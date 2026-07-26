@@ -6,7 +6,6 @@ import { ContextAction } from "./actions/context.js";
 import { KeycapAction } from "./actions/keycap.js";
 import { ModelAction } from "./actions/model.js";
 import { ReasoningAction } from "./actions/reasoning.js";
-import { SessionNavigationAction } from "./actions/session-navigation.js";
 import { UsageAction } from "./actions/usage.js";
 import { WorkflowAction } from "./actions/workflow.js";
 import { codexStore } from "./lib/codex-store.js";
@@ -20,7 +19,6 @@ const keycap = new KeycapAction();
 const model = new ModelAction();
 const workflow = new WorkflowAction();
 const reasoning = new ReasoningAction();
-const sessionNavigation = new SessionNavigationAction();
 const usage = new UsageAction();
 
 streamDeck.logger.setLevel("debug");
@@ -32,7 +30,6 @@ streamDeck.actions.registerAction(keycap);
 streamDeck.actions.registerAction(model);
 streamDeck.actions.registerAction(workflow);
 streamDeck.actions.registerAction(reasoning);
-streamDeck.actions.registerAction(sessionNavigation);
 streamDeck.actions.registerAction(usage);
 
 const refresh = async (): Promise<void> => {
@@ -47,7 +44,6 @@ const refresh = async (): Promise<void> => {
       model.refreshAll(),
       workflow.refreshAll(),
       reasoning.refreshAll(),
-      sessionNavigation.refreshAll(),
       usage.refreshAll(),
     ]);
   } catch (error) {

@@ -181,29 +181,10 @@ describe("physical input acceptance", () => {
     expect(keyDown).toContain("showAlert");
   });
 
-  it("navigates adjacent sessions without composer keyboard input or wrap", () => {
-    const action = source("src/actions/session-navigation.ts");
-    const resolver = source("src/lib/session-navigation.ts");
-
-    expect(action).toContain("codexStore.sessions(8)");
-    expect(action).toContain("session.isActive");
-    expect(action).toContain("resolveSessionNeighbor");
-    expect(action).toContain("openThread(result.target.id)");
-    expect(action).toContain("showAlert");
-    expect(action).not.toContain("runControl");
-    expect(action).not.toContain("executeCommand");
-    expect(action).not.toContain("keyboard");
-    expect(resolver).toContain(
-      'currentIndex + (direction === "older" ? 1 : -1)',
-    );
-    expect(resolver).not.toContain("% sessions.length");
-  });
-
   it("exposes a visible alert path for every external action family", () => {
     for (const path of [
       "src/actions/agent-status.ts",
       "src/actions/agent-navigator.ts",
-      "src/actions/session-navigation.ts",
       "src/actions/command.ts",
       "src/actions/workflow.ts",
       "src/actions/model.ts",

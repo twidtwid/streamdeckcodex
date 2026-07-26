@@ -2,9 +2,18 @@
 
 ## Lucide icons
 
-Ordinary UI glyphs are generated from `lucide-static` v0.468.0, under the ISC
+All pictograms are generated from `lucide-static` v0.468.0, under the ISC
 License. Copyright © Lucide Contributors 2022; portions © Cole Bemis 2013–2022
 under the MIT License.
+
+## Barlow
+
+The YEET and YOLO wordmarks are vector outlines generated from Barlow Condensed
+Black Italic by Jeremy Tribby and contributors. Barlow is licensed under the
+SIL Open Font License 1.1; the bundled license is at
+`assets/fonts/barlow-condensed/OFL.txt`. The profile embeds only generated
+letterform paths, so the result is a deterministic graphic and has no runtime
+font dependency.
 
 This project is an independent implementation. It does not contain source or
 assets from the installed ChatGPT/Codex desktop application or Codex Micro.

@@ -31,10 +31,12 @@
     "profile:build": "node scripts/build-profile.mjs",
     "profile:keycaps": "node scripts/generate-keycap-pages.mjs",
     "icons:lucide": "node scripts/generate-lucide-paths.mjs",
+    "icons:static": "node scripts/generate-static-icons.mjs",
+    "icons:wordmarks": "node scripts/generate-wordmark-paths.mjs",
     "icons:extract-app": "node scripts/extract-app-icons.mjs",
     "profile:keycaps:install": "node scripts/install-keycap-pages.mjs",
     "native:build": "node scripts/build-native.mjs",
-    "build": "npm run icons:lucide && npm run profile:build && npm run native:build && esbuild src/plugin.ts --bundle --platform=node --format=esm --target=node24 --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=com.todd.streamdeckcodex.sdPlugin/bin/plugin.js --sourcemap",
+    "build": "npm run icons:lucide && npm run icons:wordmarks && npm run profile:build && npm run native:build && esbuild src/plugin.ts --bundle --platform=node --format=esm --target=node24 --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=com.todd.streamdeckcodex.sdPlugin/bin/plugin.js --sourcemap",
     "watch": "npm run build -- --watch",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -49,9 +51,11 @@
     "qa:dials": "node scripts/qa-dial-events.mjs",
     "qa:plan": "npm run qa:modes",
     "qa:modes": "node scripts/qa-mode-events.mjs",
-    "qa:sessions": "node --experimental-strip-types scripts/qa-session-events.mjs",
     "qa:status-visuals": "node --experimental-strip-types scripts/render-session-status-fixtures.mjs",
-    "check": "npm run format:check && npm run typecheck && npm test && npm run build && npm run validate"
+    "qa:visuals": "node scripts/render-profile-visuals.mjs",
+    "qa:design": "npm run qa:visuals && node scripts/evaluate-profile-design.mjs",
+    "qa:design:release": "npm run qa:visuals && node scripts/evaluate-profile-design.mjs --release",
+    "check": "npm run format:check && npm run typecheck && npm test && npm run qa:design && npm run build && npm run validate"
   },
   "dependencies": {
     "@elgato/streamdeck": "2.1.0",
@@ -63,6 +67,7 @@
     "@types/node": "26.1.1",
     "acorn": "8.17.0",
     "esbuild": "0.28.1",
+    "opentype.js": "1.3.4",
     "prettier": "3.9.5",
     "typescript": "7.0.2",
     "vitest": "4.1.10"

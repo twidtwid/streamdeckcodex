@@ -53,11 +53,11 @@ export function parseActiveDesktopThreadId(
   return undefined;
 }
 
-function localLogDateParts(date: Date): string[] {
+function utcLogDateParts(date: Date): string[] {
   return [
-    String(date.getFullYear()),
-    String(date.getMonth() + 1).padStart(2, "0"),
-    String(date.getDate()).padStart(2, "0"),
+    String(date.getUTCFullYear()),
+    String(date.getUTCMonth() + 1).padStart(2, "0"),
+    String(date.getUTCDate()).padStart(2, "0"),
   ];
 }
 
@@ -67,7 +67,10 @@ export function activeDesktopThreadId(
 ): string | undefined {
   const dates = [now, new Date(now.getTime() - 24 * 60 * 60 * 1000)];
   const candidates = dates.flatMap((date) => {
-    const directory = join(logRoot, ...localLogDateParts(date));
+    // Codex Desktop partitions logs by UTC date, not the Mac's local date.
+    // Around local evening in western time zones, using local date parts skips
+    // the current log directory and silently resolves a stale task.
+    const directory = join(logRoot, ...utcLogDateParts(date));
     try {
       return readdirSync(directory)
         .filter((name) => name.endsWith(".log"))

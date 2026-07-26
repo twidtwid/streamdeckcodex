@@ -3,8 +3,8 @@
   "Actions": [
     {
       "Controllers": ["Keypad"],
-      "Icon": "imgs/actions/command",
-      "Name": "Codex Micro Keycap",
+      "Icon": "imgs/actions/keycap",
+      "Name": "Codex Workflow Key",
       "States": [
         {
           "Image": "imgs/actions/command",
@@ -12,7 +12,7 @@
           "TitleAlignment": "bottom"
         }
       ],
-      "Tooltip": "Codex Micro keycap reference. Safe keys launch only an explicitly labeled action.",
+      "Tooltip": "Launch the explicitly labeled Codex command or workflow.",
       "UUID": "com.todd.streamdeckcodex.keycap"
     },
     {
@@ -151,7 +151,7 @@
     },
     {
       "Controllers": ["Keypad"],
-      "Icon": "imgs/actions/usage",
+      "Icon": "imgs/actions/context",
       "Name": "Live Usage",
       "States": [
         {
@@ -174,19 +174,6 @@
       ],
       "Tooltip": "Display context left in the focused Codex chat; press to toggle used and maximum tokens.",
       "UUID": "com.todd.streamdeckcodex.context"
-    },
-    {
-      "Controllers": ["Keypad"],
-      "Icon": "imgs/actions/navigator",
-      "Name": "Session Navigation",
-      "States": [
-        {
-          "Image": "imgs/actions/navigator",
-          "ShowTitle": false
-        }
-      ],
-      "Tooltip": "Open the immediately older or newer Codex session without typing into the composer.",
-      "UUID": "com.todd.streamdeckcodex.session-navigation"
     }
   ],
   "ApplicationsToMonitor": {

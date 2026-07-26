@@ -80,9 +80,8 @@ describe("focused-chat context", () => {
     expect(compactContext(snapshot)).toBe("82K/258K");
 
     const remaining = contextKeySvg(snapshot, "remaining");
-    expect(remaining).toContain(">CONTEXT</text>");
+    expect(remaining).toContain(">CONTEXT LEFT</text>");
     expect(remaining).toContain(">68%</text>");
-    expect(remaining).toContain(">LEFT</text>");
     expect(remaining).not.toContain("BAR");
 
     const exact = contextKeySvg(snapshot, "exact");
@@ -103,14 +102,20 @@ describe("focused-chat context", () => {
     );
     for (const view of ["remaining", "exact"] as const) {
       const svg = contextKeySvg(snapshot, view);
-      expect(svg).toContain('width="33" height="9"');
+      expect(svg).toContain('width="33" height="8"');
     }
     expect(contextKeySvg(snapshot, "remaining")).not.toContain("BAR");
   });
 
   it("renders unknown instead of a sample number", () => {
-    const svg = contextKeySvg(undefined, "remaining");
-    expect(svg).toContain(">--</text>");
-    expect(svg).not.toMatch(/>\d+%<\/text>/);
+    for (const mode of ["remaining", "exact"] as const) {
+      const svg = contextKeySvg(undefined, mode);
+      expect(svg).toContain(">CONTEXT</text>");
+      expect(svg).toContain(">NO DATA</text>");
+      expect(svg).not.toContain(">--");
+      expect(svg).not.toContain(">USED</tspan>");
+      expect(svg).not.toContain(">MAX</tspan>");
+      expect(svg).not.toMatch(/>\d+%<\/text>/);
+    }
   });
 });

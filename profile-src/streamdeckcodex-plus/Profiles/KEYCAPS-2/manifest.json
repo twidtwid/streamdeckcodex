@@ -3,163 +3,123 @@
     {
       "Actions": {
         "0,0": {
-          "ActionID": "681bfec5-9a8c-4ebf-a711-211dbd34b1ee",
+          "ActionID": "f30fc1f7-8807-5f38-8d77-5b236ce0f611",
           "LinkedTitle": false,
-          "Name": "Inbox — NEW CHAT",
+          "Name": "Refactor",
           "Resources": null,
           "Settings": {
-            "label": "Inbox",
-            "description": "NEW CHAT",
-            "icon": "inbox",
-            "action": "new-chat"
+            "label": "Refactor",
+            "description": "",
+            "icon": "refactor",
+            "action": "workflow:refactor"
           },
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.keycap"
         },
         "1,0": {
-          "ActionID": "ce107e9f-590e-42a5-b3d0-b4d8e018648a",
+          "ActionID": "efd01f6f-e180-50e7-9b44-da1db1a296f8",
           "LinkedTitle": false,
-          "Name": "Run — EXECUTE",
+          "Name": "Add tests",
           "Resources": null,
           "Settings": {
-            "label": "Run",
-            "description": "EXECUTE",
-            "icon": "play",
-            "action": "info"
+            "label": "Add tests",
+            "description": "",
+            "icon": "tests",
+            "action": "workflow:tests"
           },
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.keycap"
         },
         "2,0": {
-          "ActionID": "65d39914-9a73-4e08-a4b3-2bb5004c4b57",
+          "ActionID": "729285c7-2aba-59b0-bc0b-06fdd9f6b72b",
           "LinkedTitle": false,
-          "Name": "Branch — GIT GRAPH",
+          "Name": "Search",
           "Resources": null,
           "Settings": {
-            "label": "Branch",
-            "description": "GIT GRAPH",
-            "icon": "branch",
-            "action": "info"
+            "label": "Search",
+            "description": "",
+            "icon": "search",
+            "action": "workflow:search"
           },
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.keycap"
         },
         "3,0": {
-          "ActionID": "4cbc9631-e54e-491f-961d-d2d98f6de3f3",
+          "ActionID": "a3dd313e-c804-589c-852d-102b12e4a8cc",
           "LinkedTitle": false,
-          "Name": "Back — UNDO BRANCH",
+          "Name": "Explain",
           "Resources": null,
           "Settings": {
-            "label": "Back",
-            "description": "UNDO BRANCH",
-            "icon": "branch-back",
-            "action": "info"
+            "label": "Explain",
+            "description": "",
+            "icon": "explain",
+            "action": "workflow:explain"
           },
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.keycap"
         },
         "0,1": {
-          "ActionID": "a3693f38-7f91-4b20-9986-4aaa22caeb39",
+          "ActionID": "3324393a-5f02-540f-b01d-343b1fa7712d",
           "LinkedTitle": false,
-          "Name": "Branch+ — NEW BRANCH",
+          "Name": "Document",
           "Resources": null,
           "Settings": {
-            "label": "Branch+",
-            "description": "NEW BRANCH",
-            "icon": "branch-add",
-            "action": "info"
+            "label": "Document",
+            "description": "",
+            "icon": "document",
+            "action": "workflow:document"
           },
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.keycap"
         },
         "1,1": {
-          "ActionID": "d67712fd-ccf5-427d-bcc1-41d221d34f70",
+          "ActionID": "9187d402-1a22-5380-8b91-ede12f6079cd",
           "LinkedTitle": false,
-          "Name": "Merge — COMBINE",
+          "Name": "Optimize",
           "Resources": null,
           "Settings": {
-            "label": "Merge",
-            "description": "COMBINE",
-            "icon": "merge",
-            "action": "info"
+            "label": "Optimize",
+            "description": "",
+            "icon": "optimize",
+            "action": "workflow:optimize"
           },
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.keycap"
         },
         "2,1": {
-          "ActionID": "fa038c11-f8cf-45a7-a7bc-d62ce1b72648",
+          "ActionID": "2af66196-ad6a-55a3-a09d-2a651bcfaee5",
           "LinkedTitle": false,
-          "Name": "Brush — REFACTOR",
+          "Name": "Audit",
           "Resources": null,
           "Settings": {
-            "label": "Brush",
-            "description": "REFACTOR",
-            "icon": "paint",
-            "action": "info"
+            "label": "Audit",
+            "description": "",
+            "icon": "audit",
+            "action": "workflow:audit"
           },
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.keycap"
         },
         "3,1": {
-          "ActionID": "d4b356d7-547e-41e5-8eab-9d7558f57e1c",
+          "ActionID": "4f563b76-d484-56fa-80ce-dc9fc885899c",
           "LinkedTitle": false,
-          "Name": "Flask — TESTS",
+          "Name": "Fix CI",
           "Resources": null,
           "Settings": {
-            "label": "Flask",
-            "description": "TESTS",
-            "icon": "tests",
-            "action": "info"
+            "label": "Fix CI",
+            "description": "",
+            "icon": "fix",
+            "action": "workflow:fix-ci"
           },
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.keycap"
         }
       },
@@ -172,16 +132,9 @@
           "LinkedTitle": false,
           "Name": "Agent Navigator",
           "Resources": null,
-          "Settings": {
-            "index": 0
-          },
+          "Settings": { "index": 0 },
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.agent-navigator"
         },
         "1,0": {
@@ -189,16 +142,9 @@
           "LinkedTitle": false,
           "Name": "Core Actions",
           "Resources": null,
-          "Settings": {
-            "commandIndex": 2
-          },
+          "Settings": { "commandIndex": 2 },
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.command"
         },
         "2,0": {
@@ -208,12 +154,7 @@
           "Resources": null,
           "Settings": {},
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.model"
         },
         "3,0": {
@@ -223,12 +164,7 @@
           "Resources": null,
           "Settings": {},
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.reasoning"
         }
       },
@@ -236,5 +172,5 @@
     }
   ],
   "Icon": "",
-  "Name": "Codex Icon Keyset 2/4"
+  "Name": "Code Quality"
 }

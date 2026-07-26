@@ -1,13 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="288" height="288" viewBox="0 0 288 288">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop stop-color="#17213c"/>
-      <stop offset="1" stop-color="#0a0d14"/>
+    <linearGradient id="surface" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#151A23"/>
+      <stop offset="1" stop-color="#080A0E"/>
     </linearGradient>
   </defs>
-  <rect width="288" height="288" rx="60" fill="url(#g)"/>
-  <path d="M88 69h112a20 20 0 0 1 20 20v86a20 20 0 0 1-20 20h-52l-35 28v-28H88a20 20 0 0 1-20-20V89a20 20 0 0 1 20-20Z" fill="none" stroke="#f5f6f8" stroke-width="15" stroke-linejoin="round"/>
-  <circle cx="110" cy="132" r="12" fill="#4d8dff"/>
-  <circle cx="145" cy="132" r="12" fill="#35c98b"/>
-  <circle cx="180" cy="132" r="12" fill="#ffb43c"/>
+  <rect width="288" height="288" rx="54.72" fill="#07090C"/>
+  <rect width="288" height="288" rx="54.72" fill="url(#surface)"/>
+  <g transform="translate(60 60) scale(7)" fill="none" stroke="#9CD5FE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 7.5 8 10l2 2.5" /> <path d="m14 7.5 2 2.5-2 2.5" /> <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></g>
 </svg>

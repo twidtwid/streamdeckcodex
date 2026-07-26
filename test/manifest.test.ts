@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { COMMANDS } from "../src/lib/commands.js";
+import { KEYCAP_WORKFLOWS } from "../src/lib/keycap-workflows.js";
 
 const manifest = JSON.parse(
   readFileSync(
@@ -31,11 +33,12 @@ const agentPage = JSON.parse(
     "utf8",
   ),
 ) as {
+  Name: string;
   Controllers: Array<{
     Type: string;
     Actions: Record<
       string,
-      { Settings: Record<string, unknown>; UUID: string }
+      { Name: string; Settings: Record<string, unknown>; UUID: string }
     >;
   }>;
 };
@@ -69,9 +72,9 @@ describe("Stream Deck manifest", () => {
         "com.todd.streamdeckcodex.agent-navigator",
         "com.todd.streamdeckcodex.usage",
         "com.todd.streamdeckcodex.context",
-        "com.todd.streamdeckcodex.session-navigation",
       ]),
     );
+    expect(ids).not.toContain("com.todd.streamdeckcodex.session-navigation");
   });
 
   it("ships an editable Stream Deck Plus profile source", () => {
@@ -88,7 +91,7 @@ describe("Stream Deck manifest", () => {
     );
   });
 
-  it("ships all 32 labeled Codex Micro keycap references across four pages", () => {
+  it("ships 32 functional workflow keys across four coherent pages", () => {
     const keycapLabels = [
       "KEYCAPS-1",
       "KEYCAPS-2",
@@ -115,8 +118,26 @@ describe("Stream Deck manifest", () => {
       ),
     ).toBe(true);
     expect(keycapLabels.map((key) => key.Settings.label)).toEqual(
-      expect.arrayContaining(["YOLO", "YEET", "Terminal", "Codex"]),
+      expect.arrayContaining(["Branch info", "Run shell", "Skills", "Fix CI"]),
     );
+    expect(keycapLabels.map((key) => key.Settings.icon)).not.toEqual(
+      expect.arrayContaining(["context", "usage", "openai"]),
+    );
+    expect(
+      keycapLabels.filter((key) => key.Settings.label === "Skills"),
+    ).toHaveLength(1);
+    expect(keycapLabels.some((key) => key.Settings.action === "info")).toBe(
+      false,
+    );
+    expect(
+      keycapLabels.every(
+        (key) =>
+          key.Name ===
+          (key.Settings.description
+            ? `${key.Settings.label} — ${key.Settings.description}`
+            : key.Settings.label),
+      ),
+    ).toBe(true);
   });
 
   it("maps keycaps with established Codex semantics to the shared command path", () => {
@@ -146,10 +167,58 @@ describe("Stream Deck manifest", () => {
     expect(actionFor("Accept")).toBe("command:accept");
     expect(actionFor("Reject")).toBe("command:reject");
     expect(actionFor("Send")).toBe("command:send");
-    expect(actionFor("Voice")).toBe("info");
+    expect(actionFor("Fix CI")).toBe("workflow:fix-ci");
+    expect(actionFor("Explore")).toBe("workflow:explore");
+    expect(actionFor("Analyze")).toBe("workflow:analyze");
   });
 
-  it("maps the primary page to six agents plus bounded session navigation", () => {
+  it("resolves every workflow and command key through an exact registry ID", () => {
+    const workflowIds = new Set(
+      KEYCAP_WORKFLOWS.map((workflow) => workflow.id),
+    );
+    const commandIds = new Set(COMMANDS.map((command) => command.id));
+    const allKeycaps = [
+      ...Object.values(
+        agentPage.Controllers.find(
+          (controller) => controller.Type === "Keypad",
+        )!.Actions,
+      ),
+      ...["KEYCAPS-1", "KEYCAPS-2", "KEYCAPS-3", "KEYCAPS-4"].flatMap(
+        (pageId) => {
+          const page = JSON.parse(
+            readFileSync(
+              resolve(
+                `profile-src/streamdeckcodex-plus/Profiles/${pageId}/manifest.json`,
+              ),
+              "utf8",
+            ),
+          ) as typeof agentPage;
+          return Object.values(
+            page.Controllers.find((controller) => controller.Type === "Keypad")!
+              .Actions,
+          );
+        },
+      ),
+    ].filter((key) => key.UUID === "com.todd.streamdeckcodex.keycap");
+
+    for (const key of allKeycaps) {
+      const action = String(key.Settings.action ?? "");
+      if (action.startsWith("workflow:")) {
+        expect(
+          workflowIds.has(action.slice("workflow:".length)),
+          key.Name,
+        ).toBe(true);
+      } else if (action.startsWith("command:")) {
+        expect(commandIds.has(action.slice("command:".length)), key.Name).toBe(
+          true,
+        );
+      } else {
+        expect(action, key.Name).toBe("skills");
+      }
+    }
+  });
+
+  it("maps the primary page to six agents plus YOLO and YEET", () => {
     const actions = agentPage.Controllers.find(
       (controller) => controller.Type === "Keypad",
     )!.Actions;
@@ -161,13 +230,29 @@ describe("Stream Deck manifest", () => {
       ),
     ).toHaveLength(6);
     expect(actions["2,1"]).toMatchObject({
-      UUID: "com.todd.streamdeckcodex.session-navigation",
-      Settings: { direction: "older" },
+      Name: "YOLO — Autonomous",
+      UUID: "com.todd.streamdeckcodex.keycap",
+      Settings: {
+        action: "workflow:yolo",
+        description: "Autonomous",
+        icon: "yolo",
+        label: "YOLO",
+      },
     });
     expect(actions["3,1"]).toMatchObject({
-      UUID: "com.todd.streamdeckcodex.session-navigation",
-      Settings: { direction: "newer" },
+      Name: "YEET — Publish",
+      UUID: "com.todd.streamdeckcodex.keycap",
+      Settings: {
+        action: "workflow:publish",
+        description: "Publish",
+        icon: "yeet",
+        label: "YEET",
+      },
     });
+    expect(agentPage.Name).toBe("Agents & Autonomy");
+    expect(values.map((item) => item.UUID)).not.toContain(
+      "com.todd.streamdeckcodex.session-navigation",
+    );
     expect(values.map((item) => item.Settings.commandId)).not.toContain(
       "accept",
     );

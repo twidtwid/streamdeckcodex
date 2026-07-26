@@ -1,56 +1,74 @@
-# Physical Input Acceptance
+# Release acceptance
 
-Updated: 2026-07-25 15:34 PDT
+This is the release gate for the connected Stream Deck Plus profile. A source
+pass is necessary but not sufficient: release also requires exact installed
+profile parity and evidence from all six pages in the live Stream Deck editor.
 
-This is the release gate for the connected Stream Deck Plus. Automated checks
-run with `npm test`; connected-device checks were performed in Stream Deck
-7.5.0 with device type 7.
-
-| Physical input          | Dispatch and postcondition                                                                                                                                                                                                                                                | Result                                                                                                                                                                                                                                                                                                                               |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Page 1 Agent 1–6        | Each installed position maps to exactly one slot. Press acknowledges and opens that task; empty slots open New Chat. The focused primary Codex task becomes the target for Action, Model, Reasoning, and Workflow controls.                                               | Passed mapping, handler, deep-link, focused-primary target, render, and connected-device display checks.                                                                                                                                                                                                                             |
-| Page 1 Previous Session | Resolves the focused session in the same ordered eight-session projection as keys/Dial 1 and opens only the immediately older entry by deep link. It never wraps or emits composer keyboard input.                                                                        | Production key-event QA opened live slot 2 `SDCodex` from slot 1 `Voice`, observed the exact focused task ID, and recorded zero composer keyboard events. Connected key face rendered unclipped.                                                                                                                                     |
-| Page 1 Next Session     | Resolves the same projection and moves exactly one entry toward newer. At the newest entry it shows `NEWEST`; no focused entry shows `NO CHAT`.                                                                                                                           | Production key-event QA returned from live `SDCodex` to `Voice` and observed the exact original task ID. Connected newest-state face rendered `NEXT / NEWEST`; no wrap.                                                                                                                                                              |
-| Shared session labels   | Keys 1–6 and Dial 1 slots 1–8 use the same IDs, order, and seven-character labels. Meaningful title wins; delegated/untitled/raw-ID sessions use project identity; collisions get deterministic numeric suffixes. Active and live status remain visible.                  | Passed ordering, identity, raw-ID, dedupe, empty/one/end, active/status, label-budget, and press-correspondence tests. Live labels were `Voice`, `SDCodex`, `OldBld`, `TermHTM`, `Laguna`, `Chrome`, `HTMLAcc`, `LabelDe`; Page 1 and Dial 1 matched.                                                                                |
-| Session status palette  | Page 1 tiles, Dial 1 indicator, and available/opened Previous/Next feedback resolve session state through one palette: idle `#FFFFFF`, unread `#9BF396`, thinking/running `#9CD5FE`, needs-input `#FFD0B8`, and error `#FF7373`. Model/Reasoning pending stays `#F4B740`. | Exact-hex and separation tests passed. Active/inactive needs-input and navigation fixtures rendered without clipping; inactive uses a darker brown outline/text tone and active retains the white border. Connected reload showed live running/unread colors. No genuine pending decision was present, so live peach is not claimed. |
-| Page 2 Accept / Reject  | Same handlers and payloads as page 1, independently mapped in the installed second page.                                                                                                                                                                                  | Passed installed mapping and exact dispatch checks.                                                                                                                                                                                                                                                                                  |
-| Page 2 Push to Talk     | Key-down starts a watchdog that focuses the targeted task and holds `Ctrl+Shift+D`; key-up closes its parent pipe and releases D plus both modifiers. Parent death, partial failure, page disappearance, process exit, and a 60-second maximum hold all force release.    | Passed event-separation, AppleScript compile, failure-injection, parent-loss, timeout, startup, shutdown, and page-hide cleanup tests. Microphone capture was not started during unattended QA.                                                                                                                                      |
-| Page 2 Usage            | Default is weekly percentage plus plain reset time; press toggles to banked reset count and never calls the consume endpoint.                                                                                                                                             | Passed parser, render, toggle, no-consume, and live signed-in `account/rateLimits/read` postcondition.                                                                                                                                                                                                                               |
-| Page 2 PR Review        | One key-down opens one encoded new-task deep link with the PR-review prompt and targeted workspace.                                                                                                                                                                       | Passed installed mapping and exact URL tests; not launched to avoid creating a QA task.                                                                                                                                                                                                                                              |
-| Page 2 Debug            | One key-down opens one encoded new-task deep link with the debug prompt and targeted workspace.                                                                                                                                                                           | Passed installed mapping and exact URL tests; not launched to avoid creating a QA task.                                                                                                                                                                                                                                              |
-| Page 2 Refactor         | One key-down opens one encoded new-task deep link with the refactor prompt and targeted workspace.                                                                                                                                                                        | Passed installed mapping and exact URL tests; not launched to avoid creating a QA task.                                                                                                                                                                                                                                              |
-| Page 2 Context          | Reads only the focused primary chat's fresh context snapshot. Default shows percentage left; press toggles locally to separate USED and MAX lines. The meter always fills by percentage used. No chat or account state may change.                                        | Passed focused/unrelated/missing/stale parsing, exact/percent toggle, no-mutation, label-fit, and profile tests. Live QA read `105904/258400` (59% left), showed `--` on an unverified chat, restored after switching back, and rendered both faces without clipping.                                                                |
-| Dial 1 Agent            | Uses the shared ordered eight-session projection. Turn changes selection only; the strip shows `SESSION n/8` and the exact matching key label; press/tap opens that exact session once; hold opens New Chat.                                                              | Passed turn/press separation, slot/label identity, active initialization, compact-label, status-color, and installed mapping checks. Connected strip showed `SESSION 1/8 / Voice`, matching Page 1 key 1.                                                                                                                            |
-| Dial 2 Action           | Turn changes selection only. Non-voice actions dispatch once on dial-up/tap. PTT alone starts on dial-down and stops on dial-up. Plan and Fast share the focused visible-composer adapter; neither may use a global chooser.                                              | Passed exact command table, event separation, width budget, installed mapping, and native-dispatch tracing. Plan toggled visibly `ACTIVE` then `OFF`, one dispatch per press. Fast returned `UNSUPPORTED`, sent no command, and left Plan unchanged. A visible draft made both refuse without changing text.                         |
-| Dial 3 Model            | Turn only previews with amber `PENDING`; it emits no Codex command. Press/tap operates the visible Codex Model picker once, rereads it, and shows green `ACTIVE` only when the requested model is visibly selected.                                                       | Passed SDK `willAppear` → `dialRotate` → `dialUp` event-path test against a real idle Codex chat: Sol previewed Terra, press visibly applied Terra, then emitted one verified `ACTIVE/TERRA`. The installed Stream Deck process separately proved Accessibility permission by visibly applying Sol.                                  |
-| Dial 4 Reasoning        | Turn only previews with amber `PENDING`; it emits no Codex command. Press/tap validates the selected model's advertised levels, operates the visible Effort picker once, rereads it, and shows green `ACTIVE` only after the exact visible result.                        | Passed SDK `willAppear` → `dialRotate` → `dialUp` event-path test against the same real chat: Medium previewed Low, press visibly applied Codex's `Light` label, then emitted one verified `ACTIVE/LOW`. The installed Stream Deck process separately applied Medium.                                                                |
-| Ultra guard             | Ultra appears only when the deck-targeted model advertises it; a stale unsupported selection is blocked.                                                                                                                                                                  | Passed live-cache model-specific tests.                                                                                                                                                                                                                                                                                              |
-| Profile pages           | Installed active profile contains two pages with 16 key mappings and eight encoder mappings; linked plugin restarts under Node 24. Page 2 position `3,1` is Context, no direct Skills key remains, and Skills remains on the Action dial.                                 | Passed source/generated/installed-manifest audits and Stream Deck 7.5 reopen. The connected preview showed both Context faces, all normal labels/icons, and no question marks. Two stale one-page duplicates remain untouched.                                                                                                       |
-| Failure feedback        | External failures never show success. Model/Reasoning show a red, readable `OPEN CHAT`, `CODEX BUSY`, `NO ACCESS`, `NOT OFFERED`, or `APPLY FAIL` state and call `showAlert()`.                                                                                           | Passed source/handler checks plus a live unavailable-picker failure.                                                                                                                                                                                                                                                                 |
-
-Commands:
+## Automated gate
 
 ```sh
+npm ci
 npm run check
-npm run qa:dials
-npm run qa:modes
-npm run qa:sessions
-npm run qa:status-visuals
 ```
 
-`qa:dials` launches the production bundle against a local SDK-compatible
-WebSocket, sends the official Stream Deck Plus event shapes, and requires both
-green dial feedback and the matching visible Codex picker values. It changes
-the visible idle QA chat to Terra/Low and does not touch an active task.
+`npm run check` verifies formatting, types, tests, the complete 144px/72px
+visual atlas, the design evaluator, the production build, and Elgato manifest
+validation.
 
-`qa:modes` uses the same production bundle and official `dialUp` shape. It
-requires one dispatch per press, visible Plan postconditions in both
-directions, and safe explicit Fast refusal when no verifiable focused-composer
-control exists. If the composer contains a draft, both actions must fail
-without typing or sending anything.
+The design evaluator rejects:
 
-`qa:sessions` uses official `willAppear` and `keyDown` shapes against the
-production bundle. It opens the immediately older live session, verifies the
-focused-task postcondition, presses Next, verifies return to the original
-session, and restores the original on failure. It does not synthesize a
-keyboard event.
+- missing, inert, unregistered, or misleading key actions;
+- redundant copy, dirty metadata, banned navigation, and wrong page grouping;
+- duplicate labels, icon aliases, or underlying Lucide path data;
+- missing YOLO/YEET primary contracts or duplicate Usage/Context keys;
+- edge collisions, icon/caption overlap, ellipses, and weak glyph mass;
+- installed page names, key counts, mappings, or settings that differ from
+  source.
+
+## Physical input matrix
+
+| Surface          | Required behavior                                                                                                                                                                      |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Page 1 agents    | Six ordered live sessions use the same compact labels and status palette as Dial 1. The focused session shows `NOW`; an empty slot shows `New chat / EMPTY SLOT` and opens a new chat. |
+| Page 1 YOLO      | Displays the outlined `YOLO / AUTONOMOUS` wordmark and dispatches exactly `workflow:yolo`.                                                                                             |
+| Page 1 YEET      | Displays the outlined `YEET / PUBLISH` wordmark and dispatches exactly `workflow:publish`.                                                                                             |
+| Page 2 core      | New Chat, Plan Mode, Push to Talk, Usage, PR Review, Debug, Compact, and Context appear once and remain legible at hardware size.                                                      |
+| Usage            | Defaults to weekly percentage left and compact reset time; press toggles to available resets without consuming one.                                                                    |
+| Context          | Resolves only the focused primary task's fresh UTC-partitioned token snapshot. Press toggles remaining/exact views. Unknown is `CONTEXT / NO DATA` in both views.                      |
+| Pages 3–6        | Git & Delivery, Code Quality, Decisions, and Workspace each contain the exact eight documented functional keys with no fillers.                                                        |
+| Dials            | Agent, Action, Model, and Reasoning preserve selection-on-turn and apply-on-press semantics with visible feedback.                                                                     |
+| Failure feedback | External failures never show success and always retain a readable failure state or `showAlert()`.                                                                                      |
+
+## Connected release gate
+
+Close Stream Deck before installing so its cached profile cannot overwrite the
+new manifests:
+
+```sh
+npm run profile:keycaps:install -- "/path/to/Active.sdProfile"
+```
+
+After relaunch:
+
+1. Select pages 1 through 6 in the Stream Deck editor.
+2. Save full-window screenshots as `page-1.png` through `page-6.png`.
+3. Run the release evaluator:
+
+```sh
+node scripts/evaluate-profile-design.mjs \
+  --release \
+  --installed "/path/to/Active.sdProfile" \
+  --live-pages ".cache/live-profile-pages"
+```
+
+Release passes only if installed manifests match source, all six live grids are
+distinct, and macOS Vision OCR finds page-specific labels—including YOLO and
+YEET on page 1.
+
+Connected dial and mode checks can change the visible state of an idle Codex
+task:
+
+```sh
+npm run qa:dials
+npm run qa:modes
+```

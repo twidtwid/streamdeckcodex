@@ -1,8 +1,5 @@
 {
-  "Device": {
-    "Model": "20GBD9901",
-    "UUID": ""
-  },
+  "Device": { "Model": "20GBD9901", "UUID": "" },
   "InstalledByPluginUUID": "com.todd.streamdeckcodex",
   "Name": "Codex Companion",
   "Pages": {

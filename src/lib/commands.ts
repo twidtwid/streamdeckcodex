@@ -97,22 +97,6 @@ export const COMMANDS: readonly CommandDefinition[] = [
     icon: "compact",
   },
   {
-    id: "back",
-    label: "Back",
-    mode: "shortcut",
-    value: "back",
-    accent: "#8B949E",
-    icon: "back",
-  },
-  {
-    id: "forward",
-    label: "Forward",
-    mode: "shortcut",
-    value: "forward",
-    accent: "#8B949E",
-    icon: "forward",
-  },
-  {
     id: "sidebar",
     label: "Sidebar",
     mode: "shortcut",

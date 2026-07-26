@@ -3,163 +3,123 @@
     {
       "Actions": {
         "0,0": {
-          "ActionID": "ea325072-1a8a-4135-811d-28d08fa7bb30",
+          "ActionID": "cdb67ab8-9cdd-5e97-874d-526ab666f78c",
           "LinkedTitle": false,
-          "Name": "Settings — CONFIGURE",
+          "Name": "Run shell",
           "Resources": null,
           "Settings": {
-            "label": "Settings",
-            "description": "CONFIGURE",
-            "icon": "settings",
-            "action": "info"
+            "label": "Run shell",
+            "description": "",
+            "icon": "terminal",
+            "action": "workflow:terminal"
           },
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.keycap"
         },
         "1,0": {
-          "ActionID": "d6b60cd7-fdc2-4c4f-bb88-0d5b9cef8524",
+          "ActionID": "e3dba344-bf59-5db9-9c27-d839c05e1531",
           "LinkedTitle": false,
-          "Name": "Folder+ — NEW PROJECT",
+          "Name": "Edit code",
           "Resources": null,
           "Settings": {
-            "label": "Folder+",
-            "description": "NEW PROJECT",
-            "icon": "folder-plus",
-            "action": "info"
+            "label": "Edit code",
+            "description": "",
+            "icon": "edit",
+            "action": "workflow:editor"
           },
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.keycap"
         },
         "2,0": {
-          "ActionID": "a0faff23-1ec2-4f99-a59d-dde43cf2a13e",
+          "ActionID": "c1eaf227-3116-5246-8b44-8249a0660d95",
           "LinkedTitle": false,
-          "Name": "Upload — SHARE",
+          "Name": "New project",
           "Resources": null,
           "Settings": {
-            "label": "Upload",
-            "description": "SHARE",
-            "icon": "cloud-upload",
-            "action": "info"
+            "label": "New project",
+            "description": "",
+            "icon": "folder-plus",
+            "action": "workflow:new-project"
           },
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.keycap"
         },
         "3,0": {
-          "ActionID": "a9286f82-7454-4023-a734-d23d186857f7",
+          "ActionID": "4ee8a2ae-1222-58aa-9aa7-b3023e76c986",
           "LinkedTitle": false,
-          "Name": "Apps — MORE TOOLS",
+          "Name": "Upload",
           "Resources": null,
           "Settings": {
-            "label": "Apps",
-            "description": "MORE TOOLS",
-            "icon": "apps",
-            "action": "skills"
+            "label": "Upload",
+            "description": "",
+            "icon": "cloud-upload",
+            "action": "workflow:upload"
           },
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.keycap"
         },
         "0,1": {
-          "ActionID": "9146c155-69ac-4b62-aa23-0defc7a6ee7a",
+          "ActionID": "758f7331-9549-5023-b753-37a8b682c677",
           "LinkedTitle": false,
-          "Name": "YOLO — Permissions",
+          "Name": "Skills",
           "Resources": null,
           "Settings": {
-            "label": "YOLO",
-            "description": "Permissions",
-            "icon": "yolo",
-            "action": "info"
-          },
-          "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
-          "UUID": "com.todd.streamdeckcodex.keycap"
-        },
-        "1,1": {
-          "ActionID": "d3523b02-608c-4d18-afb1-bbaf96df253b",
-          "LinkedTitle": false,
-          "Name": "YEET — Review publish",
-          "Resources": null,
-          "Settings": {
-            "label": "YEET",
-            "description": "Review publish",
-            "icon": "yeet",
-            "action": "info"
-          },
-          "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
-          "UUID": "com.todd.streamdeckcodex.keycap"
-        },
-        "2,1": {
-          "ActionID": "e1919c07-e375-4cd1-968f-f2ed0187f5b2",
-          "LinkedTitle": false,
-          "Name": "Voice — Push to talk",
-          "Resources": null,
-          "Settings": {
-            "label": "Voice",
-            "description": "Push to talk",
-            "icon": "dictate",
-            "action": "info"
-          },
-          "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
-          "UUID": "com.todd.streamdeckcodex.keycap"
-        },
-        "3,1": {
-          "ActionID": "d35fd7fd-ec1e-4cd7-9936-4b0c78b970c2",
-          "LinkedTitle": false,
-          "Name": "Cloud — Codex",
-          "Resources": null,
-          "Settings": {
-            "label": "Cloud",
-            "description": "Codex",
-            "icon": "cloud",
+            "label": "Skills",
+            "description": "",
+            "icon": "skills",
             "action": "skills"
           },
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "1,1": {
+          "ActionID": "c1ea2629-f88d-55c7-8082-12197e418fec",
+          "LinkedTitle": false,
+          "Name": "Chat audit",
+          "Resources": null,
+          "Settings": {
+            "label": "Chat audit",
+            "description": "",
+            "icon": "sessions",
+            "action": "workflow:sessions"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "2,1": {
+          "ActionID": "4dc0f0f5-d407-53ee-832c-eaa9468aaa4b",
+          "LinkedTitle": false,
+          "Name": "Sidebar",
+          "Resources": null,
+          "Settings": {
+            "label": "Sidebar",
+            "description": "",
+            "icon": "sidebar",
+            "action": "command:sidebar"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "3,1": {
+          "ActionID": "57f84a2a-a4e0-557a-a70e-aa56785866ec",
+          "LinkedTitle": false,
+          "Name": "Tune setup",
+          "Resources": null,
+          "Settings": {
+            "label": "Tune setup",
+            "description": "",
+            "icon": "settings",
+            "action": "workflow:settings"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.keycap"
         }
       },
@@ -172,16 +132,9 @@
           "LinkedTitle": false,
           "Name": "Agent Navigator",
           "Resources": null,
-          "Settings": {
-            "index": 0
-          },
+          "Settings": { "index": 0 },
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.agent-navigator"
         },
         "1,0": {
@@ -189,16 +142,9 @@
           "LinkedTitle": false,
           "Name": "Core Actions",
           "Resources": null,
-          "Settings": {
-            "commandIndex": 2
-          },
+          "Settings": { "commandIndex": 2 },
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.command"
         },
         "2,0": {
@@ -208,12 +154,7 @@
           "Resources": null,
           "Settings": {},
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.model"
         },
         "3,0": {
@@ -223,12 +164,7 @@
           "Resources": null,
           "Settings": {},
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.reasoning"
         }
       },
@@ -236,5 +172,5 @@
     }
   ],
   "Icon": "",
-  "Name": "Codex Icon Keyset 4/4"
+  "Name": "Workspace"
 }

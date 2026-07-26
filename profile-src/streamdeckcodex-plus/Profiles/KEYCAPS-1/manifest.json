@@ -3,163 +3,123 @@
     {
       "Actions": {
         "0,0": {
-          "ActionID": "45633fe9-112e-4454-b622-107664c985d5",
+          "ActionID": "3156fe1f-464e-5d29-a386-f6286361b6e8",
           "LinkedTitle": false,
-          "Name": "Bug — DEBUG AGENT",
+          "Name": "Branch info",
           "Resources": null,
           "Settings": {
-            "label": "Bug",
-            "description": "DEBUG AGENT",
-            "icon": "debug",
-            "action": "info"
+            "label": "Branch info",
+            "description": "",
+            "icon": "branch",
+            "action": "workflow:branch"
           },
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.keycap"
         },
         "1,0": {
-          "ActionID": "8baa2a28-883b-4e84-b63c-5615e979a96a",
+          "ActionID": "504f8679-3237-5fe6-819c-b28c3a0ca965",
           "LinkedTitle": false,
-          "Name": "Codex — OPEN SKILLS",
+          "Name": "New branch",
           "Resources": null,
           "Settings": {
-            "label": "Codex",
-            "description": "OPEN SKILLS",
-            "icon": "openai",
-            "action": "skills"
+            "label": "New branch",
+            "description": "",
+            "icon": "branch-add",
+            "action": "workflow:new-branch"
           },
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.keycap"
         },
         "2,0": {
-          "ActionID": "28c1a3a4-0bd3-4193-baeb-8fa9eb87f79f",
+          "ActionID": "2290d943-e265-5804-aa8f-143a5a1a25b4",
           "LinkedTitle": false,
-          "Name": "Terminal — SHELL",
+          "Name": "Merge",
           "Resources": null,
           "Settings": {
-            "label": "Terminal",
-            "description": "SHELL",
-            "icon": "terminal",
-            "action": "info"
+            "label": "Merge",
+            "description": "",
+            "icon": "merge",
+            "action": "workflow:merge"
           },
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.keycap"
         },
         "3,0": {
-          "ActionID": "322153e2-6d52-4702-97ae-4bfca6bbcaff",
+          "ActionID": "a2bfeebc-f65c-56d3-9bec-434d1d99aa98",
           "LinkedTitle": false,
-          "Name": "Download — EXPORT",
+          "Name": "Diff",
           "Resources": null,
           "Settings": {
-            "label": "Download",
-            "description": "EXPORT",
-            "icon": "download",
-            "action": "info"
+            "label": "Diff",
+            "description": "",
+            "icon": "diff",
+            "action": "workflow:diff"
           },
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.keycap"
         },
         "0,1": {
-          "ActionID": "5b8d1364-3084-4a9b-9165-b6a7dfeb3dc9",
+          "ActionID": "c5c400cd-ae6f-5c5d-8244-7cf98c597e9a",
           "LinkedTitle": false,
-          "Name": "Trash — DISCARD",
+          "Name": "Commit",
           "Resources": null,
           "Settings": {
-            "label": "Trash",
-            "description": "DISCARD",
-            "icon": "trash",
-            "action": "info"
+            "label": "Commit",
+            "description": "",
+            "icon": "commit",
+            "action": "workflow:commit"
           },
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.keycap"
         },
         "1,1": {
-          "ActionID": "b61e7e53-0676-42bc-a74f-de03616cc4bf",
+          "ActionID": "65809343-d601-58d6-966d-b7ee3034e867",
           "LinkedTitle": false,
-          "Name": "Edit — DRAFT",
+          "Name": "Push",
           "Resources": null,
           "Settings": {
-            "label": "Edit",
-            "description": "DRAFT",
-            "icon": "edit",
-            "action": "info"
+            "label": "Push",
+            "description": "",
+            "icon": "push",
+            "action": "workflow:push"
           },
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.keycap"
         },
         "2,1": {
-          "ActionID": "c8f0d24e-c16e-4692-848e-b9e923f5b982",
+          "ActionID": "8e69cee6-5e58-5c02-a857-5d1be022241f",
           "LinkedTitle": false,
-          "Name": "Send — PROMPT",
+          "Name": "Ship prep",
           "Resources": null,
           "Settings": {
-            "label": "Send",
-            "description": "PROMPT",
-            "icon": "send",
-            "action": "command:send"
+            "label": "Ship prep",
+            "description": "",
+            "icon": "release",
+            "action": "workflow:release"
           },
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.keycap"
         },
         "3,1": {
-          "ActionID": "b3a9a240-ad75-465d-bcbb-e13ec2533289",
+          "ActionID": "09f3c44f-13a2-50fb-93f7-c2bd54c105bf",
           "LinkedTitle": false,
-          "Name": "Spark — SKILLS",
+          "Name": "Deploy",
           "Resources": null,
           "Settings": {
-            "label": "Spark",
-            "description": "SKILLS",
-            "icon": "skills",
-            "action": "skills"
+            "label": "Deploy",
+            "description": "",
+            "icon": "deploy",
+            "action": "workflow:deploy"
           },
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.keycap"
         }
       },
@@ -172,16 +132,9 @@
           "LinkedTitle": false,
           "Name": "Agent Navigator",
           "Resources": null,
-          "Settings": {
-            "index": 0
-          },
+          "Settings": { "index": 0 },
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.agent-navigator"
         },
         "1,0": {
@@ -189,16 +142,9 @@
           "LinkedTitle": false,
           "Name": "Core Actions",
           "Resources": null,
-          "Settings": {
-            "commandIndex": 2
-          },
+          "Settings": { "commandIndex": 2 },
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.command"
         },
         "2,0": {
@@ -208,12 +154,7 @@
           "Resources": null,
           "Settings": {},
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.model"
         },
         "3,0": {
@@ -223,12 +164,7 @@
           "Resources": null,
           "Settings": {},
           "State": 0,
-          "States": [
-            {
-              "Image": "",
-              "TitleAlignment": "bottom"
-            }
-          ],
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
           "UUID": "com.todd.streamdeckcodex.reasoning"
         }
       },
@@ -236,5 +172,5 @@
     }
   ],
   "Icon": "",
-  "Name": "Codex Icon Keyset 1/4"
+  "Name": "Git & Delivery"
 }

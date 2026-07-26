@@ -31,7 +31,7 @@ chat. Read [QA.md](QA.md) before running them:
 ```sh
 npm run qa:dials
 npm run qa:modes
-npm run qa:sessions
+npm run qa:design
 ```
 
 ## Pull requests

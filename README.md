@@ -21,8 +21,7 @@ by, or sponsored by OpenAI, Work Louder, or Elgato.
   - `#FFD0B8` peach — approval or answer required
   - `#FF7373` light red — error
   - off — no assigned chat
-- Safe Previous/Next Session keys on Page 1; Accept, Reject, and push-to-talk
-  remain on Page 2, and New Chat remains on the Action dial.
+- Primary YOLO and YEET workflow keys on Page 1.
 - PR Review, Debug, Refactor, and Tests skill/workflow launchers.
 - Four Stream Deck Plus encoders with live touch-strip feedback.
 - A Luna/Terra/Sol model dial that previews on turn and applies on press.
@@ -30,40 +29,58 @@ by, or sponsored by OpenAI, Work Louder, or Elgato.
   advertises it.
 - A live Usage key showing weekly capacity left and banked resets.
 - A live, read-only Context key scoped to the focused primary chat.
-- A bundled, editable two-page Stream Deck Plus profile.
+- A bundled, editable six-page Stream Deck Plus profile: two live-control pages
+  and four curated Lucide keycap pages.
 - A local newest-first build activity feed at `http://127.0.0.1:4317/`.
 
 ## Stream Deck Plus layout
 
 ### Page 1 — agents
 
-| Session 1 | Session 2 | Session 3        | Session 4    |
-| --------- | --------- | ---------------- | ------------ |
-| Session 5 | Session 6 | Previous Session | Next Session |
+| Session 1 | Session 2 | Session 3 | Session 4 |
+| --------- | --------- | --------- | --------- |
+| Session 5 | Session 6 | YOLO      | YEET      |
 
 Keys 1–6 and Dial 1 share one ordered eight-session projection. A page key's
 number and compact label identify the exact same session as the corresponding
 dial slot. The focused key is marked `NOW`; color and footer retain idle,
-unread, running, needs-input, and error state. Previous opens the immediately
-older session and Next moves toward the immediately newer session. Neither
-wraps or types into the composer; at the ends they show `OLDEST` or `NEWEST`.
+unread, running, needs-input, and error state. An empty slot becomes a clearly
+labeled New Chat key. YOLO launches an autonomous completion workflow; YEET
+reviews, checks, commits, pushes, and prepares a draft pull request.
 
 ### Page 2 — commands and context
 
-| Accept    | Reject | Push to Talk | Usage   |
-| --------- | ------ | ------------ | ------- |
-| PR Review | Debug  | Refactor     | Context |
+| New Chat  | Plan Mode | Push to Talk | Usage   |
+| --------- | --------- | ------------ | ------- |
+| PR Review | Debug     | Compact      | Context |
 
 The Usage key defaults to weekly capacity left. Press it to show the
-authoritative number of banked rate-limit resets; press again to return to
-weekly usage. Its footer shows plain time until the natural weekly reset, such
-as `3 DAYS` or `5 HOURS`.
+authoritative number of available rate-limit resets; press again to return to
+weekly usage. Its footer shows compact time until the natural weekly reset,
+such as `RESET 3D` or `RESET 5H`.
 
 The Context key defaults to the focused chat's verified percentage left. Its
 meter fills by percentage used. Press once for two compact lines—used tokens
-and maximum tokens—and press again to return. Unknown or stale data is `--`;
-the key never substitutes another chat or a sample value. Skills and New Chat
-remain available from the Action dial.
+and maximum tokens—and press again to return. Unknown or stale data is
+`NO DATA` in both views; the key never substitutes another chat or a sample value. Usage and Context
+appear exactly once in the bundled profile; the four curated keycap pages do
+not duplicate either live display.
+
+### Pages 3–6 — task workflows
+
+| Git & Delivery | Code Quality | Decisions   | Workspace   |
+| -------------- | ------------ | ----------- | ----------- |
+| Branch info    | Refactor     | Fast        | Run shell   |
+| New branch     | Add tests    | Accept      | Edit code   |
+| Merge          | Search       | Reject      | New project |
+| Diff           | Explain      | Send        | Upload      |
+| Commit         | Document     | Explore     | Skills      |
+| Push           | Optimize     | Analyze     | Chat audit  |
+| Ship prep      | Audit        | Summarize   | Sidebar     |
+| Deploy         | Fix CI       | Define goal | Tune setup  |
+
+Every key dispatches a real command or named workflow. Ordinary keys use one
+label; only the primary wordmarks use a second explanatory line.
 
 ### Dials and touch strip
 
@@ -244,13 +261,13 @@ the plugin never writes the SQLite database directly.
 npm run check
 npm run qa:dials
 npm run qa:modes
-npm run qa:sessions
+npm run qa:design
 ```
 
 Current gate:
 
-- All 96 automated state, input, profile, session, context, usage, mode,
-  reasoning, palette, and PTT-safety tests pass.
+- All automated state, input, profile, context, usage, mode,
+  reasoning, palette, visual-source, and PTT-safety tests pass.
 - TypeScript typecheck passes.
 - The plugin builds for Stream Deck's Node 24 runtime.
 - Elgato manifest validation passes.
@@ -262,29 +279,16 @@ Current gate:
 - `npm run qa:modes` sends production Action-dial events, proves Plan toggles
   `ACTIVE` then `OFF` with one native dispatch per press, and proves unsupported
   Fast sends no command and changes no visible mode.
-- `npm run qa:sessions` sends production key events for Previous and Next,
-  verifies the exact focused-session postcondition after each deep link, and
-  records zero composer keyboard events.
+- `npm run qa:design` renders all six pages at 144px and physical 72px, then
+  enforces copy, action-registry, page-membership, safe-area, glyph-mass,
+  Lucide-path uniqueness, and source-profile contracts.
 - The installed Stream Deck process independently passed live permission and
   visible-picker checks for both Model and Reasoning.
-- Live focused-chat Context QA read `105904/258400` (59% left), showed `--`
-  when a different chat had no verified snapshot, and restored the source
-  chat's value after switching back.
-- The linked plugin restarted under Stream Deck 7.5 on the connected Plus.
-  Page 2 showed the default `59% / LEFT` Context face and all actions rendered
-  normally with no clipping, ellipsis, or question marks. The two-line exact
-  face was also checked in the connected-device preview.
-- Connected Page 1 rendered live labels `Voice`, `SDCodex`, `OldBld`,
-  `TermHTM`, `Laguna`, and `Chrome`; Dial 1 showed `SESSION 1/8 / Voice`.
-  `Voice` carried the `NOW` treatment, session statuses matched, Previous was
-  available, and Next showed `NEWEST`, with no clipping or question marks.
-- Page 1, Dial 1, and Previous/Next use the same exact official session-status
-  palette. Rendered active/inactive needs-input fixtures confirmed the peach
-  fill, darker peach/brown inactive outline, readable status text, and white
-  active border. The connected device showed the updated running and unread
-  colors after reload. No genuine pending approval/question was present during
-  this reload, so the peach hardware state remains explicitly unclaimed rather
-  than being simulated.
+- Live focused-chat Context QA resolves the current UTC-partitioned Codex
+  desktop log and reads only that task's latest verified token snapshot.
+- Release QA additionally compares every installed page name and key mapping
+  with source, captures all six live Stream Deck editor pages, OCRs
+  page-specific labels, and rejects stale or mismatched pages.
 
 See [QA.md](QA.md) for the physical-input acceptance matrix.
 
@@ -315,8 +319,9 @@ See [QA.md](QA.md) for the physical-input acceptance matrix.
   through the documented Codex deep-link API.
 - Codex does not expose the desktop's selected task through a stable public
   plugin API. The companion parses the app's local primary-window activity
-  events and falls back to the last task opened from the deck, then to the
-  newest local task. A Codex desktop logging change may require an update.
+  events and refuses focused-task-only displays when that signal is missing; it
+  never substitutes the newest task. A Codex desktop logging change may
+  require an update.
 - Unread acknowledgement is companion-local and resets when the plugin process
   is replaced.
 - Banked resets require the installed Codex CLI's stable
@@ -365,8 +370,23 @@ npm run pack
 The editable profile source is in `profile-src/streamdeckcodex-plus`. Generated
 plugin JavaScript and logs are ignored by Git.
 
-To install the optional generated keycap pages into an existing Stream Deck
-profile, pass that profile explicitly:
+Every profile pictogram is Lucide-based. YEET and YOLO are original outlined
+vector graphics generated from the open-licensed Barlow Condensed Black Italic
+face; they do not depend on a locally installed font. No installed
+ChatGPT/Codex artwork is embedded in the profile.
+
+The profile uses full-bleed dark key faces with deliberately empty edge space,
+so its artwork cannot collide with Stream Deck's own rounded bezel. Icon and
+label zones are disjoint; supporting copy is reserved for the two wordmarks.
+Regenerate and inspect both design-size and physical-size contact sheets with:
+
+```sh
+npm run qa:visuals
+npm run qa:design
+```
+
+To replace all six pages in an existing Stream Deck profile with the verified
+source layout, pass that profile explicitly while Stream Deck is closed:
 
 ```sh
 npm run profile:keycaps:install -- "/path/to/Your Profile.sdProfile"

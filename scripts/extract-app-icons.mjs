@@ -53,7 +53,7 @@ function sha256(value) {
   return createHash("sha256").update(value).digest("hex");
 }
 
-function literalValue(node) {
+function literalValue(node, bindings = new Map()) {
   if (
     node?.type === "Literal" &&
     ["string", "number"].includes(typeof node.value)
@@ -78,6 +78,9 @@ function literalValue(node) {
   ) {
     return `-${node.argument.value}`;
   }
+  if (node?.type === "Identifier") {
+    return bindings.get(node.name);
+  }
   return undefined;
 }
 
@@ -100,11 +103,11 @@ function objectProperties(node) {
   return properties;
 }
 
-function callTag(node) {
+function callTag(node, bindings) {
   if (node?.type !== "CallExpression" || node.arguments.length < 2) {
     return undefined;
   }
-  return literalValue(node.arguments[0]);
+  return literalValue(node.arguments[0], bindings);
 }
 
 function escapeAttribute(value) {
@@ -114,29 +117,33 @@ function escapeAttribute(value) {
     .replaceAll("<", "&lt;");
 }
 
-function renderChildren(node) {
+function renderChildren(node, bindings) {
   if (node?.type === "ArrayExpression") {
-    return node.elements.map(renderChildren).filter(Boolean).join("\n");
+    return node.elements
+      .map((child) => renderChildren(child, bindings))
+      .filter(Boolean)
+      .join("\n");
   }
-  if (node?.type === "CallExpression") return renderElement(node);
+  if (node?.type === "CallExpression") return renderElement(node, bindings);
   return "";
 }
 
-function renderElement(node) {
-  const tag = callTag(node);
+function renderElement(node, bindings) {
+  const tag = callTag(node, bindings);
   if (!tag || !shapeTags.has(tag)) return "";
   const properties = objectProperties(node.arguments[1]);
   const attributes = [];
   for (const [name, valueNode] of properties) {
     if (name === "children" || name === "key") continue;
-    const value = literalValue(valueNode);
+    const value = literalValue(valueNode, bindings);
     if (value === undefined) continue;
     attributes.push(
       `${attributeNames.get(name) ?? name}="${escapeAttribute(value)}"`,
     );
   }
+  if (!hasRequiredGeometry(tag, attributes)) return "";
   const childrenNode = properties.get("children");
-  const children = childrenNode ? renderChildren(childrenNode) : "";
+  const children = childrenNode ? renderChildren(childrenNode, bindings) : "";
   const opening = attributes.length
     ? `<${tag} ${attributes.join(" ")}>`
     : `<${tag}>`;
@@ -145,10 +152,25 @@ function renderElement(node) {
     : `${opening.slice(0, -1)} />`;
 }
 
-function rootCandidate(node) {
-  if (callTag(node) !== "svg") return undefined;
+function hasRequiredGeometry(tag, attributes) {
+  const names = new Set(
+    attributes.map((attribute) => attribute.slice(0, attribute.indexOf("="))),
+  );
+  if (tag === "path") return names.has("d");
+  if (tag === "circle") return names.has("r");
+  if (tag === "rect") return names.has("width") && names.has("height");
+  if (tag === "line") {
+    return ["x1", "x2", "y1", "y2"].every((name) => names.has(name));
+  }
+  if (tag === "polyline" || tag === "polygon") return names.has("points");
+  if (tag === "ellipse") return names.has("rx") && names.has("ry");
+  return true;
+}
+
+function rootCandidate(node, bindings) {
+  if (callTag(node, bindings) !== "svg") return undefined;
   const properties = objectProperties(node.arguments[1]);
-  const viewBox = literalValue(properties.get("viewBox"));
+  const viewBox = literalValue(properties.get("viewBox"), bindings);
   if (!viewBox) return undefined;
   const viewBoxNumbers = viewBox.trim().split(/\s+/).map(Number);
   if (
@@ -162,13 +184,15 @@ function rootCandidate(node) {
     return undefined;
   }
   const childrenNode = properties.get("children");
-  const children = childrenNode ? renderChildren(childrenNode) : "";
+  const children = childrenNode ? renderChildren(childrenNode, bindings) : "";
   if (!children) return undefined;
 
   const width =
-    literalValue(properties.get("width")) ?? String(viewBoxNumbers[2]);
+    literalValue(properties.get("width"), bindings) ??
+    String(viewBoxNumbers[2]);
   const height =
-    literalValue(properties.get("height")) ?? String(viewBoxNumbers[3]);
+    literalValue(properties.get("height"), bindings) ??
+    String(viewBoxNumbers[3]);
   const rootAttributes = [];
   for (const name of [
     "fill",
@@ -178,7 +202,7 @@ function rootCandidate(node) {
     "strokeLinejoin",
   ]) {
     const valueNode = properties.get(name);
-    const value = valueNode ? literalValue(valueNode) : undefined;
+    const value = valueNode ? literalValue(valueNode, bindings) : undefined;
     if (value !== undefined) {
       rootAttributes.push(
         `${attributeNames.get(name) ?? name}="${escapeAttribute(value)}"`,
@@ -198,6 +222,35 @@ function rootCandidate(node) {
     viewBox,
     width,
   };
+}
+
+function staticBindings(sourceFile) {
+  const bindings = new Map();
+  const ambiguous = new Set();
+  const setBinding = (name, node) => {
+    if (!name || ambiguous.has(name)) return;
+    const value = literalValue(node, bindings);
+    if (value === undefined) return;
+    const previous = bindings.get(name);
+    if (previous !== undefined && previous !== value) {
+      bindings.delete(name);
+      ambiguous.add(name);
+      return;
+    }
+    bindings.set(name, value);
+  };
+  walk(sourceFile, (node) => {
+    if (node.type === "VariableDeclarator" && node.id?.type === "Identifier") {
+      setBinding(node.id.name, node.init);
+    } else if (
+      node.type === "AssignmentExpression" &&
+      node.operator === "=" &&
+      node.left?.type === "Identifier"
+    ) {
+      setBinding(node.left.name, node.right);
+    }
+  });
+  return bindings;
 }
 
 function walk(node, visitor) {
@@ -343,9 +396,10 @@ try {
       continue;
     }
     const relativeSource = file.slice(unpacked.length + 1);
+    const bindings = staticBindings(sourceFile);
     walk(sourceFile, (node) => {
       if (node.type === "CallExpression") {
-        const candidate = rootCandidate(node);
+        const candidate = rootCandidate(node, bindings);
         if (candidate) {
           candidates.push({
             ...candidate,

@@ -5,16 +5,23 @@ import {
   SingletonAction,
   type WillAppearEvent,
 } from "@elgato/streamdeck";
-import { executeCommand, openNewChat, openSkills } from "../lib/automation.js";
+import {
+  executeCommand,
+  launchWorkflow,
+  openNewChat,
+  openSkills,
+} from "../lib/automation.js";
 import { COMMANDS } from "../lib/commands.js";
 import { codexStore } from "../lib/codex-store.js";
+import { keycapWorkflow } from "../lib/keycap-workflows.js";
 import { keycapSvg, svgDataUrl } from "../lib/visuals.js";
 
 type KeycapSettings = {
   label?: string;
   description?: string;
   icon?: string;
-  action?: "new-chat" | "skills" | "info" | `command:${string}`;
+  action?:
+    "new-chat" | "skills" | "info" | `command:${string}` | `workflow:${string}`;
 };
 
 @action({ UUID: "com.todd.streamdeckcodex.keycap" })
@@ -29,7 +36,12 @@ export class KeycapAction extends SingletonAction<KeycapSettings> {
     try {
       if (actionKind === "new-chat") await openNewChat();
       else if (actionKind === "skills") await openSkills();
-      else if (actionKind.startsWith("command:")) {
+      else if (actionKind.startsWith("workflow:")) {
+        const id = actionKind.slice("workflow:".length);
+        const workflow = keycapWorkflow(id);
+        if (!workflow) throw new Error("unsupported keycap workflow");
+        await launchWorkflow(workflow, codexStore.controlThread()?.cwd);
+      } else if (actionKind.startsWith("command:")) {
         const id = actionKind.slice("command:".length);
         const command = COMMANDS.find((candidate) => candidate.id === id);
         // Dictation is intentionally excluded: press-to-talk requires matched
@@ -38,7 +50,7 @@ export class KeycapAction extends SingletonAction<KeycapSettings> {
           throw new Error("unsupported keycap command");
         await executeCommand(command, codexStore.controlThread()?.id);
       } else {
-        // A reference key deliberately does not guess at a destructive action.
+        // Unknown settings are not allowed to dispatch an unlabeled action.
         await event.action.showAlert();
         return;
       }

@@ -12,7 +12,7 @@ const bundledVisuals = resolve(
 await build({
   stdin: {
     contents:
-      'export { agentKeySvg, sessionNavigationKeySvg, STATUS_COLOR } from "./src/lib/visuals.ts";',
+      'export { agentKeySvg, STATUS_COLOR } from "./src/lib/visuals.ts";',
     resolveDir: process.cwd(),
     sourcefile: "status-visuals-entry.ts",
   },
@@ -22,7 +22,7 @@ await build({
   target: "node22",
   outfile: bundledVisuals,
 });
-const { agentKeySvg, sessionNavigationKeySvg, STATUS_COLOR } = await import(
+const { agentKeySvg, STATUS_COLOR } = await import(
   pathToFileURL(bundledVisuals).href
 );
 
@@ -64,11 +64,5 @@ for (const status of Object.keys(STATUS_COLOR)) {
     );
   }
 }
-
-await writeFile(
-  resolve(outputDirectory, "navigation-needs-input.svg"),
-  sessionNavigationKeySvg("older", "available", "needs-input"),
-  "utf8",
-);
 
 process.stdout.write(`${outputDirectory}\n`);

@@ -34,8 +34,6 @@
     ["plan", "Enable Plan mode"],
     ["review", "Start review"],
     ["skills", "Open Skills"],
-    ["back", "Navigate back"],
-    ["forward", "Navigate forward"],
     ["sidebar", "Toggle sidebar"],
   ];
 

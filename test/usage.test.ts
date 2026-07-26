@@ -96,7 +96,7 @@ describe("live Codex usage", () => {
     );
 
     expect(svg).toContain(">58%</text>");
-    expect(svg).toContain(">3 DAYS</text>");
+    expect(svg).toContain(">RESET 3D</text>");
     expect(svg).toContain("#35C759");
   });
 
@@ -112,8 +112,7 @@ describe("live Codex usage", () => {
       now,
     );
 
-    expect(svg).toContain(">5 HOURS</text>");
-    expect(svg).not.toContain(">RESET");
+    expect(svg).toContain(">RESET 5H</text>");
   });
 
   it("renders the authoritative banked reset count in the pressed view", () => {
@@ -126,8 +125,8 @@ describe("live Codex usage", () => {
       "resets",
     );
 
-    expect(svg).toContain(">RESETS LEFT</text>");
+    expect(svg).toContain(">RESETS</text>");
     expect(svg).toContain(">3</text>");
-    expect(svg).toContain(">BANKED</text>");
+    expect(svg).toContain(">AVAILABLE</text>");
   });
 });

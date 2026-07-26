@@ -1,5 +1,20 @@
-import { describe, expect, it } from "vitest";
-import { parseActiveDesktopThreadId } from "../src/lib/desktop-active.js";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
+import {
+  activeDesktopThreadId,
+  parseActiveDesktopThreadId,
+} from "../src/lib/desktop-active.js";
+
+const temporaryRoots: string[] = [];
+
+afterEach(() => {
+  for (const path of temporaryRoots.splice(0)) {
+    spawnSync("trash", [path]);
+  }
+});
 
 describe("active Codex desktop task targeting", () => {
   it("uses the latest focused primary thread activity event", () => {
@@ -25,5 +40,21 @@ describe("active Codex desktop task targeting", () => {
     ].join("\n");
 
     expect(parseActiveDesktopThreadId(log)).toBe(valid);
+  });
+
+  it("reads the UTC log day when local time is still on the prior date", () => {
+    const root = mkdtempSync(join(tmpdir(), "codex-desktop-logs-"));
+    temporaryRoots.push(root);
+    const directory = join(root, "2026", "07", "26");
+    const active = "019f9c13-ce4e-7f01-bf9c-311e5262b4ce";
+    mkdirSync(directory, { recursive: true });
+    writeFileSync(
+      join(directory, "codex-desktop.log"),
+      `thread_stream_view_activity_changed active=true conversationId=${active} rendererWindowAppearance=primary rendererWindowFocused=true`,
+    );
+
+    expect(activeDesktopThreadId(root, new Date("2026-07-26T02:00:00Z"))).toBe(
+      active,
+    );
   });
 });

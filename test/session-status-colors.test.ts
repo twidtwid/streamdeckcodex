@@ -4,7 +4,6 @@ import { reasoningFeedback } from "../src/lib/reasoning.js";
 import type { SessionSnapshot } from "../src/types.js";
 import {
   agentKeySvg,
-  sessionNavigationKeySvg,
   STATUS_COLOR,
   statusIndicator,
 } from "../src/lib/visuals.js";
@@ -62,33 +61,23 @@ describe("official Codex Micro session status palette", () => {
     const inactive = agentKeySvg(needsInputSession(false), 0);
     const active = agentKeySvg(needsInputSession(true), 0);
 
-    expect(inactive).toContain('fill="#FFD0B8"');
-    expect(inactive).toContain('stroke="#9A5B45"');
+    expect(inactive).toContain('stroke="#FFD0B8"');
+    expect(inactive).toContain('fill="#9A5B45"');
     expect(inactive).toContain('fill="#E7A589"');
     expect(inactive).not.toContain(PENDING_AMBER);
     expect(inactive).not.toContain("...");
 
-    expect(active).toContain('stroke="#FFFFFF" stroke-width="7"');
-    expect(active).toContain('fill="#FFD0B8"');
+    expect(active).toContain('fill="#FFFFFF"');
+    expect(active).toContain('stroke="#FFD0B8"');
     expect(active).not.toContain(PENDING_AMBER);
     expect(active).not.toContain("...");
   });
 
-  it("uses the shared palette for Dial 1 and session navigation", () => {
+  it("uses the shared palette for Dial 1", () => {
     for (const [status, color] of Object.entries(STATUS_COLOR)) {
       expect(
         statusIndicator(status as keyof typeof STATUS_COLOR).bar_fill_c,
       ).toBe(color);
     }
-
-    const navigation = sessionNavigationKeySvg(
-      "older",
-      "available",
-      "needs-input",
-    );
-    expect(navigation).toContain('fill="#FFD0B8"');
-    expect(navigation).toContain('stroke="#9A5B45"');
-    expect(navigation).toContain('fill="#E7A589"');
-    expect(navigation).not.toContain(PENDING_AMBER);
   });
 });

@@ -150,9 +150,10 @@ key. Skills remains available through the Action dial.
    resolver used by chat-targeted controls, with no fallback to another task.
 2. Read the newest verified `token_count` snapshot from only that task's rollout
    and reject missing, malformed, unrelated, or stale snapshots.
-3. Render remaining context by default (`68%` / `LEFT`), with the meter filled
-   by context used. Toggle on press to separate compact used and maximum lines,
-   and render `--` when unknown. Do not add a textual meter caption.
+3. Render remaining context by default (`CONTEXT LEFT` / `68%`), with the meter
+   filled by context used. Toggle on press to separate compact used and maximum
+   lines, and render `NO DATA` in both views when unknown. Do not add a textual
+   meter caption.
 4. Keep the action mutation-free: a press changes only the key's local view.
 5. Reuse the Usage key's refresh behavior and verify the compact face fits
    without clipping or ellipsis.
@@ -164,29 +165,25 @@ percent/exact rendering, toggle/no-mutation, label-fit, and profile-mapping
 tests, plus installed-profile verification against live data or an explicit
 unknown state.
 
-## Page 1 session navigation safety
+## Page 1 autonomy workflows
 
-Replace only Page 1's dedicated Accept and Reject keys with Previous Session
-and Next Session.
+Page 1 uses six live session keys plus primary YOLO and YEET wordmarks.
 
-1. Resolve the focused primary Codex task with no newest-task fallback.
-2. Use the same descending recent-session order shown by the companion:
-   Previous selects the immediately older entry; Next selects the immediately
-   newer entry.
-3. Never wrap, guess, or synthesize composer keyboard input. Open the resolved
-   session only through its validated Codex deep link.
-4. Render compact Previous/Next Session faces and explicit `NO CHAT`, `OLDEST`,
-   or `NEWEST` feedback when navigation is unavailable.
-5. Preserve Page 2 and the Action dial, where Accept/Reject remain referenced;
-   do not remove their implementation.
+1. YOLO launches a bounded autonomous-completion workflow with explicit
+   verification and safety constraints.
+2. YEET launches review, checks, intentional commit, push, and draft-PR
+   preparation.
+3. Both keys dispatch exact registered workflow IDs and use one additive
+   explanatory word.
+4. Empty agent slots render `New chat / EMPTY SLOT` and create a new chat.
+5. Previous/Next session keys and their plugin action are not shipped.
 
-Release requires pure neighbor-order tests, no-wrap/no-fallback tests,
-no-keyboard-input assertions, source/generated/installed profile checks, and a
-connected Page 1 device preview.
+Release requires exact action-contract tests, source/generated/installed
+profile parity, and live Page 1 OCR evidence for both wordmarks.
 
 ## Unified session labels
 
-Page 1 keys, Dial 1, and Previous/Next share one `sessions(8)` projection.
+Page 1 keys and Dial 1 share one `sessions(8)` projection.
 
 1. Order once by Codex's descending visible-session recency and preserve that
    order everywhere.
@@ -224,3 +221,24 @@ Release requires unit coverage for focused/nonfocused and pending/cleared
 states, native detector fixtures, a linked-plugin reload, and a genuine
 permission prompt observed as `#FFD0B8` on the connected Stream Deck Plus
 followed by verified status restoration after reject/cancel.
+
+## Lucide-only profile visual polish
+
+The profile must remain cleanly redistributable. Extracted application artwork
+is a local research artifact only and is never embedded in profile keys.
+
+1. Keep every functional control on a single Lucide icon system;
+   no hand-drawn or OpenAI-proprietary glyphs may be used by the profile.
+2. Render YEET and YOLO as sharp original vector wordmarks outlined from the
+   open-licensed Barlow Condensed Black Italic face. Do not depend on a system
+   font and do not copy installed application artwork.
+3. Reserve fixed, disjoint zones for icon, primary label, and supporting label.
+4. Render every functional key at 144×144 and physical 72×72
+   resolution, create page contact sheets, and visually inspect every result.
+5. Verify the generated, bundled, and installed profiles use the same mappings.
+6. Keep Usage and Context exclusively as the live Page 2 pair; do not duplicate
+   them on the curated keycap pages.
+
+Release requires a Lucide mapping for every profile icon, no icon/text overlap,
+successful rasterization of every key, contact-sheet review, automated tests,
+build/typecheck, Elgato validation, and final inspection in Stream Deck.

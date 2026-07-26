@@ -65,22 +65,32 @@
         "2,1": {
           "ActionID": "38EA0C98-1CEA-4BEF-B9A2-D73DF38A2B2C",
           "LinkedTitle": false,
-          "Name": "Previous Session",
+          "Name": "YOLO — Autonomous",
           "Resources": null,
-          "Settings": { "direction": "older" },
+          "Settings": {
+            "action": "workflow:yolo",
+            "description": "Autonomous",
+            "icon": "yolo",
+            "label": "YOLO"
+          },
           "State": 0,
           "States": [{ "Image": "", "TitleAlignment": "bottom" }],
-          "UUID": "com.todd.streamdeckcodex.session-navigation"
+          "UUID": "com.todd.streamdeckcodex.keycap"
         },
         "3,1": {
           "ActionID": "B834835B-13EE-4AB8-A12A-2C2812DC0EFF",
           "LinkedTitle": false,
-          "Name": "Next Session",
+          "Name": "YEET — Publish",
           "Resources": null,
-          "Settings": { "direction": "newer" },
+          "Settings": {
+            "action": "workflow:publish",
+            "description": "Publish",
+            "icon": "yeet",
+            "label": "YEET"
+          },
           "State": 0,
           "States": [{ "Image": "", "TitleAlignment": "bottom" }],
-          "UUID": "com.todd.streamdeckcodex.session-navigation"
+          "UUID": "com.todd.streamdeckcodex.keycap"
         }
       },
       "Type": "Keypad"
@@ -132,5 +142,5 @@
     }
   ],
   "Icon": "",
-  "Name": ""
+  "Name": "Agents & Autonomy"
 }
