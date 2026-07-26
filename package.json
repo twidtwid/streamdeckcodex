@@ -1,0 +1,64 @@
+{
+  "name": "streamdeck-codex-companion",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Independent Stream Deck Plus companion for the Codex desktop app.",
+  "author": "Todd",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/twidtwid/streamdeckcodex.git"
+  },
+  "bugs": {
+    "url": "https://github.com/twidtwid/streamdeckcodex/issues"
+  },
+  "homepage": "https://github.com/twidtwid/streamdeckcodex#readme",
+  "keywords": [
+    "codex",
+    "stream-deck",
+    "stream-deck-plus",
+    "macos",
+    "openai"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "profile:build": "node scripts/build-profile.mjs",
+    "profile:keycaps": "node scripts/generate-keycap-pages.mjs",
+    "icons:lucide": "node scripts/generate-lucide-paths.mjs",
+    "profile:keycaps:install": "node scripts/install-keycap-pages.mjs",
+    "native:build": "node scripts/build-native.mjs",
+    "build": "npm run icons:lucide && npm run profile:build && npm run native:build && esbuild src/plugin.ts --bundle --platform=node --format=esm --target=node24 --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=com.todd.streamdeckcodex.sdPlugin/bin/plugin.js --sourcemap",
+    "watch": "npm run build -- --watch",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "validate": "streamdeck validate com.todd.streamdeckcodex.sdPlugin",
+    "pack": "npm run build && streamdeck pack com.todd.streamdeckcodex.sdPlugin --output dist --force",
+    "link": "npm run build && streamdeck link com.todd.streamdeckcodex.sdPlugin",
+    "progress": "node scripts/progress-server.mjs",
+    "progress:log": "node scripts/progress-log.mjs",
+    "qa:store": "node --experimental-strip-types scripts/qa-live.mjs",
+    "qa:dials": "node scripts/qa-dial-events.mjs",
+    "qa:plan": "npm run qa:modes",
+    "qa:modes": "node scripts/qa-mode-events.mjs",
+    "qa:sessions": "node --experimental-strip-types scripts/qa-session-events.mjs",
+    "qa:status-visuals": "node --experimental-strip-types scripts/render-session-status-fixtures.mjs",
+    "check": "npm run format:check && npm run typecheck && npm test && npm run build && npm run validate"
+  },
+  "dependencies": {
+    "@elgato/streamdeck": "2.1.0",
+    "lucide-static": "^0.468.0"
+  },
+  "devDependencies": {
+    "@elgato/cli": "1.7.4",
+    "@types/node": "26.1.1",
+    "esbuild": "0.28.1",
+    "prettier": "3.9.5",
+    "typescript": "7.0.2",
+    "vitest": "4.1.10"
+  }
+}

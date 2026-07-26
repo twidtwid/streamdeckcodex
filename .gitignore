@@ -1,0 +1,13 @@
+node_modules/
+dist/
+logs/
+coverage/
+.cache/
+.env
+.env.*
+!.env.example
+com.todd.streamdeckcodex.sdPlugin/bin/
+com.todd.streamdeckcodex.sdPlugin/logs/
+*.streamDeckPlugin
+*.log
+.DS_Store

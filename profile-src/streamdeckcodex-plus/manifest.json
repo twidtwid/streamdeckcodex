@@ -1,0 +1,22 @@
+{
+  "Device": {
+    "Model": "20GBD9901",
+    "UUID": ""
+  },
+  "InstalledByPluginUUID": "com.todd.streamdeckcodex",
+  "Name": "Codex Companion",
+  "Pages": {
+    "Current": "0D4C7F4C-666D-46B1-A787-7F2ABE2E12F0",
+    "Default": "EF2D8260-4379-4B8F-B6C4-4F4881FBC856",
+    "Pages": [
+      "0D4C7F4C-666D-46B1-A787-7F2ABE2E12F0",
+      "95B6205B-6011-4D73-8C91-B78957110300",
+      "KEYCAPS-1",
+      "KEYCAPS-2",
+      "KEYCAPS-3",
+      "KEYCAPS-4"
+    ]
+  },
+  "PreconfiguredName": "Codex Companion",
+  "Version": "3.0"
+}

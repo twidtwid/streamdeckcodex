@@ -1,0 +1,63 @@
+:root {
+  color-scheme: dark;
+  font:
+    13px -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+}
+
+body {
+  margin: 0;
+  padding: 14px;
+  background: #252525;
+  color: #f4f4f4;
+}
+
+main {
+  display: grid;
+  gap: 12px;
+}
+
+label {
+  display: grid;
+  gap: 5px;
+}
+
+input,
+select,
+textarea,
+button {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid #555;
+  border-radius: 5px;
+  padding: 7px 8px;
+  background: #343434;
+  color: inherit;
+}
+
+textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.check input {
+  width: auto;
+}
+
+.muted {
+  margin: 0;
+  color: #b8b8b8;
+  line-height: 1.4;
+}
+
+.note {
+  border-left: 3px solid #4d8dff;
+  padding-left: 9px;
+}

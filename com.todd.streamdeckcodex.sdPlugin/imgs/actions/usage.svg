@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
+  <rect width="144" height="144" rx="18" fill="#0B0D10"/>
+  <path d="M35 91a45 45 0 1 1 74 0" fill="none" stroke="#35C759" stroke-width="9" stroke-linecap="round"/>
+  <path d="M72 72l26-19" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="72" cy="72" r="8" fill="#FFFFFF"/>
+  <text x="72" y="119" text-anchor="middle" fill="#FFFFFF" font-family="-apple-system,system-ui,sans-serif" font-size="18" font-weight="700">USAGE</text>
+</svg>

@@ -1,0 +1,240 @@
+{
+  "Controllers": [
+    {
+      "Actions": {
+        "0,0": {
+          "ActionID": "45633fe9-112e-4454-b622-107664c985d5",
+          "LinkedTitle": false,
+          "Name": "Bug — DEBUG AGENT",
+          "Resources": null,
+          "Settings": {
+            "label": "Bug",
+            "description": "DEBUG AGENT",
+            "icon": "debug",
+            "action": "info"
+          },
+          "State": 0,
+          "States": [
+            {
+              "Image": "",
+              "TitleAlignment": "bottom"
+            }
+          ],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "1,0": {
+          "ActionID": "8baa2a28-883b-4e84-b63c-5615e979a96a",
+          "LinkedTitle": false,
+          "Name": "Codex — OPEN SKILLS",
+          "Resources": null,
+          "Settings": {
+            "label": "Codex",
+            "description": "OPEN SKILLS",
+            "icon": "openai",
+            "action": "skills"
+          },
+          "State": 0,
+          "States": [
+            {
+              "Image": "",
+              "TitleAlignment": "bottom"
+            }
+          ],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "2,0": {
+          "ActionID": "28c1a3a4-0bd3-4193-baeb-8fa9eb87f79f",
+          "LinkedTitle": false,
+          "Name": "Terminal — SHELL",
+          "Resources": null,
+          "Settings": {
+            "label": "Terminal",
+            "description": "SHELL",
+            "icon": "terminal",
+            "action": "info"
+          },
+          "State": 0,
+          "States": [
+            {
+              "Image": "",
+              "TitleAlignment": "bottom"
+            }
+          ],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "3,0": {
+          "ActionID": "322153e2-6d52-4702-97ae-4bfca6bbcaff",
+          "LinkedTitle": false,
+          "Name": "Download — EXPORT",
+          "Resources": null,
+          "Settings": {
+            "label": "Download",
+            "description": "EXPORT",
+            "icon": "download",
+            "action": "info"
+          },
+          "State": 0,
+          "States": [
+            {
+              "Image": "",
+              "TitleAlignment": "bottom"
+            }
+          ],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "0,1": {
+          "ActionID": "5b8d1364-3084-4a9b-9165-b6a7dfeb3dc9",
+          "LinkedTitle": false,
+          "Name": "Trash — DISCARD",
+          "Resources": null,
+          "Settings": {
+            "label": "Trash",
+            "description": "DISCARD",
+            "icon": "trash",
+            "action": "info"
+          },
+          "State": 0,
+          "States": [
+            {
+              "Image": "",
+              "TitleAlignment": "bottom"
+            }
+          ],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "1,1": {
+          "ActionID": "b61e7e53-0676-42bc-a74f-de03616cc4bf",
+          "LinkedTitle": false,
+          "Name": "Edit — DRAFT",
+          "Resources": null,
+          "Settings": {
+            "label": "Edit",
+            "description": "DRAFT",
+            "icon": "edit",
+            "action": "info"
+          },
+          "State": 0,
+          "States": [
+            {
+              "Image": "",
+              "TitleAlignment": "bottom"
+            }
+          ],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "2,1": {
+          "ActionID": "c8f0d24e-c16e-4692-848e-b9e923f5b982",
+          "LinkedTitle": false,
+          "Name": "Send — PROMPT",
+          "Resources": null,
+          "Settings": {
+            "label": "Send",
+            "description": "PROMPT",
+            "icon": "send",
+            "action": "command:send"
+          },
+          "State": 0,
+          "States": [
+            {
+              "Image": "",
+              "TitleAlignment": "bottom"
+            }
+          ],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "3,1": {
+          "ActionID": "b3a9a240-ad75-465d-bcbb-e13ec2533289",
+          "LinkedTitle": false,
+          "Name": "Spark — SKILLS",
+          "Resources": null,
+          "Settings": {
+            "label": "Spark",
+            "description": "SKILLS",
+            "icon": "skills",
+            "action": "skills"
+          },
+          "State": 0,
+          "States": [
+            {
+              "Image": "",
+              "TitleAlignment": "bottom"
+            }
+          ],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        }
+      },
+      "Type": "Keypad"
+    },
+    {
+      "Actions": {
+        "0,0": {
+          "ActionID": "10ED2078-36DA-4388-8542-41656BD5F09D",
+          "LinkedTitle": false,
+          "Name": "Agent Navigator",
+          "Resources": null,
+          "Settings": {
+            "index": 0
+          },
+          "State": 0,
+          "States": [
+            {
+              "Image": "",
+              "TitleAlignment": "bottom"
+            }
+          ],
+          "UUID": "com.todd.streamdeckcodex.agent-navigator"
+        },
+        "1,0": {
+          "ActionID": "0AF7BCFC-2048-4DAA-BB81-4128992A29FA",
+          "LinkedTitle": false,
+          "Name": "Core Actions",
+          "Resources": null,
+          "Settings": {
+            "commandIndex": 2
+          },
+          "State": 0,
+          "States": [
+            {
+              "Image": "",
+              "TitleAlignment": "bottom"
+            }
+          ],
+          "UUID": "com.todd.streamdeckcodex.command"
+        },
+        "2,0": {
+          "ActionID": "86C1ABB9-7A25-4BB1-B378-AA50E7CC5DB1",
+          "LinkedTitle": false,
+          "Name": "Model",
+          "Resources": null,
+          "Settings": {},
+          "State": 0,
+          "States": [
+            {
+              "Image": "",
+              "TitleAlignment": "bottom"
+            }
+          ],
+          "UUID": "com.todd.streamdeckcodex.model"
+        },
+        "3,0": {
+          "ActionID": "A435607A-DEC7-4C35-B755-7C62A63BF7CB",
+          "LinkedTitle": false,
+          "Name": "Reasoning",
+          "Resources": null,
+          "Settings": {},
+          "State": 0,
+          "States": [
+            {
+              "Image": "",
+              "TitleAlignment": "bottom"
+            }
+          ],
+          "UUID": "com.todd.streamdeckcodex.reasoning"
+        }
+      },
+      "Type": "Encoder"
+    }
+  ],
+  "Icon": "",
+  "Name": "Codex Icon Keyset 1/4"
+}
