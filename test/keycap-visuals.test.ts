@@ -28,5 +28,6 @@ describe("Codex Micro keycap renderer", () => {
     expect(previous).toContain('d="m12 19-7-7 7-7"');
     expect(next).toContain('d="m12 5 7 7-7 7"');
     expect(previous).not.toContain("M85 31L52 64l33 33");
+    expect(previous).not.toContain("<svg class=");
   });
 });
