@@ -26,5 +26,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install visual QA tools
+        run: brew install librsvg imagemagick
+
       - name: Run verification gate
         run: npm run check
