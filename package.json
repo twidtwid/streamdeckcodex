@@ -31,6 +31,7 @@
     "profile:build": "node scripts/build-profile.mjs",
     "profile:keycaps": "node scripts/generate-keycap-pages.mjs",
     "icons:lucide": "node scripts/generate-lucide-paths.mjs",
+    "icons:extract-app": "node scripts/extract-app-icons.mjs",
     "profile:keycaps:install": "node scripts/install-keycap-pages.mjs",
     "native:build": "node scripts/build-native.mjs",
     "build": "npm run icons:lucide && npm run profile:build && npm run native:build && esbuild src/plugin.ts --bundle --platform=node --format=esm --target=node24 --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=com.todd.streamdeckcodex.sdPlugin/bin/plugin.js --sourcemap",
@@ -57,8 +58,10 @@
     "lucide-static": "^0.468.0"
   },
   "devDependencies": {
+    "@electron/asar": "4.2.1",
     "@elgato/cli": "1.7.4",
     "@types/node": "26.1.1",
+    "acorn": "8.17.0",
     "esbuild": "0.28.1",
     "prettier": "3.9.5",
     "typescript": "7.0.2",

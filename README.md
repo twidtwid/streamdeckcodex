@@ -372,6 +372,20 @@ profile, pass that profile explicitly:
 npm run profile:keycaps:install -- "/path/to/Your Profile.sdProfile"
 ```
 
+For local visual comparison, the repository includes an extractor for the
+small, static SVG glyphs embedded in an installed ChatGPT/Codex app. Extracted
+OpenAI artwork is deliberately written to the Git-ignored
+`extracted-app-icons/` directory and is not part of this project's licensed
+source:
+
+```sh
+npm run icons:extract-app
+```
+
+Pass `--asar` or `--output` to override the installed app archive and output
+directory. The extractor produces clean source SVGs, 144×144 Stream Deck
+variants, a searchable contact sheet, and a provenance manifest.
+
 Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before
 opening a pull request. Please report security-sensitive issues through the
 private process in [SECURITY.md](SECURITY.md).
