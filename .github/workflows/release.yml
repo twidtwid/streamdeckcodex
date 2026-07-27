@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-14
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install visual QA tools
+        run: brew install librsvg imagemagick
+
+      - name: Build verified release artifacts
+        run: npm run release:bundle
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          flags=(--verify-tag --generate-notes)
+          if [[ "$tag" == *-* ]]; then
+            flags+=(--prerelease)
+          fi
+          gh release create "$tag" \
+            dist/com.todd.streamdeckcodex.streamDeckPlugin \
+            dist/streamdeckcodex-stream-deck.streamDeckProfile \
+            dist/streamdeckcodex-mini.streamDeckProfile \
+            dist/streamdeckcodex-neo.streamDeckProfile \
+            dist/streamdeckcodex-xl.streamDeckProfile \
+            dist/streamdeckcodex-plus.streamDeckProfile \
+            dist/SHA256SUMS.txt \
+            "${flags[@]}"

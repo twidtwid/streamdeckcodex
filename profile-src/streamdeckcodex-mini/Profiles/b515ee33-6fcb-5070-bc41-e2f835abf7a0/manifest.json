@@ -1,0 +1,101 @@
+{
+  "Controllers": [
+    {
+      "Actions": {
+        "0,0": {
+          "ActionID": "cf33eba3-e265-51dd-a011-a50732a78f30",
+          "LinkedTitle": false,
+          "Name": "PR Review",
+          "Resources": null,
+          "Settings": {
+            "label": "PR Review",
+            "description": "",
+            "icon": "review",
+            "action": "workflow:pr-review"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "1,0": {
+          "ActionID": "535b29ef-d40b-5dc9-8a32-6c43bb016148",
+          "LinkedTitle": false,
+          "Name": "Accept",
+          "Resources": null,
+          "Settings": {
+            "label": "Accept",
+            "description": "",
+            "icon": "accept",
+            "action": "command:accept"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "2,0": {
+          "ActionID": "2e981d77-96b6-5589-819e-c2002e65ebe1",
+          "LinkedTitle": false,
+          "Name": "Reject",
+          "Resources": null,
+          "Settings": {
+            "label": "Reject",
+            "description": "",
+            "icon": "reject",
+            "action": "command:reject"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "0,1": {
+          "ActionID": "f2f607a5-bb19-5ab1-802a-cddcd7ca7ed4",
+          "LinkedTitle": false,
+          "Name": "Send",
+          "Resources": null,
+          "Settings": {
+            "label": "Send",
+            "description": "",
+            "icon": "send",
+            "action": "command:send"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "1,1": {
+          "ActionID": "8941ee14-01ec-51b9-921a-2e42e8f9fa3a",
+          "LinkedTitle": false,
+          "Name": "Explore",
+          "Resources": null,
+          "Settings": {
+            "label": "Explore",
+            "description": "",
+            "icon": "brain-medium",
+            "action": "workflow:explore"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "2,1": {
+          "ActionID": "fb59dee4-b6a4-5968-80c1-29efca08b515",
+          "LinkedTitle": false,
+          "Name": "Analyze",
+          "Resources": null,
+          "Settings": {
+            "label": "Analyze",
+            "description": "",
+            "icon": "brain-outline",
+            "action": "workflow:analyze"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        }
+      },
+      "Type": "Keypad"
+    }
+  ],
+  "Icon": "",
+  "Name": "Decisions 1/2"
+}

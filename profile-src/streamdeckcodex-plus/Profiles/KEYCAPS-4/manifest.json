@@ -1,0 +1,131 @@
+{
+  "Controllers": [
+    {
+      "Actions": {
+        "0,0": {
+          "ActionID": "cdb67ab8-9cdd-5e97-874d-526ab666f78c",
+          "LinkedTitle": false,
+          "Name": "Run shell",
+          "Resources": null,
+          "Settings": {
+            "label": "Run shell",
+            "description": "",
+            "icon": "terminal",
+            "action": "workflow:terminal"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "1,0": {
+          "ActionID": "e3dba344-bf59-5db9-9c27-d839c05e1531",
+          "LinkedTitle": false,
+          "Name": "Edit code",
+          "Resources": null,
+          "Settings": {
+            "label": "Edit code",
+            "description": "",
+            "icon": "edit",
+            "action": "workflow:editor"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "2,0": {
+          "ActionID": "c1eaf227-3116-5246-8b44-8249a0660d95",
+          "LinkedTitle": false,
+          "Name": "Debug",
+          "Resources": null,
+          "Settings": {
+            "label": "Debug",
+            "description": "",
+            "icon": "debug",
+            "action": "workflow:debug"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "0,1": {
+          "ActionID": "758f7331-9549-5023-b753-37a8b682c677",
+          "LinkedTitle": false,
+          "Name": "Skills",
+          "Resources": null,
+          "Settings": {
+            "label": "Skills",
+            "description": "",
+            "icon": "skills",
+            "action": "skills"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "1,1": {
+          "ActionID": "c1ea2629-f88d-55c7-8082-12197e418fec",
+          "LinkedTitle": false,
+          "Name": "Chat audit",
+          "Resources": null,
+          "Settings": {
+            "label": "Chat audit",
+            "description": "",
+            "icon": "sessions",
+            "action": "workflow:sessions"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        }
+      },
+      "Type": "Keypad"
+    },
+    {
+      "Actions": {
+        "0,0": {
+          "ActionID": "10ED2078-36DA-4388-8542-41656BD5F09D",
+          "LinkedTitle": false,
+          "Name": "Agent Navigator",
+          "Resources": null,
+          "Settings": { "index": 0 },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.agent-navigator"
+        },
+        "1,0": {
+          "ActionID": "0AF7BCFC-2048-4DAA-BB81-4128992A29FA",
+          "LinkedTitle": false,
+          "Name": "Core Actions",
+          "Resources": null,
+          "Settings": { "commandIndex": 0 },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.command"
+        },
+        "2,0": {
+          "ActionID": "86C1ABB9-7A25-4BB1-B378-AA50E7CC5DB1",
+          "LinkedTitle": false,
+          "Name": "Model",
+          "Resources": null,
+          "Settings": {},
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.model"
+        },
+        "3,0": {
+          "ActionID": "A435607A-DEC7-4C35-B755-7C62A63BF7CB",
+          "LinkedTitle": false,
+          "Name": "Reasoning",
+          "Resources": null,
+          "Settings": {},
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.reasoning"
+        }
+      },
+      "Type": "Encoder"
+    }
+  ],
+  "Icon": "",
+  "Name": "Workspace"
+}

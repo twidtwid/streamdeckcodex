@@ -1,0 +1,101 @@
+{
+  "Controllers": [
+    {
+      "Actions": {
+        "0,0": {
+          "ActionID": "714fc866-ad7f-5b97-b873-9487b3d322aa",
+          "LinkedTitle": false,
+          "Name": "Branch info",
+          "Resources": null,
+          "Settings": {
+            "label": "Branch info",
+            "description": "",
+            "icon": "branch",
+            "action": "workflow:branch"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "1,0": {
+          "ActionID": "eb4c6007-97af-538a-81e6-18d1c4a99181",
+          "LinkedTitle": false,
+          "Name": "New branch",
+          "Resources": null,
+          "Settings": {
+            "label": "New branch",
+            "description": "",
+            "icon": "branch-add",
+            "action": "workflow:new-branch"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "2,0": {
+          "ActionID": "ec9dd3b2-33a6-58a6-b01d-09f121633371",
+          "LinkedTitle": false,
+          "Name": "Merge",
+          "Resources": null,
+          "Settings": {
+            "label": "Merge",
+            "description": "",
+            "icon": "merge",
+            "action": "workflow:merge"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "0,1": {
+          "ActionID": "25ed09bf-bf9f-5a71-8548-447f064a73a3",
+          "LinkedTitle": false,
+          "Name": "Diff",
+          "Resources": null,
+          "Settings": {
+            "label": "Diff",
+            "description": "",
+            "icon": "diff",
+            "action": "workflow:diff"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "1,1": {
+          "ActionID": "10bd03a3-679d-5361-92c3-afdefd084452",
+          "LinkedTitle": false,
+          "Name": "Commit",
+          "Resources": null,
+          "Settings": {
+            "label": "Commit",
+            "description": "",
+            "icon": "commit",
+            "action": "workflow:commit"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "2,1": {
+          "ActionID": "4dff0579-1deb-56ef-99f6-4c675613ef3e",
+          "LinkedTitle": false,
+          "Name": "Push",
+          "Resources": null,
+          "Settings": {
+            "label": "Push",
+            "description": "",
+            "icon": "push",
+            "action": "workflow:push"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        }
+      },
+      "Type": "Keypad"
+    }
+  ],
+  "Icon": "",
+  "Name": "Git & Delivery 1/2"
+}

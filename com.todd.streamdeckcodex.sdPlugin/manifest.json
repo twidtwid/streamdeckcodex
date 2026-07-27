@@ -1,0 +1,271 @@
+{
+  "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
+  "Actions": [
+    {
+      "Controllers": [
+        "Keypad"
+      ],
+      "Icon": "imgs/actions/command",
+      "Name": "Approval Mode",
+      "States": [
+        {
+          "Image": "imgs/actions/command",
+          "ShowTitle": false,
+          "TitleAlignment": "bottom"
+        }
+      ],
+      "Tooltip": "Cycle Ask for approval, Approve for me, Full Access, and Custom permissions.",
+      "UUID": "com.todd.streamdeckcodex.approval-mode"
+    },
+    {
+      "Controllers": [
+        "Keypad"
+      ],
+      "Icon": "imgs/actions/keycap",
+      "Name": "Codex Workflow Key",
+      "States": [
+        {
+          "Image": "imgs/actions/command",
+          "ShowTitle": false,
+          "TitleAlignment": "bottom"
+        }
+      ],
+      "Tooltip": "Launch the explicitly labeled Codex command or workflow.",
+      "UUID": "com.todd.streamdeckcodex.keycap",
+      "VisibleInActionsList": false
+    },
+    {
+      "Controllers": [
+        "Keypad"
+      ],
+      "Icon": "imgs/actions/agent",
+      "Name": "Agent Status",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "States": [
+        {
+          "Image": "imgs/actions/agent",
+          "ShowTitle": false,
+          "TitleAlignment": "bottom"
+        }
+      ],
+      "Tooltip": "Follow a recent Codex chat and display its live status.",
+      "UUID": "com.todd.streamdeckcodex.agent-status"
+    },
+    {
+      "Controllers": [
+        "Keypad",
+        "Encoder"
+      ],
+      "Encoder": {
+        "Icon": "imgs/actions/command",
+        "layout": "layouts/command.json",
+        "TriggerDescription": {
+          "Push": "Run the displayed Codex action",
+          "Rotate": "Choose a Codex action"
+        }
+      },
+      "Icon": "imgs/actions/command",
+      "Name": "Codex Command",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "States": [
+        {
+          "Image": "imgs/actions/command",
+          "ShowTitle": false,
+          "TitleAlignment": "bottom"
+        }
+      ],
+      "Tooltip": "Toggle FAST or Plan, compact the task, or open Review, Browser, Files, and Side chat.",
+      "UUID": "com.todd.streamdeckcodex.command"
+    },
+    {
+      "Controllers": [
+        "Keypad",
+        "Encoder"
+      ],
+      "Encoder": {
+        "Icon": "imgs/actions/workflow",
+        "layout": "$B1",
+        "TriggerDescription": {
+          "Push": "Launch workflow",
+          "Rotate": "Choose workflow"
+        }
+      },
+      "Icon": "imgs/actions/workflow",
+      "Name": "Workflow Launcher",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "States": [
+        {
+          "Image": "imgs/actions/workflow",
+          "ShowTitle": false,
+          "TitleAlignment": "bottom"
+        }
+      ],
+      "Tooltip": "Launch PR review, debugging, refactoring, or a custom Codex workflow.",
+      "UUID": "com.todd.streamdeckcodex.workflow"
+    },
+    {
+      "Controllers": [
+        "Encoder"
+      ],
+      "Encoder": {
+        "Icon": "imgs/actions/model",
+        "layout": "$B1",
+        "TriggerDescription": {
+          "Push": "Apply displayed model",
+          "Rotate": "Preview Luna, Terra, or Sol"
+        }
+      },
+      "Icon": "imgs/actions/model",
+      "Name": "Model",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "States": [
+        {
+          "Image": "imgs/actions/model"
+        }
+      ],
+      "Tooltip": "Preview Luna, Terra, or Sol, then press to apply the displayed model.",
+      "UUID": "com.todd.streamdeckcodex.model"
+    },
+    {
+      "Controllers": [
+        "Encoder"
+      ],
+      "Encoder": {
+        "Icon": "imgs/actions/reasoning",
+        "layout": "$B1",
+        "TriggerDescription": {
+          "Push": "Apply displayed effort",
+          "Rotate": "Adjust reasoning effort"
+        }
+      },
+      "Icon": "imgs/actions/reasoning",
+      "Name": "Reasoning Effort",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "States": [
+        {
+          "Image": "imgs/actions/reasoning"
+        }
+      ],
+      "Tooltip": "View and change the active Codex chat's reasoning effort.",
+      "UUID": "com.todd.streamdeckcodex.reasoning"
+    },
+    {
+      "Controllers": [
+        "Encoder"
+      ],
+      "Encoder": {
+        "Icon": "imgs/actions/navigator",
+        "layout": "$B1",
+        "TriggerDescription": {
+          "Push": "Open selected chat",
+          "Rotate": "Choose chat"
+        }
+      },
+      "Icon": "imgs/actions/navigator",
+      "Name": "Agent Navigator",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "States": [
+        {
+          "Image": "imgs/actions/navigator"
+        }
+      ],
+      "Tooltip": "Browse recent Codex chats on the touch strip and open one with the dial.",
+      "UUID": "com.todd.streamdeckcodex.agent-navigator"
+    },
+    {
+      "Controllers": [
+        "Keypad"
+      ],
+      "Icon": "imgs/actions/context",
+      "Name": "Live Usage",
+      "States": [
+        {
+          "Image": "imgs/actions/usage",
+          "ShowTitle": false
+        }
+      ],
+      "Tooltip": "Display weekly Codex usage left; press to toggle banked resets left.",
+      "UUID": "com.todd.streamdeckcodex.usage"
+    },
+    {
+      "Controllers": [
+        "Keypad"
+      ],
+      "Icon": "imgs/actions/usage",
+      "Name": "Live Context",
+      "States": [
+        {
+          "Image": "imgs/actions/usage",
+          "ShowTitle": false
+        }
+      ],
+      "Tooltip": "Display context left in the focused Codex chat; press to toggle used and maximum tokens.",
+      "UUID": "com.todd.streamdeckcodex.context"
+    }
+  ],
+  "ApplicationsToMonitor": {
+    "mac": [
+      "com.openai.codex"
+    ]
+  },
+  "Author": "Todd",
+  "Category": "Codex Companion",
+  "CategoryIcon": "imgs/category",
+  "CodePath": "bin/plugin.js",
+  "Description": "Local Stream Deck controls for Codex on macOS, with live chat status, workflows, commands, usage, and context. Stream Deck + adds model, reasoning, and chat-navigation dials.",
+  "Icon": "imgs/plugin",
+  "Name": "Codex Companion",
+  "Nodejs": {
+    "Version": "24"
+  },
+  "OS": [
+    {
+      "Platform": "mac",
+      "MinimumVersion": "13"
+    }
+  ],
+  "Profiles": [
+    {
+      "AutoInstall": true,
+      "DeviceType": 0,
+      "DontAutoSwitchWhenInstalled": true,
+      "Name": "streamdeckcodex-stream-deck",
+      "Readonly": false
+    },
+    {
+      "AutoInstall": true,
+      "DeviceType": 1,
+      "DontAutoSwitchWhenInstalled": true,
+      "Name": "streamdeckcodex-mini",
+      "Readonly": false
+    },
+    {
+      "AutoInstall": true,
+      "DeviceType": 2,
+      "DontAutoSwitchWhenInstalled": true,
+      "Name": "streamdeckcodex-xl",
+      "Readonly": false
+    },
+    {
+      "AutoInstall": true,
+      "DeviceType": 7,
+      "DontAutoSwitchWhenInstalled": true,
+      "Name": "streamdeckcodex-plus",
+      "Readonly": false
+    },
+    {
+      "AutoInstall": true,
+      "DeviceType": 9,
+      "DontAutoSwitchWhenInstalled": true,
+      "Name": "streamdeckcodex-neo",
+      "Readonly": false
+    }
+  ],
+  "SDKVersion": 3,
+  "Software": {
+    "MinimumVersion": "7.1"
+  },
+  "SupportURL": "https://github.com/twidtwid/streamdeckcodex/issues",
+  "UUID": "com.todd.streamdeckcodex",
+  "Version": "0.1.0.0"
+}

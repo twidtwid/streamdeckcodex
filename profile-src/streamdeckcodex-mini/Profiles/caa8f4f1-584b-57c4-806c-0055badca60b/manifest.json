@@ -1,0 +1,41 @@
+{
+  "Controllers": [
+    {
+      "Actions": {
+        "0,0": {
+          "ActionID": "1ff18918-b353-5372-becd-d22e19a7bd8d",
+          "LinkedTitle": false,
+          "Name": "Summarize",
+          "Resources": null,
+          "Settings": {
+            "label": "Summarize",
+            "description": "",
+            "icon": "summarize",
+            "action": "workflow:summarize"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "1,0": {
+          "ActionID": "dfb0c3db-1b12-529f-9fb7-28117ddf3e19",
+          "LinkedTitle": false,
+          "Name": "Define goal",
+          "Resources": null,
+          "Settings": {
+            "label": "Define goal",
+            "description": "",
+            "icon": "goal",
+            "action": "workflow:goal"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        }
+      },
+      "Type": "Keypad"
+    }
+  ],
+  "Icon": "",
+  "Name": "Decisions 2/2"
+}

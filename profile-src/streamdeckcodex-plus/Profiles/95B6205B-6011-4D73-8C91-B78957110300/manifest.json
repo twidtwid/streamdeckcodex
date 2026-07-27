@@ -1,0 +1,146 @@
+{
+  "Controllers": [
+    {
+      "Actions": {
+        "0,0": {
+          "ActionID": "7A85AA56-5AFB-4CE8-8354-5E9FF425C80B",
+          "LinkedTitle": false,
+          "Name": "FAST",
+          "Resources": null,
+          "Settings": { "commandId": "fast" },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.command"
+        },
+        "1,0": {
+          "ActionID": "030BD076-46D6-4CBA-94BC-8849E72F54B3",
+          "LinkedTitle": false,
+          "Name": "Permissions",
+          "Resources": null,
+          "Settings": { "mode": "yolo" },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.approval-mode"
+        },
+        "2,0": {
+          "ActionID": "AF3AB0FB-8CB9-4179-8E74-D15DFD9DEA16",
+          "LinkedTitle": false,
+          "Name": "PTT",
+          "Resources": null,
+          "Settings": { "commandId": "dictate" },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.command"
+        },
+        "3,0": {
+          "ActionID": "C49CF3F6-2675-446E-B61D-1CF4EDB3DD35",
+          "LinkedTitle": false,
+          "Name": "Quota",
+          "Resources": null,
+          "Settings": {},
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.usage"
+        },
+        "0,1": {
+          "ActionID": "8B29A13D-668E-4479-8288-9A3D9088B81E",
+          "LinkedTitle": false,
+          "Name": "YEET — Publish",
+          "Resources": null,
+          "Settings": {
+            "action": "workflow:publish",
+            "description": "Publish",
+            "icon": "yeet",
+            "label": "YEET"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "1,1": {
+          "ActionID": "C93B4F16-A760-4F0F-932C-59CB10EBEC8B",
+          "LinkedTitle": false,
+          "Name": "New project",
+          "Resources": null,
+          "Settings": {
+            "action": "new-project",
+            "description": "",
+            "icon": "folder-plus",
+            "label": "New project"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "2,1": {
+          "ActionID": "BCA47EBC-2E09-443B-8DC8-E6DB4E2D7931",
+          "LinkedTitle": false,
+          "Name": "Compact",
+          "Resources": null,
+          "Settings": { "commandId": "compact" },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.command"
+        },
+        "3,1": {
+          "ActionID": "2B9DC6CA-DB1D-4B3E-B202-1B27501EB112",
+          "LinkedTitle": false,
+          "Name": "Context",
+          "Resources": null,
+          "Settings": {},
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.context"
+        }
+      },
+      "Type": "Keypad"
+    },
+    {
+      "Actions": {
+        "0,0": {
+          "ActionID": "10ED2078-36DA-4388-8542-41656BD5F09D",
+          "LinkedTitle": false,
+          "Name": "Agent Navigator",
+          "Resources": null,
+          "Settings": { "index": 0 },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.agent-navigator"
+        },
+        "1,0": {
+          "ActionID": "0AF7BCFC-2048-4DAA-BB81-4128992A29FA",
+          "LinkedTitle": false,
+          "Name": "Core Actions",
+          "Resources": null,
+          "Settings": { "commandIndex": 0 },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.command"
+        },
+        "2,0": {
+          "ActionID": "86C1ABB9-7A25-4BB1-B378-AA50E7CC5DB1",
+          "LinkedTitle": false,
+          "Name": "Model",
+          "Resources": null,
+          "Settings": {},
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.model"
+        },
+        "3,0": {
+          "ActionID": "A435607A-DEC7-4C35-B755-7C62A63BF7CB",
+          "LinkedTitle": false,
+          "Name": "Reasoning",
+          "Resources": null,
+          "Settings": {},
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.reasoning"
+        }
+      },
+      "Type": "Encoder"
+    }
+  ],
+  "Icon": "",
+  "Name": "Live Controls"
+}

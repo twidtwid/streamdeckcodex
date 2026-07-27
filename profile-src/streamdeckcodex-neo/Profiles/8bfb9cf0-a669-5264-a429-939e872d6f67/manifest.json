@@ -1,0 +1,86 @@
+{
+  "Controllers": [
+    {
+      "Actions": {
+        "0,0": {
+          "ActionID": "abdc2cc0-4597-59dd-8c80-180fd58acea4",
+          "LinkedTitle": false,
+          "Name": "Run shell",
+          "Resources": null,
+          "Settings": {
+            "label": "Run shell",
+            "description": "",
+            "icon": "terminal",
+            "action": "workflow:terminal"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "1,0": {
+          "ActionID": "ef6d42a5-c835-5887-9cb6-05fed31fe433",
+          "LinkedTitle": false,
+          "Name": "Edit code",
+          "Resources": null,
+          "Settings": {
+            "label": "Edit code",
+            "description": "",
+            "icon": "edit",
+            "action": "workflow:editor"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "2,0": {
+          "ActionID": "faf7cac6-5646-55bb-926e-f1382b9b3aac",
+          "LinkedTitle": false,
+          "Name": "Debug",
+          "Resources": null,
+          "Settings": {
+            "label": "Debug",
+            "description": "",
+            "icon": "debug",
+            "action": "workflow:debug"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "3,0": {
+          "ActionID": "dd8f9944-bc78-5af6-9d01-cc84c9388d67",
+          "LinkedTitle": false,
+          "Name": "Skills",
+          "Resources": null,
+          "Settings": {
+            "label": "Skills",
+            "description": "",
+            "icon": "skills",
+            "action": "skills"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "0,1": {
+          "ActionID": "de1f6ccb-2c19-5248-84b1-1cbac41d3139",
+          "LinkedTitle": false,
+          "Name": "Chat audit",
+          "Resources": null,
+          "Settings": {
+            "label": "Chat audit",
+            "description": "",
+            "icon": "sessions",
+            "action": "workflow:sessions"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        }
+      },
+      "Type": "Keypad"
+    }
+  ],
+  "Icon": "",
+  "Name": "Workspace"
+}

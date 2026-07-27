@@ -1,0 +1,31 @@
+{
+  "Controllers": [
+    {
+      "Actions": {
+        "0,0": {
+          "ActionID": "9d2d5411-d2b1-5d33-9c2f-005b624bd6e2",
+          "LinkedTitle": false,
+          "Name": "Compact",
+          "Resources": null,
+          "Settings": { "commandId": "compact" },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.command"
+        },
+        "1,0": {
+          "ActionID": "caae6201-8dfc-5cd3-944d-0c316313c4b4",
+          "LinkedTitle": false,
+          "Name": "Context",
+          "Resources": null,
+          "Settings": {},
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.context"
+        }
+      },
+      "Type": "Keypad"
+    }
+  ],
+  "Icon": "",
+  "Name": "Live Controls 2/2"
+}

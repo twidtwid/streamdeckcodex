@@ -1,0 +1,131 @@
+{
+  "Controllers": [
+    {
+      "Actions": {
+        "0,0": {
+          "ActionID": "f737c0a4-9264-566d-8147-82e3ae90bb7d",
+          "LinkedTitle": false,
+          "Name": "Refactor",
+          "Resources": null,
+          "Settings": {
+            "label": "Refactor",
+            "description": "",
+            "icon": "refactor",
+            "action": "workflow:refactor"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "1,0": {
+          "ActionID": "0fc9548f-c765-51a3-bb2e-c57caacbad8d",
+          "LinkedTitle": false,
+          "Name": "Add tests",
+          "Resources": null,
+          "Settings": {
+            "label": "Add tests",
+            "description": "",
+            "icon": "tests",
+            "action": "workflow:tests"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "2,0": {
+          "ActionID": "bde08642-452f-5e55-b7e9-4975acc85191",
+          "LinkedTitle": false,
+          "Name": "Search",
+          "Resources": null,
+          "Settings": {
+            "label": "Search",
+            "description": "",
+            "icon": "search",
+            "action": "workflow:search"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "3,0": {
+          "ActionID": "28beb200-8f57-5f29-95aa-cb499b29f775",
+          "LinkedTitle": false,
+          "Name": "Explain",
+          "Resources": null,
+          "Settings": {
+            "label": "Explain",
+            "description": "",
+            "icon": "explain",
+            "action": "workflow:explain"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "4,0": {
+          "ActionID": "fda1890e-29c5-569f-a7c7-3d13422fcbb4",
+          "LinkedTitle": false,
+          "Name": "Document",
+          "Resources": null,
+          "Settings": {
+            "label": "Document",
+            "description": "",
+            "icon": "document",
+            "action": "workflow:document"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "0,1": {
+          "ActionID": "0c61c7d8-d8ad-5d8a-ba0e-1d6c4676f752",
+          "LinkedTitle": false,
+          "Name": "Optimize",
+          "Resources": null,
+          "Settings": {
+            "label": "Optimize",
+            "description": "",
+            "icon": "optimize",
+            "action": "workflow:optimize"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "1,1": {
+          "ActionID": "fdefdf41-6506-5106-93f2-5aae606a00e7",
+          "LinkedTitle": false,
+          "Name": "Audit",
+          "Resources": null,
+          "Settings": {
+            "label": "Audit",
+            "description": "",
+            "icon": "audit",
+            "action": "workflow:audit"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "2,1": {
+          "ActionID": "bdc385bf-2315-57aa-8cc5-104b64786cc7",
+          "LinkedTitle": false,
+          "Name": "Fix CI",
+          "Resources": null,
+          "Settings": {
+            "label": "Fix CI",
+            "description": "",
+            "icon": "fix",
+            "action": "workflow:fix-ci"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        }
+      },
+      "Type": "Keypad"
+    }
+  ],
+  "Icon": "",
+  "Name": "Code Quality"
+}

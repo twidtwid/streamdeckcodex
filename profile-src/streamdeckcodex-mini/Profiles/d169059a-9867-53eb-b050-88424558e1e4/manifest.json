@@ -1,0 +1,41 @@
+{
+  "Controllers": [
+    {
+      "Actions": {
+        "0,0": {
+          "ActionID": "4abc6c05-61af-5507-ae9c-9143353a1bd0",
+          "LinkedTitle": false,
+          "Name": "Audit",
+          "Resources": null,
+          "Settings": {
+            "label": "Audit",
+            "description": "",
+            "icon": "audit",
+            "action": "workflow:audit"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "1,0": {
+          "ActionID": "6d8fd363-b8d8-58e3-a41a-07f98bcf6111",
+          "LinkedTitle": false,
+          "Name": "Fix CI",
+          "Resources": null,
+          "Settings": {
+            "label": "Fix CI",
+            "description": "",
+            "icon": "fix",
+            "action": "workflow:fix-ci"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        }
+      },
+      "Type": "Keypad"
+    }
+  ],
+  "Icon": "",
+  "Name": "Code Quality 2/2"
+}

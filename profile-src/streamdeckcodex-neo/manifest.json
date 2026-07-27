@@ -1,0 +1,20 @@
+{
+  "Device": { "Model": "20GBJ9901", "UUID": "" },
+  "InstalledByPluginUUID": "com.todd.streamdeckcodex",
+  "Name": "Codex Companion — Stream Deck Neo",
+  "Pages": {
+    "Current": "29b3b5f5-dd66-5f18-83cb-66f99cbad63e",
+    "Default": "d51f9d77-7e22-56b9-899e-b038f292f8dd",
+    "Pages": [
+      "29b3b5f5-dd66-5f18-83cb-66f99cbad63e",
+      "2d165707-9584-575f-a6c2-10e24fec269c",
+      "270588bc-3167-5180-b63d-c47f22eac777",
+      "11a0ef84-a95d-5383-9561-529fa5b3af02",
+      "11d18cdd-1ce8-5e31-b166-9743b0b5154c",
+      "8bfb9cf0-a669-5264-a429-939e872d6f67",
+      "79108534-3214-5200-9ea5-e4668cee98e0"
+    ]
+  },
+  "PreconfiguredName": "Codex Companion — Stream Deck Neo",
+  "Version": "3.0"
+}

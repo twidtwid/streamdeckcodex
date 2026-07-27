@@ -1,0 +1,89 @@
+{
+  "name": "streamdeck-codex-companion",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Independent Stream Deck companion for the Codex desktop app.",
+  "author": "Todd",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/twidtwid/streamdeckcodex.git"
+  },
+  "bugs": {
+    "url": "https://github.com/twidtwid/streamdeckcodex/issues"
+  },
+  "homepage": "https://github.com/twidtwid/streamdeckcodex#readme",
+  "keywords": [
+    "codex",
+    "stream-deck",
+    "stream-deck-plus",
+    "macos",
+    "openai"
+  ],
+  "overrides": {
+    "brace-expansion": "5.0.8"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "pretest": "npm run native:build",
+    "profile:build": "node scripts/build-profile.mjs",
+    "profile:generate": "node scripts/generate-profile.mjs && node scripts/generate-keypad-profiles.mjs",
+    "profile:check": "node scripts/generate-profile.mjs --check && node scripts/generate-keypad-profiles.mjs --check",
+    "keypad-profiles:generate": "node scripts/generate-keypad-profiles.mjs",
+    "keypad-profiles:check": "node scripts/generate-keypad-profiles.mjs --check",
+    "icons:lucide": "node scripts/generate-lucide-paths.mjs",
+    "icons:static": "node scripts/generate-static-icons.mjs",
+    "icons:wordmarks": "node scripts/generate-wordmark-paths.mjs",
+    "icons:extract-app": "node scripts/extract-app-icons.mjs",
+    "licenses:bundle": "node scripts/generate-bundled-licenses.mjs",
+    "profile:keycaps:install": "node scripts/install-keycap-pages.mjs",
+    "native:build": "node scripts/build-native.mjs",
+    "generated:check": "npm run icons:lucide -- --check && npm run icons:static -- --check && npm run icons:wordmarks -- --check && npm run licenses:bundle -- --check && npm run profile:check",
+    "build:bundle": "esbuild src/plugin.ts --bundle --platform=node --format=esm --target=node24 --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=com.todd.streamdeckcodex.sdPlugin/bin/plugin.js --sourcemap",
+    "build": "npm run icons:lucide && npm run icons:static && npm run icons:wordmarks && npm run licenses:bundle && npm run profile:generate && npm run native:build && npm run profile:build && npm run build:bundle",
+    "watch": "npm run build -- --watch",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "validate": "streamdeck validate com.todd.streamdeckcodex.sdPlugin",
+    "pack": "npm run build && streamdeck pack com.todd.streamdeckcodex.sdPlugin --output dist --force",
+    "link": "npm run build && streamdeck link com.todd.streamdeckcodex.sdPlugin",
+    "marketplace:media": "node scripts/generate-marketplace-media.mjs",
+    "progress": "node scripts/progress-server.mjs",
+    "progress:log": "node scripts/progress-log.mjs",
+    "public:check": "node scripts/check-public-tree.mjs",
+    "qa:store": "node --experimental-strip-types scripts/qa-live.mjs",
+    "qa:dials": "node scripts/qa-dial-events.mjs",
+    "qa:plan": "npm run qa:modes",
+    "qa:modes": "node scripts/qa-mode-events.mjs",
+    "qa:keys:preflight": "node scripts/qa-profile-keys.mjs --preflight",
+    "qa:keys:connected": "node scripts/qa-profile-keys.mjs",
+    "qa:release:connected": "node scripts/qa-release-connected.mjs",
+    "qa:status-visuals": "node --experimental-strip-types scripts/render-session-status-fixtures.mjs",
+    "qa:visuals": "node scripts/render-profile-visuals.mjs",
+    "qa:design": "npm run qa:visuals && node scripts/evaluate-profile-design.mjs",
+    "qa:design:release": "npm run qa:visuals && node scripts/evaluate-profile-design.mjs --release",
+    "check": "npm run public:check && npm run generated:check && npm run native:build && npm run format:check && npm run typecheck && npm run test:unit && npm run qa:design && npm run build:bundle && npm run validate",
+    "release:bundle": "npm run check && npm run pack && node scripts/stage-release.mjs"
+  },
+  "dependencies": {
+    "@elgato/streamdeck": "2.1.0",
+    "lucide-static": "^0.468.0"
+  },
+  "devDependencies": {
+    "@electron/asar": "4.2.1",
+    "@elgato/cli": "1.7.4",
+    "@types/node": "26.1.1",
+    "acorn": "8.17.0",
+    "esbuild": "0.28.1",
+    "opentype.js": "1.3.4",
+    "prettier": "3.9.5",
+    "typescript": "7.0.2",
+    "vitest": "4.1.10"
+  }
+}

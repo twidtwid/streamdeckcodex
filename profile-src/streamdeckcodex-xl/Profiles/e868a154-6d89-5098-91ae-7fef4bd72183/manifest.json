@@ -1,0 +1,131 @@
+{
+  "Controllers": [
+    {
+      "Actions": {
+        "0,0": {
+          "ActionID": "27ef982d-0b7a-5957-a523-4097611b5480",
+          "LinkedTitle": false,
+          "Name": "PR Review",
+          "Resources": null,
+          "Settings": {
+            "label": "PR Review",
+            "description": "",
+            "icon": "review",
+            "action": "workflow:pr-review"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "1,0": {
+          "ActionID": "438be77c-eec5-5b1e-8876-e4d83141ec30",
+          "LinkedTitle": false,
+          "Name": "Accept",
+          "Resources": null,
+          "Settings": {
+            "label": "Accept",
+            "description": "",
+            "icon": "accept",
+            "action": "command:accept"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "2,0": {
+          "ActionID": "5173c6a3-a558-5fba-b64e-5821658aea7a",
+          "LinkedTitle": false,
+          "Name": "Reject",
+          "Resources": null,
+          "Settings": {
+            "label": "Reject",
+            "description": "",
+            "icon": "reject",
+            "action": "command:reject"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "3,0": {
+          "ActionID": "088a4406-85bc-5e8a-b406-540205e4b413",
+          "LinkedTitle": false,
+          "Name": "Send",
+          "Resources": null,
+          "Settings": {
+            "label": "Send",
+            "description": "",
+            "icon": "send",
+            "action": "command:send"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "4,0": {
+          "ActionID": "7b584d3f-cc66-55ff-b07b-45bb23eb264c",
+          "LinkedTitle": false,
+          "Name": "Explore",
+          "Resources": null,
+          "Settings": {
+            "label": "Explore",
+            "description": "",
+            "icon": "brain-medium",
+            "action": "workflow:explore"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "5,0": {
+          "ActionID": "f27c69d6-14d5-5fc0-8d67-1adfd1d6000d",
+          "LinkedTitle": false,
+          "Name": "Analyze",
+          "Resources": null,
+          "Settings": {
+            "label": "Analyze",
+            "description": "",
+            "icon": "brain-outline",
+            "action": "workflow:analyze"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "6,0": {
+          "ActionID": "0d11e0b9-e2c7-5699-b022-47ea28e713a6",
+          "LinkedTitle": false,
+          "Name": "Summarize",
+          "Resources": null,
+          "Settings": {
+            "label": "Summarize",
+            "description": "",
+            "icon": "summarize",
+            "action": "workflow:summarize"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "7,0": {
+          "ActionID": "0de54ba8-7f9d-5ec5-b535-633546181d3a",
+          "LinkedTitle": false,
+          "Name": "Define goal",
+          "Resources": null,
+          "Settings": {
+            "label": "Define goal",
+            "description": "",
+            "icon": "goal",
+            "action": "workflow:goal"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        }
+      },
+      "Type": "Keypad"
+    }
+  ],
+  "Icon": "",
+  "Name": "Decisions"
+}

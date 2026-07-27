@@ -1,0 +1,91 @@
+{
+  "Controllers": [
+    {
+      "Actions": {
+        "0,0": {
+          "ActionID": "114faedc-5327-5bdf-97b2-185892abd744",
+          "LinkedTitle": false,
+          "Name": "Agent 1",
+          "Resources": null,
+          "Settings": { "slot": 1 },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.agent-status"
+        },
+        "1,0": {
+          "ActionID": "4ee15e9e-39f4-5d8a-ab5e-ed974f6e9d4b",
+          "LinkedTitle": false,
+          "Name": "Agent 2",
+          "Resources": null,
+          "Settings": { "slot": 2 },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.agent-status"
+        },
+        "2,0": {
+          "ActionID": "257c36bd-9fde-5009-9c41-4dc760faec69",
+          "LinkedTitle": false,
+          "Name": "Agent 3",
+          "Resources": null,
+          "Settings": { "slot": 3 },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.agent-status"
+        },
+        "3,0": {
+          "ActionID": "7e830016-953a-5b0c-b744-cb593ed2bb7a",
+          "LinkedTitle": false,
+          "Name": "Agent 4",
+          "Resources": null,
+          "Settings": { "slot": 4 },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.agent-status"
+        },
+        "4,0": {
+          "ActionID": "3ad660be-23aa-59c8-aeac-dfbca10698fe",
+          "LinkedTitle": false,
+          "Name": "Agent 5",
+          "Resources": null,
+          "Settings": { "slot": 5 },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.agent-status"
+        },
+        "5,0": {
+          "ActionID": "96bcf5ae-65fa-599e-a8a3-9f2f13ab0696",
+          "LinkedTitle": false,
+          "Name": "Agent 6",
+          "Resources": null,
+          "Settings": { "slot": 6 },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.agent-status"
+        },
+        "6,0": {
+          "ActionID": "e9a504de-8215-5e1b-85c6-e811d6446cc7",
+          "LinkedTitle": false,
+          "Name": "New Chat",
+          "Resources": null,
+          "Settings": { "commandId": "new-chat" },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.command"
+        },
+        "7,0": {
+          "ActionID": "9722ce89-4cc4-5c73-bb5b-1800bc957e3f",
+          "LinkedTitle": false,
+          "Name": "Plan Mode",
+          "Resources": null,
+          "Settings": { "commandId": "plan" },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.command"
+        }
+      },
+      "Type": "Keypad"
+    }
+  ],
+  "Icon": "",
+  "Name": "Agents & Sessions"
+}

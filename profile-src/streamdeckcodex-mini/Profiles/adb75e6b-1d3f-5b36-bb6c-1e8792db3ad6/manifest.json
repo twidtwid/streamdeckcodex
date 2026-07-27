@@ -1,0 +1,41 @@
+{
+  "Controllers": [
+    {
+      "Actions": {
+        "0,0": {
+          "ActionID": "f80936db-2c4e-5350-b60b-9a195035ac0e",
+          "LinkedTitle": false,
+          "Name": "Ship prep",
+          "Resources": null,
+          "Settings": {
+            "label": "Ship prep",
+            "description": "",
+            "icon": "release",
+            "action": "workflow:release"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "1,0": {
+          "ActionID": "fe3e0245-3b4c-5876-98c9-a30e31415411",
+          "LinkedTitle": false,
+          "Name": "Deploy",
+          "Resources": null,
+          "Settings": {
+            "label": "Deploy",
+            "description": "",
+            "icon": "deploy",
+            "action": "workflow:deploy"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        }
+      },
+      "Type": "Keypad"
+    }
+  ],
+  "Icon": "",
+  "Name": "Git & Delivery 2/2"
+}

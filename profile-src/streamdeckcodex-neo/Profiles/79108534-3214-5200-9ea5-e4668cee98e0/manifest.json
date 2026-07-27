@@ -1,0 +1,86 @@
+{
+  "Controllers": [
+    {
+      "Actions": {
+        "0,0": {
+          "ActionID": "34616028-10e7-58a0-bda7-1b713d0cf9bc",
+          "LinkedTitle": false,
+          "Name": "Browser",
+          "Resources": null,
+          "Settings": {
+            "label": "Browser",
+            "description": "",
+            "icon": "browser",
+            "action": "command:browser"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "1,0": {
+          "ActionID": "a25d21c1-058f-5341-89e9-5e981c483598",
+          "LinkedTitle": false,
+          "Name": "Files",
+          "Resources": null,
+          "Settings": {
+            "label": "Files",
+            "description": "",
+            "icon": "files",
+            "action": "command:files"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "2,0": {
+          "ActionID": "4836f5a2-4763-5f78-bd9b-88401ac87886",
+          "LinkedTitle": false,
+          "Name": "Side chat",
+          "Resources": null,
+          "Settings": {
+            "label": "Side chat",
+            "description": "",
+            "icon": "side-chat",
+            "action": "command:side-chat"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "3,0": {
+          "ActionID": "2c17e641-89d6-549a-86f8-82351ddde0a1",
+          "LinkedTitle": false,
+          "Name": "Sidebar",
+          "Resources": null,
+          "Settings": {
+            "label": "Sidebar",
+            "description": "",
+            "icon": "sidebar",
+            "action": "command:sidebar"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "0,1": {
+          "ActionID": "c9bfe269-a04b-5d62-8019-8228cffb2fae",
+          "LinkedTitle": false,
+          "Name": "Settings",
+          "Resources": null,
+          "Settings": {
+            "label": "Settings",
+            "description": "",
+            "icon": "settings",
+            "action": "command:settings"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        }
+      },
+      "Type": "Keypad"
+    }
+  ],
+  "Icon": "",
+  "Name": "Codex Panels"
+}

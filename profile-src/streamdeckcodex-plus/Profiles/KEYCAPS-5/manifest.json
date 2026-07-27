@@ -1,0 +1,131 @@
+{
+  "Controllers": [
+    {
+      "Actions": {
+        "0,0": {
+          "ActionID": "d235e552-8103-5248-81a3-1f08242da796",
+          "LinkedTitle": false,
+          "Name": "Browser",
+          "Resources": null,
+          "Settings": {
+            "label": "Browser",
+            "description": "",
+            "icon": "browser",
+            "action": "command:browser"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "1,0": {
+          "ActionID": "8614b68b-34bc-5155-b618-6557858c7583",
+          "LinkedTitle": false,
+          "Name": "Files",
+          "Resources": null,
+          "Settings": {
+            "label": "Files",
+            "description": "",
+            "icon": "files",
+            "action": "command:files"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "2,0": {
+          "ActionID": "5d7c8e83-da70-5b36-b05b-bcec6ef727cc",
+          "LinkedTitle": false,
+          "Name": "Side chat",
+          "Resources": null,
+          "Settings": {
+            "label": "Side chat",
+            "description": "",
+            "icon": "side-chat",
+            "action": "command:side-chat"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "3,0": {
+          "ActionID": "3176317a-3b3f-5ade-9093-b41618dcd290",
+          "LinkedTitle": false,
+          "Name": "Sidebar",
+          "Resources": null,
+          "Settings": {
+            "label": "Sidebar",
+            "description": "",
+            "icon": "sidebar",
+            "action": "command:sidebar"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "0,1": {
+          "ActionID": "df6c6552-06c8-5075-8e50-66e0936fb940",
+          "LinkedTitle": false,
+          "Name": "Settings",
+          "Resources": null,
+          "Settings": {
+            "label": "Settings",
+            "description": "",
+            "icon": "settings",
+            "action": "command:settings"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        }
+      },
+      "Type": "Keypad"
+    },
+    {
+      "Actions": {
+        "0,0": {
+          "ActionID": "10ED2078-36DA-4388-8542-41656BD5F09D",
+          "LinkedTitle": false,
+          "Name": "Agent Navigator",
+          "Resources": null,
+          "Settings": { "index": 0 },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.agent-navigator"
+        },
+        "1,0": {
+          "ActionID": "0AF7BCFC-2048-4DAA-BB81-4128992A29FA",
+          "LinkedTitle": false,
+          "Name": "Core Actions",
+          "Resources": null,
+          "Settings": { "commandIndex": 0 },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.command"
+        },
+        "2,0": {
+          "ActionID": "86C1ABB9-7A25-4BB1-B378-AA50E7CC5DB1",
+          "LinkedTitle": false,
+          "Name": "Model",
+          "Resources": null,
+          "Settings": {},
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.model"
+        },
+        "3,0": {
+          "ActionID": "A435607A-DEC7-4C35-B755-7C62A63BF7CB",
+          "LinkedTitle": false,
+          "Name": "Reasoning",
+          "Resources": null,
+          "Settings": {},
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.reasoning"
+        }
+      },
+      "Type": "Encoder"
+    }
+  ],
+  "Icon": "",
+  "Name": "Codex Panels"
+}

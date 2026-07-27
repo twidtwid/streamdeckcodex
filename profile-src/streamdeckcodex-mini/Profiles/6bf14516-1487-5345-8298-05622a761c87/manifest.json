@@ -1,0 +1,31 @@
+{
+  "Controllers": [
+    {
+      "Actions": {
+        "0,0": {
+          "ActionID": "c0e25ed3-46a9-587e-ba07-d8f6cd9fffdb",
+          "LinkedTitle": false,
+          "Name": "New Chat",
+          "Resources": null,
+          "Settings": { "commandId": "new-chat" },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.command"
+        },
+        "1,0": {
+          "ActionID": "774d69e2-3615-51a2-8086-f5948a112bda",
+          "LinkedTitle": false,
+          "Name": "Plan Mode",
+          "Resources": null,
+          "Settings": { "commandId": "plan" },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.command"
+        }
+      },
+      "Type": "Keypad"
+    }
+  ],
+  "Icon": "",
+  "Name": "Agents & Sessions 2/2"
+}

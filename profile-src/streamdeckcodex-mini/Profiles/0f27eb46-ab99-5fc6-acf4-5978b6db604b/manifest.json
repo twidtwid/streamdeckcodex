@@ -1,0 +1,81 @@
+{
+  "Controllers": [
+    {
+      "Actions": {
+        "0,0": {
+          "ActionID": "57aae0c3-832e-5f00-9c62-6c789ffe5178",
+          "LinkedTitle": false,
+          "Name": "FAST",
+          "Resources": null,
+          "Settings": { "commandId": "fast" },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.command"
+        },
+        "1,0": {
+          "ActionID": "265ca7f2-3cb9-54e9-894f-60737f09ab0a",
+          "LinkedTitle": false,
+          "Name": "Permissions",
+          "Resources": null,
+          "Settings": { "mode": "yolo" },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.approval-mode"
+        },
+        "2,0": {
+          "ActionID": "28035878-1a99-5ef9-8d73-603265384e3f",
+          "LinkedTitle": false,
+          "Name": "PTT",
+          "Resources": null,
+          "Settings": { "commandId": "dictate" },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.command"
+        },
+        "0,1": {
+          "ActionID": "09a89214-7c39-5884-8724-30b46d844039",
+          "LinkedTitle": false,
+          "Name": "Quota",
+          "Resources": null,
+          "Settings": {},
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.usage"
+        },
+        "1,1": {
+          "ActionID": "1bd93459-c205-50f9-acfc-650f67b12f8c",
+          "LinkedTitle": false,
+          "Name": "YEET — Publish",
+          "Resources": null,
+          "Settings": {
+            "action": "workflow:publish",
+            "description": "Publish",
+            "icon": "yeet",
+            "label": "YEET"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "2,1": {
+          "ActionID": "2e753f5b-4f06-58ef-903f-565aff30bc43",
+          "LinkedTitle": false,
+          "Name": "New project",
+          "Resources": null,
+          "Settings": {
+            "action": "new-project",
+            "description": "",
+            "icon": "folder-plus",
+            "label": "New project"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        }
+      },
+      "Type": "Keypad"
+    }
+  ],
+  "Icon": "",
+  "Name": "Live Controls 1/2"
+}

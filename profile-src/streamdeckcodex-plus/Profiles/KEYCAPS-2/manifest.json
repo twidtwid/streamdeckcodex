@@ -1,0 +1,176 @@
+{
+  "Controllers": [
+    {
+      "Actions": {
+        "0,0": {
+          "ActionID": "f30fc1f7-8807-5f38-8d77-5b236ce0f611",
+          "LinkedTitle": false,
+          "Name": "Refactor",
+          "Resources": null,
+          "Settings": {
+            "label": "Refactor",
+            "description": "",
+            "icon": "refactor",
+            "action": "workflow:refactor"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "1,0": {
+          "ActionID": "efd01f6f-e180-50e7-9b44-da1db1a296f8",
+          "LinkedTitle": false,
+          "Name": "Add tests",
+          "Resources": null,
+          "Settings": {
+            "label": "Add tests",
+            "description": "",
+            "icon": "tests",
+            "action": "workflow:tests"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "2,0": {
+          "ActionID": "729285c7-2aba-59b0-bc0b-06fdd9f6b72b",
+          "LinkedTitle": false,
+          "Name": "Search",
+          "Resources": null,
+          "Settings": {
+            "label": "Search",
+            "description": "",
+            "icon": "search",
+            "action": "workflow:search"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "3,0": {
+          "ActionID": "a3dd313e-c804-589c-852d-102b12e4a8cc",
+          "LinkedTitle": false,
+          "Name": "Explain",
+          "Resources": null,
+          "Settings": {
+            "label": "Explain",
+            "description": "",
+            "icon": "explain",
+            "action": "workflow:explain"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "0,1": {
+          "ActionID": "3324393a-5f02-540f-b01d-343b1fa7712d",
+          "LinkedTitle": false,
+          "Name": "Document",
+          "Resources": null,
+          "Settings": {
+            "label": "Document",
+            "description": "",
+            "icon": "document",
+            "action": "workflow:document"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "1,1": {
+          "ActionID": "9187d402-1a22-5380-8b91-ede12f6079cd",
+          "LinkedTitle": false,
+          "Name": "Optimize",
+          "Resources": null,
+          "Settings": {
+            "label": "Optimize",
+            "description": "",
+            "icon": "optimize",
+            "action": "workflow:optimize"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "2,1": {
+          "ActionID": "2af66196-ad6a-55a3-a09d-2a651bcfaee5",
+          "LinkedTitle": false,
+          "Name": "Audit",
+          "Resources": null,
+          "Settings": {
+            "label": "Audit",
+            "description": "",
+            "icon": "audit",
+            "action": "workflow:audit"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "3,1": {
+          "ActionID": "4f563b76-d484-56fa-80ce-dc9fc885899c",
+          "LinkedTitle": false,
+          "Name": "Fix CI",
+          "Resources": null,
+          "Settings": {
+            "label": "Fix CI",
+            "description": "",
+            "icon": "fix",
+            "action": "workflow:fix-ci"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        }
+      },
+      "Type": "Keypad"
+    },
+    {
+      "Actions": {
+        "0,0": {
+          "ActionID": "10ED2078-36DA-4388-8542-41656BD5F09D",
+          "LinkedTitle": false,
+          "Name": "Agent Navigator",
+          "Resources": null,
+          "Settings": { "index": 0 },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.agent-navigator"
+        },
+        "1,0": {
+          "ActionID": "0AF7BCFC-2048-4DAA-BB81-4128992A29FA",
+          "LinkedTitle": false,
+          "Name": "Core Actions",
+          "Resources": null,
+          "Settings": { "commandIndex": 0 },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.command"
+        },
+        "2,0": {
+          "ActionID": "86C1ABB9-7A25-4BB1-B378-AA50E7CC5DB1",
+          "LinkedTitle": false,
+          "Name": "Model",
+          "Resources": null,
+          "Settings": {},
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.model"
+        },
+        "3,0": {
+          "ActionID": "A435607A-DEC7-4C35-B755-7C62A63BF7CB",
+          "LinkedTitle": false,
+          "Name": "Reasoning",
+          "Resources": null,
+          "Settings": {},
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.reasoning"
+        }
+      },
+      "Type": "Encoder"
+    }
+  ],
+  "Icon": "",
+  "Name": "Code Quality"
+}

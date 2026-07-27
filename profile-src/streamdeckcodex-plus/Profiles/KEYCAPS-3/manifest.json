@@ -1,0 +1,176 @@
+{
+  "Controllers": [
+    {
+      "Actions": {
+        "0,0": {
+          "ActionID": "949fd6d0-a357-5e57-92f2-dbb576cd834d",
+          "LinkedTitle": false,
+          "Name": "PR Review",
+          "Resources": null,
+          "Settings": {
+            "label": "PR Review",
+            "description": "",
+            "icon": "review",
+            "action": "workflow:pr-review"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "1,0": {
+          "ActionID": "7fa8fe06-0372-53a2-9964-1b65ba7ca7aa",
+          "LinkedTitle": false,
+          "Name": "Accept",
+          "Resources": null,
+          "Settings": {
+            "label": "Accept",
+            "description": "",
+            "icon": "accept",
+            "action": "command:accept"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "2,0": {
+          "ActionID": "e0cbc1c9-2a20-5438-bcab-c958acaf2aa3",
+          "LinkedTitle": false,
+          "Name": "Reject",
+          "Resources": null,
+          "Settings": {
+            "label": "Reject",
+            "description": "",
+            "icon": "reject",
+            "action": "command:reject"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "3,0": {
+          "ActionID": "d9d228b7-7971-5d17-9bf9-fcb7d26e7a1b",
+          "LinkedTitle": false,
+          "Name": "Send",
+          "Resources": null,
+          "Settings": {
+            "label": "Send",
+            "description": "",
+            "icon": "send",
+            "action": "command:send"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "0,1": {
+          "ActionID": "bfc57653-d845-58c2-9f72-82c37bc8b03d",
+          "LinkedTitle": false,
+          "Name": "Explore",
+          "Resources": null,
+          "Settings": {
+            "label": "Explore",
+            "description": "",
+            "icon": "brain-medium",
+            "action": "workflow:explore"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "1,1": {
+          "ActionID": "dc2c5814-edea-5fb5-a7c6-7301623805ea",
+          "LinkedTitle": false,
+          "Name": "Analyze",
+          "Resources": null,
+          "Settings": {
+            "label": "Analyze",
+            "description": "",
+            "icon": "brain-outline",
+            "action": "workflow:analyze"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "2,1": {
+          "ActionID": "9791ff79-2017-550c-8d19-9d1f73512535",
+          "LinkedTitle": false,
+          "Name": "Summarize",
+          "Resources": null,
+          "Settings": {
+            "label": "Summarize",
+            "description": "",
+            "icon": "summarize",
+            "action": "workflow:summarize"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "3,1": {
+          "ActionID": "cb72f8fc-76e7-5aaf-9031-67489588101b",
+          "LinkedTitle": false,
+          "Name": "Define goal",
+          "Resources": null,
+          "Settings": {
+            "label": "Define goal",
+            "description": "",
+            "icon": "goal",
+            "action": "workflow:goal"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        }
+      },
+      "Type": "Keypad"
+    },
+    {
+      "Actions": {
+        "0,0": {
+          "ActionID": "10ED2078-36DA-4388-8542-41656BD5F09D",
+          "LinkedTitle": false,
+          "Name": "Agent Navigator",
+          "Resources": null,
+          "Settings": { "index": 0 },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.agent-navigator"
+        },
+        "1,0": {
+          "ActionID": "0AF7BCFC-2048-4DAA-BB81-4128992A29FA",
+          "LinkedTitle": false,
+          "Name": "Core Actions",
+          "Resources": null,
+          "Settings": { "commandIndex": 0 },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.command"
+        },
+        "2,0": {
+          "ActionID": "86C1ABB9-7A25-4BB1-B378-AA50E7CC5DB1",
+          "LinkedTitle": false,
+          "Name": "Model",
+          "Resources": null,
+          "Settings": {},
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.model"
+        },
+        "3,0": {
+          "ActionID": "A435607A-DEC7-4C35-B755-7C62A63BF7CB",
+          "LinkedTitle": false,
+          "Name": "Reasoning",
+          "Resources": null,
+          "Settings": {},
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.reasoning"
+        }
+      },
+      "Type": "Encoder"
+    }
+  ],
+  "Icon": "",
+  "Name": "Decisions"
+}

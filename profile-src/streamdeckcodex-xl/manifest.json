@@ -1,0 +1,20 @@
+{
+  "Device": { "Model": "20GAT9901", "UUID": "" },
+  "InstalledByPluginUUID": "com.todd.streamdeckcodex",
+  "Name": "Codex Companion — Stream Deck XL",
+  "Pages": {
+    "Current": "410e5cf7-e7b8-50e6-be19-ab07e911aa43",
+    "Default": "15d02371-d648-5bce-a9db-449d8949f144",
+    "Pages": [
+      "410e5cf7-e7b8-50e6-be19-ab07e911aa43",
+      "eaf21822-b8be-5a61-8581-3ccb9e1d1697",
+      "e52d1520-d0eb-5e2f-8a4b-6ad4beeb7b4d",
+      "45f26cc6-6fa0-5d01-8f8b-fcccad7e843e",
+      "e868a154-6d89-5098-91ae-7fef4bd72183",
+      "9d40b565-ae00-556f-9e4d-979b58771b34",
+      "4dca2c33-f3d5-54e5-8d2f-ce1fe0b294e0"
+    ]
+  },
+  "PreconfiguredName": "Codex Companion — Stream Deck XL",
+  "Version": "3.0"
+}

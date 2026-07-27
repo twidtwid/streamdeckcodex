@@ -1,0 +1,25 @@
+{
+  "Device": { "Model": "20GAI9901", "UUID": "" },
+  "InstalledByPluginUUID": "com.todd.streamdeckcodex",
+  "Name": "Codex Companion — Stream Deck Mini",
+  "Pages": {
+    "Current": "0f27eb46-ab99-5fc6-acf4-5978b6db604b",
+    "Default": "5bfeb414-2c54-5198-9e8d-6717bac39470",
+    "Pages": [
+      "0f27eb46-ab99-5fc6-acf4-5978b6db604b",
+      "53b7d04b-df22-59ce-b9d8-66293a2a6721",
+      "2ec21082-f93c-5a21-97c5-82cf495da8ed",
+      "6bf14516-1487-5345-8298-05622a761c87",
+      "e3aa5ab0-b5f7-5af7-8ad3-dbb01693eb28",
+      "adb75e6b-1d3f-5b36-bb6c-1e8792db3ad6",
+      "3e4a6097-e92f-5269-aec4-e648b0d082aa",
+      "d169059a-9867-53eb-b050-88424558e1e4",
+      "b515ee33-6fcb-5070-bc41-e2f835abf7a0",
+      "caa8f4f1-584b-57c4-806c-0055badca60b",
+      "9482964d-ae13-5513-bf36-1aa0bd95ed68",
+      "a3839d1e-04e9-5624-b9e8-6723ee8560ac"
+    ]
+  },
+  "PreconfiguredName": "Codex Companion — Stream Deck Mini",
+  "Version": "3.0"
+}

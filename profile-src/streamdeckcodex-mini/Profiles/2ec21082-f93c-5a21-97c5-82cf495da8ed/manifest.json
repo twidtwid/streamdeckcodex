@@ -1,0 +1,71 @@
+{
+  "Controllers": [
+    {
+      "Actions": {
+        "0,0": {
+          "ActionID": "900dca6b-98d9-53f5-ae93-93e8479c7f0e",
+          "LinkedTitle": false,
+          "Name": "Agent 1",
+          "Resources": null,
+          "Settings": { "slot": 1 },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.agent-status"
+        },
+        "1,0": {
+          "ActionID": "190db8a5-e3d8-586c-a50d-9ec33b279b6a",
+          "LinkedTitle": false,
+          "Name": "Agent 2",
+          "Resources": null,
+          "Settings": { "slot": 2 },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.agent-status"
+        },
+        "2,0": {
+          "ActionID": "2b90cf5d-1fb2-5fed-8e11-74dbd2dc4447",
+          "LinkedTitle": false,
+          "Name": "Agent 3",
+          "Resources": null,
+          "Settings": { "slot": 3 },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.agent-status"
+        },
+        "0,1": {
+          "ActionID": "193f1636-7471-52b7-ba30-44b40fa49e12",
+          "LinkedTitle": false,
+          "Name": "Agent 4",
+          "Resources": null,
+          "Settings": { "slot": 4 },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.agent-status"
+        },
+        "1,1": {
+          "ActionID": "e89791a5-53cb-540e-b798-7c44bb8e6a18",
+          "LinkedTitle": false,
+          "Name": "Agent 5",
+          "Resources": null,
+          "Settings": { "slot": 5 },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.agent-status"
+        },
+        "2,1": {
+          "ActionID": "c6002c34-970c-5780-afcc-8be77860adf6",
+          "LinkedTitle": false,
+          "Name": "Agent 6",
+          "Resources": null,
+          "Settings": { "slot": 6 },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.agent-status"
+        }
+      },
+      "Type": "Keypad"
+    }
+  ],
+  "Icon": "",
+  "Name": "Agents & Sessions 1/2"
+}

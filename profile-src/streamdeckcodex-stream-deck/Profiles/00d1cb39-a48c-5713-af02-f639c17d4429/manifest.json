@@ -1,0 +1,131 @@
+{
+  "Controllers": [
+    {
+      "Actions": {
+        "0,0": {
+          "ActionID": "74bdf552-540c-5ced-85fd-0458eab6ecbf",
+          "LinkedTitle": false,
+          "Name": "Branch info",
+          "Resources": null,
+          "Settings": {
+            "label": "Branch info",
+            "description": "",
+            "icon": "branch",
+            "action": "workflow:branch"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "1,0": {
+          "ActionID": "49488eba-52a3-5f11-bd11-7e262fcf76c4",
+          "LinkedTitle": false,
+          "Name": "New branch",
+          "Resources": null,
+          "Settings": {
+            "label": "New branch",
+            "description": "",
+            "icon": "branch-add",
+            "action": "workflow:new-branch"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "2,0": {
+          "ActionID": "1555c488-1c1f-54db-8b9c-b82e94c12468",
+          "LinkedTitle": false,
+          "Name": "Merge",
+          "Resources": null,
+          "Settings": {
+            "label": "Merge",
+            "description": "",
+            "icon": "merge",
+            "action": "workflow:merge"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "3,0": {
+          "ActionID": "4d4fc10c-0890-5bd1-a101-dd272101a80a",
+          "LinkedTitle": false,
+          "Name": "Diff",
+          "Resources": null,
+          "Settings": {
+            "label": "Diff",
+            "description": "",
+            "icon": "diff",
+            "action": "workflow:diff"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "4,0": {
+          "ActionID": "f54239c0-b2c1-5ab4-ba5d-06b4f42f3f87",
+          "LinkedTitle": false,
+          "Name": "Commit",
+          "Resources": null,
+          "Settings": {
+            "label": "Commit",
+            "description": "",
+            "icon": "commit",
+            "action": "workflow:commit"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "0,1": {
+          "ActionID": "38080a05-fd9d-52c3-9e6d-a3d65e4e5f2e",
+          "LinkedTitle": false,
+          "Name": "Push",
+          "Resources": null,
+          "Settings": {
+            "label": "Push",
+            "description": "",
+            "icon": "push",
+            "action": "workflow:push"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "1,1": {
+          "ActionID": "41ccb148-2ffe-5a8e-b70f-10a3a6f77d46",
+          "LinkedTitle": false,
+          "Name": "Ship prep",
+          "Resources": null,
+          "Settings": {
+            "label": "Ship prep",
+            "description": "",
+            "icon": "release",
+            "action": "workflow:release"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "2,1": {
+          "ActionID": "af1555a5-411e-5f65-af1a-6517dc4d40f1",
+          "LinkedTitle": false,
+          "Name": "Deploy",
+          "Resources": null,
+          "Settings": {
+            "label": "Deploy",
+            "description": "",
+            "icon": "deploy",
+            "action": "workflow:deploy"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        }
+      },
+      "Type": "Keypad"
+    }
+  ],
+  "Icon": "",
+  "Name": "Git & Delivery"
+}

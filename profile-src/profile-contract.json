@@ -1,0 +1,893 @@
+{
+  "profile": {
+    "name": "Codex Companion",
+    "preconfiguredName": "Codex Companion"
+  },
+  "pages": [
+    {
+      "id": "0D4C7F4C-666D-46B1-A787-7F2ABE2E12F0",
+      "name": "Agents & Sessions",
+      "slug": "agents",
+      "visual": {
+        "liveOcrAnchors": ["new chat", "plan"],
+        "requiredLiveAnchors": 2,
+        "requiresLivePercent": false
+      },
+      "dimensions": {
+        "columns": 4,
+        "rows": 2,
+        "emptyPositions": []
+      },
+      "keys": [
+        {
+          "position": "0,0",
+          "actionId": "E0DECAB9-87DA-4F64-90DB-6A0D1C63AB7B",
+          "label": "Agent 1",
+          "name": "Agent 1",
+          "uuid": "com.todd.streamdeckcodex.agent-status",
+          "settings": {
+            "slot": 1
+          },
+          "behavior": "agent",
+          "target": "global",
+          "icon": null
+        },
+        {
+          "position": "1,0",
+          "actionId": "6E5B3428-B937-42D0-9509-BB55A1FF82D6",
+          "label": "Agent 2",
+          "name": "Agent 2",
+          "uuid": "com.todd.streamdeckcodex.agent-status",
+          "settings": {
+            "slot": 2
+          },
+          "behavior": "agent",
+          "target": "global",
+          "icon": null
+        },
+        {
+          "position": "2,0",
+          "actionId": "1B7F91FC-3B82-4B47-A04E-58EE9056BF3F",
+          "label": "Agent 3",
+          "name": "Agent 3",
+          "uuid": "com.todd.streamdeckcodex.agent-status",
+          "settings": {
+            "slot": 3
+          },
+          "behavior": "agent",
+          "target": "global",
+          "icon": null
+        },
+        {
+          "position": "3,0",
+          "actionId": "F7C02FB6-5124-42CC-85F9-DF7A49AF8FE4",
+          "label": "Agent 4",
+          "name": "Agent 4",
+          "uuid": "com.todd.streamdeckcodex.agent-status",
+          "settings": {
+            "slot": 4
+          },
+          "behavior": "agent",
+          "target": "global",
+          "icon": null
+        },
+        {
+          "position": "0,1",
+          "actionId": "FC05BA7E-557B-43F7-B036-6C4E3E89CA3D",
+          "label": "Agent 5",
+          "name": "Agent 5",
+          "uuid": "com.todd.streamdeckcodex.agent-status",
+          "settings": {
+            "slot": 5
+          },
+          "behavior": "agent",
+          "target": "global",
+          "icon": null
+        },
+        {
+          "position": "1,1",
+          "actionId": "6EF44B19-CA59-433F-97AC-B36123C6D574",
+          "label": "Agent 6",
+          "name": "Agent 6",
+          "uuid": "com.todd.streamdeckcodex.agent-status",
+          "settings": {
+            "slot": 6
+          },
+          "behavior": "agent",
+          "target": "global",
+          "icon": null
+        },
+        {
+          "position": "2,1",
+          "actionId": "38EA0C98-1CEA-4BEF-B9A2-D73DF38A2B2C",
+          "label": "New Chat",
+          "name": "New Chat",
+          "uuid": "com.todd.streamdeckcodex.command",
+          "settings": {
+            "commandId": "new-chat"
+          },
+          "behavior": "command",
+          "target": "global",
+          "icon": null
+        },
+        {
+          "position": "3,1",
+          "actionId": "B834835B-13EE-4AB8-A12A-2C2812DC0EFF",
+          "label": "Plan Mode",
+          "name": "Plan Mode",
+          "uuid": "com.todd.streamdeckcodex.command",
+          "settings": {
+            "commandId": "plan"
+          },
+          "behavior": "command",
+          "target": "focused",
+          "icon": null
+        }
+      ]
+    },
+    {
+      "id": "95B6205B-6011-4D73-8C91-B78957110300",
+      "name": "Live Controls",
+      "slug": "commands",
+      "visual": {
+        "liveOcrAnchors": ["fast", "yolo", "yeet", "compact", "context"],
+        "requiredLiveAnchors": 3,
+        "requiresLivePercent": true
+      },
+      "dimensions": {
+        "columns": 4,
+        "rows": 2,
+        "emptyPositions": []
+      },
+      "keys": [
+        {
+          "position": "0,0",
+          "actionId": "7A85AA56-5AFB-4CE8-8354-5E9FF425C80B",
+          "label": "FAST",
+          "name": "FAST",
+          "uuid": "com.todd.streamdeckcodex.command",
+          "settings": {
+            "commandId": "fast"
+          },
+          "behavior": "command",
+          "target": "focused",
+          "icon": null
+        },
+        {
+          "position": "1,0",
+          "actionId": "030BD076-46D6-4CBA-94BC-8849E72F54B3",
+          "label": "Permissions",
+          "name": "Permissions",
+          "uuid": "com.todd.streamdeckcodex.approval-mode",
+          "settings": {
+            "mode": "yolo"
+          },
+          "behavior": "approval",
+          "target": "focused",
+          "icon": null
+        },
+        {
+          "position": "2,0",
+          "actionId": "AF3AB0FB-8CB9-4179-8E74-D15DFD9DEA16",
+          "label": "PTT",
+          "name": "PTT",
+          "uuid": "com.todd.streamdeckcodex.command",
+          "settings": {
+            "commandId": "dictate"
+          },
+          "behavior": "command",
+          "target": "focused",
+          "icon": null
+        },
+        {
+          "position": "3,0",
+          "actionId": "C49CF3F6-2675-446E-B61D-1CF4EDB3DD35",
+          "label": "Quota",
+          "name": "Quota",
+          "uuid": "com.todd.streamdeckcodex.usage",
+          "settings": {},
+          "behavior": "usage",
+          "target": "display",
+          "icon": null
+        },
+        {
+          "position": "0,1",
+          "actionId": "8B29A13D-668E-4479-8288-9A3D9088B81E",
+          "label": "YEET",
+          "name": "YEET — Publish",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "action": "workflow:publish",
+            "description": "Publish",
+            "icon": "yeet",
+            "label": "YEET"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "yeet"
+        },
+        {
+          "position": "1,1",
+          "actionId": "C93B4F16-A760-4F0F-932C-59CB10EBEC8B",
+          "label": "New project",
+          "name": "New project",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "action": "new-project",
+            "description": "",
+            "icon": "folder-plus",
+            "label": "New project"
+          },
+          "behavior": "keycap",
+          "target": "global",
+          "icon": "folder-plus"
+        },
+        {
+          "position": "2,1",
+          "actionId": "BCA47EBC-2E09-443B-8DC8-E6DB4E2D7931",
+          "label": "Compact",
+          "name": "Compact",
+          "uuid": "com.todd.streamdeckcodex.command",
+          "settings": {
+            "commandId": "compact"
+          },
+          "behavior": "command",
+          "target": "focused",
+          "icon": null
+        },
+        {
+          "position": "3,1",
+          "actionId": "2B9DC6CA-DB1D-4B3E-B202-1B27501EB112",
+          "label": "Context",
+          "name": "Context",
+          "uuid": "com.todd.streamdeckcodex.context",
+          "settings": {},
+          "behavior": "context",
+          "target": "display",
+          "icon": null
+        }
+      ]
+    },
+    {
+      "id": "KEYCAPS-1",
+      "name": "Git & Delivery",
+      "slug": "keycaps-1",
+      "visual": {
+        "liveOcrAnchors": ["ship prep", "deploy"],
+        "requiredLiveAnchors": 2,
+        "requiresLivePercent": false
+      },
+      "dimensions": {
+        "columns": 4,
+        "rows": 2,
+        "emptyPositions": []
+      },
+      "keys": [
+        {
+          "position": "0,0",
+          "actionId": "3156fe1f-464e-5d29-a386-f6286361b6e8",
+          "label": "Branch info",
+          "name": "Branch info",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Branch info",
+            "description": "",
+            "icon": "branch",
+            "action": "workflow:branch"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "branch"
+        },
+        {
+          "position": "1,0",
+          "actionId": "504f8679-3237-5fe6-819c-b28c3a0ca965",
+          "label": "New branch",
+          "name": "New branch",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "New branch",
+            "description": "",
+            "icon": "branch-add",
+            "action": "workflow:new-branch"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "branch-add"
+        },
+        {
+          "position": "2,0",
+          "actionId": "2290d943-e265-5804-aa8f-143a5a1a25b4",
+          "label": "Merge",
+          "name": "Merge",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Merge",
+            "description": "",
+            "icon": "merge",
+            "action": "workflow:merge"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "merge"
+        },
+        {
+          "position": "3,0",
+          "actionId": "a2bfeebc-f65c-56d3-9bec-434d1d99aa98",
+          "label": "Diff",
+          "name": "Diff",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Diff",
+            "description": "",
+            "icon": "diff",
+            "action": "workflow:diff"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "diff"
+        },
+        {
+          "position": "0,1",
+          "actionId": "c5c400cd-ae6f-5c5d-8244-7cf98c597e9a",
+          "label": "Commit",
+          "name": "Commit",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Commit",
+            "description": "",
+            "icon": "commit",
+            "action": "workflow:commit"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "commit"
+        },
+        {
+          "position": "1,1",
+          "actionId": "65809343-d601-58d6-966d-b7ee3034e867",
+          "label": "Push",
+          "name": "Push",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Push",
+            "description": "",
+            "icon": "push",
+            "action": "workflow:push"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "push"
+        },
+        {
+          "position": "2,1",
+          "actionId": "8e69cee6-5e58-5c02-a857-5d1be022241f",
+          "label": "Ship prep",
+          "name": "Ship prep",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Ship prep",
+            "description": "",
+            "icon": "release",
+            "action": "workflow:release"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "release"
+        },
+        {
+          "position": "3,1",
+          "actionId": "09f3c44f-13a2-50fb-93f7-c2bd54c105bf",
+          "label": "Deploy",
+          "name": "Deploy",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Deploy",
+            "description": "",
+            "icon": "deploy",
+            "action": "workflow:deploy"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "deploy"
+        }
+      ]
+    },
+    {
+      "id": "KEYCAPS-2",
+      "name": "Code Quality",
+      "slug": "keycaps-2",
+      "visual": {
+        "liveOcrAnchors": ["search", "explain", "add tests"],
+        "requiredLiveAnchors": 2,
+        "requiresLivePercent": false
+      },
+      "dimensions": {
+        "columns": 4,
+        "rows": 2,
+        "emptyPositions": []
+      },
+      "keys": [
+        {
+          "position": "0,0",
+          "actionId": "f30fc1f7-8807-5f38-8d77-5b236ce0f611",
+          "label": "Refactor",
+          "name": "Refactor",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Refactor",
+            "description": "",
+            "icon": "refactor",
+            "action": "workflow:refactor"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "refactor"
+        },
+        {
+          "position": "1,0",
+          "actionId": "efd01f6f-e180-50e7-9b44-da1db1a296f8",
+          "label": "Add tests",
+          "name": "Add tests",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Add tests",
+            "description": "",
+            "icon": "tests",
+            "action": "workflow:tests"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "tests"
+        },
+        {
+          "position": "2,0",
+          "actionId": "729285c7-2aba-59b0-bc0b-06fdd9f6b72b",
+          "label": "Search",
+          "name": "Search",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Search",
+            "description": "",
+            "icon": "search",
+            "action": "workflow:search"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "search"
+        },
+        {
+          "position": "3,0",
+          "actionId": "a3dd313e-c804-589c-852d-102b12e4a8cc",
+          "label": "Explain",
+          "name": "Explain",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Explain",
+            "description": "",
+            "icon": "explain",
+            "action": "workflow:explain"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "explain"
+        },
+        {
+          "position": "0,1",
+          "actionId": "3324393a-5f02-540f-b01d-343b1fa7712d",
+          "label": "Document",
+          "name": "Document",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Document",
+            "description": "",
+            "icon": "document",
+            "action": "workflow:document"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "document"
+        },
+        {
+          "position": "1,1",
+          "actionId": "9187d402-1a22-5380-8b91-ede12f6079cd",
+          "label": "Optimize",
+          "name": "Optimize",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Optimize",
+            "description": "",
+            "icon": "optimize",
+            "action": "workflow:optimize"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "optimize"
+        },
+        {
+          "position": "2,1",
+          "actionId": "2af66196-ad6a-55a3-a09d-2a651bcfaee5",
+          "label": "Audit",
+          "name": "Audit",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Audit",
+            "description": "",
+            "icon": "audit",
+            "action": "workflow:audit"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "audit"
+        },
+        {
+          "position": "3,1",
+          "actionId": "4f563b76-d484-56fa-80ce-dc9fc885899c",
+          "label": "Fix CI",
+          "name": "Fix CI",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Fix CI",
+            "description": "",
+            "icon": "fix",
+            "action": "workflow:fix-ci"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "fix"
+        }
+      ]
+    },
+    {
+      "id": "KEYCAPS-3",
+      "name": "Decisions",
+      "slug": "keycaps-3",
+      "visual": {
+        "liveOcrAnchors": [
+          "pr review",
+          "accept",
+          "reject",
+          "send",
+          "define goal"
+        ],
+        "requiredLiveAnchors": 3,
+        "requiresLivePercent": false
+      },
+      "dimensions": {
+        "columns": 4,
+        "rows": 2,
+        "emptyPositions": []
+      },
+      "keys": [
+        {
+          "position": "0,0",
+          "actionId": "949fd6d0-a357-5e57-92f2-dbb576cd834d",
+          "label": "PR Review",
+          "name": "PR Review",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "PR Review",
+            "description": "",
+            "icon": "review",
+            "action": "workflow:pr-review"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "review"
+        },
+        {
+          "position": "1,0",
+          "actionId": "7fa8fe06-0372-53a2-9964-1b65ba7ca7aa",
+          "label": "Accept",
+          "name": "Accept",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Accept",
+            "description": "",
+            "icon": "accept",
+            "action": "command:accept"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "accept"
+        },
+        {
+          "position": "2,0",
+          "actionId": "e0cbc1c9-2a20-5438-bcab-c958acaf2aa3",
+          "label": "Reject",
+          "name": "Reject",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Reject",
+            "description": "",
+            "icon": "reject",
+            "action": "command:reject"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "reject"
+        },
+        {
+          "position": "3,0",
+          "actionId": "d9d228b7-7971-5d17-9bf9-fcb7d26e7a1b",
+          "label": "Send",
+          "name": "Send",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Send",
+            "description": "",
+            "icon": "send",
+            "action": "command:send"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "send"
+        },
+        {
+          "position": "0,1",
+          "actionId": "bfc57653-d845-58c2-9f72-82c37bc8b03d",
+          "label": "Explore",
+          "name": "Explore",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Explore",
+            "description": "",
+            "icon": "brain-medium",
+            "action": "workflow:explore"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "brain-medium"
+        },
+        {
+          "position": "1,1",
+          "actionId": "dc2c5814-edea-5fb5-a7c6-7301623805ea",
+          "label": "Analyze",
+          "name": "Analyze",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Analyze",
+            "description": "",
+            "icon": "brain-outline",
+            "action": "workflow:analyze"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "brain-outline"
+        },
+        {
+          "position": "2,1",
+          "actionId": "9791ff79-2017-550c-8d19-9d1f73512535",
+          "label": "Summarize",
+          "name": "Summarize",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Summarize",
+            "description": "",
+            "icon": "summarize",
+            "action": "workflow:summarize"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "summarize"
+        },
+        {
+          "position": "3,1",
+          "actionId": "cb72f8fc-76e7-5aaf-9031-67489588101b",
+          "label": "Define goal",
+          "name": "Define goal",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Define goal",
+            "description": "",
+            "icon": "goal",
+            "action": "workflow:goal"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "goal"
+        }
+      ]
+    },
+    {
+      "id": "KEYCAPS-4",
+      "name": "Workspace",
+      "slug": "keycaps-4",
+      "visual": {
+        "liveOcrAnchors": ["run shell", "edit code", "debug", "skills"],
+        "requiredLiveAnchors": 2,
+        "requiresLivePercent": false
+      },
+      "dimensions": {
+        "columns": 4,
+        "rows": 2,
+        "emptyPositions": ["3,0", "2,1", "3,1"]
+      },
+      "keys": [
+        {
+          "position": "0,0",
+          "actionId": "cdb67ab8-9cdd-5e97-874d-526ab666f78c",
+          "label": "Run shell",
+          "name": "Run shell",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Run shell",
+            "description": "",
+            "icon": "terminal",
+            "action": "workflow:terminal"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "terminal"
+        },
+        {
+          "position": "1,0",
+          "actionId": "e3dba344-bf59-5db9-9c27-d839c05e1531",
+          "label": "Edit code",
+          "name": "Edit code",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Edit code",
+            "description": "",
+            "icon": "edit",
+            "action": "workflow:editor"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "edit"
+        },
+        {
+          "position": "2,0",
+          "actionId": "c1eaf227-3116-5246-8b44-8249a0660d95",
+          "label": "Debug",
+          "name": "Debug",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Debug",
+            "description": "",
+            "icon": "debug",
+            "action": "workflow:debug"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "debug"
+        },
+        {
+          "position": "0,1",
+          "actionId": "758f7331-9549-5023-b753-37a8b682c677",
+          "label": "Skills",
+          "name": "Skills",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Skills",
+            "description": "",
+            "icon": "skills",
+            "action": "skills"
+          },
+          "behavior": "keycap",
+          "target": "global",
+          "icon": "skills"
+        },
+        {
+          "position": "1,1",
+          "actionId": "c1ea2629-f88d-55c7-8082-12197e418fec",
+          "label": "Chat audit",
+          "name": "Chat audit",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Chat audit",
+            "description": "",
+            "icon": "sessions",
+            "action": "workflow:sessions"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "sessions"
+        }
+      ]
+    },
+    {
+      "id": "KEYCAPS-5",
+      "name": "Codex Panels",
+      "slug": "keycaps-5",
+      "visual": {
+        "liveOcrAnchors": [
+          "browser",
+          "files",
+          "side chat",
+          "sidebar",
+          "settings"
+        ],
+        "requiredLiveAnchors": 2,
+        "requiresLivePercent": false
+      },
+      "dimensions": {
+        "columns": 4,
+        "rows": 2,
+        "emptyPositions": ["1,1", "2,1", "3,1"]
+      },
+      "keys": [
+        {
+          "position": "0,0",
+          "actionId": "d235e552-8103-5248-81a3-1f08242da796",
+          "label": "Browser",
+          "name": "Browser",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Browser",
+            "description": "",
+            "icon": "browser",
+            "action": "command:browser"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "browser"
+        },
+        {
+          "position": "1,0",
+          "actionId": "8614b68b-34bc-5155-b618-6557858c7583",
+          "label": "Files",
+          "name": "Files",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Files",
+            "description": "",
+            "icon": "files",
+            "action": "command:files"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "files"
+        },
+        {
+          "position": "2,0",
+          "actionId": "5d7c8e83-da70-5b36-b05b-bcec6ef727cc",
+          "label": "Side chat",
+          "name": "Side chat",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Side chat",
+            "description": "",
+            "icon": "side-chat",
+            "action": "command:side-chat"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "side-chat"
+        },
+        {
+          "position": "3,0",
+          "actionId": "3176317a-3b3f-5ade-9093-b41618dcd290",
+          "label": "Sidebar",
+          "name": "Sidebar",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Sidebar",
+            "description": "",
+            "icon": "sidebar",
+            "action": "command:sidebar"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "sidebar"
+        },
+        {
+          "position": "0,1",
+          "actionId": "df6c6552-06c8-5075-8e50-66e0936fb940",
+          "label": "Settings",
+          "name": "Settings",
+          "uuid": "com.todd.streamdeckcodex.keycap",
+          "settings": {
+            "label": "Settings",
+            "description": "",
+            "icon": "settings",
+            "action": "command:settings"
+          },
+          "behavior": "keycap",
+          "target": "focused",
+          "icon": "settings"
+        }
+      ]
+    }
+  ]
+}

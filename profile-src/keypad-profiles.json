@@ -1,0 +1,40 @@
+{
+  "devices": [
+    {
+      "archiveName": "streamdeckcodex-stream-deck",
+      "columns": 5,
+      "deviceType": 0,
+      "model": "20GBA9901",
+      "name": "Stream Deck",
+      "rows": 3,
+      "slug": "stream-deck"
+    },
+    {
+      "archiveName": "streamdeckcodex-mini",
+      "columns": 3,
+      "deviceType": 1,
+      "model": "20GAI9901",
+      "name": "Stream Deck Mini",
+      "rows": 2,
+      "slug": "mini"
+    },
+    {
+      "archiveName": "streamdeckcodex-xl",
+      "columns": 8,
+      "deviceType": 2,
+      "model": "20GAT9901",
+      "name": "Stream Deck XL",
+      "rows": 4,
+      "slug": "xl"
+    },
+    {
+      "archiveName": "streamdeckcodex-neo",
+      "columns": 4,
+      "deviceType": 9,
+      "model": "20GBJ9901",
+      "name": "Stream Deck Neo",
+      "rows": 2,
+      "slug": "neo"
+    }
+  ]
+}

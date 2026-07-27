@@ -1,0 +1,101 @@
+{
+  "Controllers": [
+    {
+      "Actions": {
+        "0,0": {
+          "ActionID": "0b72105d-ed22-517c-bbda-261a721ef110",
+          "LinkedTitle": false,
+          "Name": "Refactor",
+          "Resources": null,
+          "Settings": {
+            "label": "Refactor",
+            "description": "",
+            "icon": "refactor",
+            "action": "workflow:refactor"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "1,0": {
+          "ActionID": "a0ae317f-15d7-56c8-af5d-437adbc5a714",
+          "LinkedTitle": false,
+          "Name": "Add tests",
+          "Resources": null,
+          "Settings": {
+            "label": "Add tests",
+            "description": "",
+            "icon": "tests",
+            "action": "workflow:tests"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "2,0": {
+          "ActionID": "e971da80-6ac3-518c-93fd-da76aa4161e7",
+          "LinkedTitle": false,
+          "Name": "Search",
+          "Resources": null,
+          "Settings": {
+            "label": "Search",
+            "description": "",
+            "icon": "search",
+            "action": "workflow:search"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "0,1": {
+          "ActionID": "91b96623-4587-5873-a1de-55b179a76a53",
+          "LinkedTitle": false,
+          "Name": "Explain",
+          "Resources": null,
+          "Settings": {
+            "label": "Explain",
+            "description": "",
+            "icon": "explain",
+            "action": "workflow:explain"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "1,1": {
+          "ActionID": "8f4ca6f8-a3cd-53bc-9685-699a165ef5ae",
+          "LinkedTitle": false,
+          "Name": "Document",
+          "Resources": null,
+          "Settings": {
+            "label": "Document",
+            "description": "",
+            "icon": "document",
+            "action": "workflow:document"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        },
+        "2,1": {
+          "ActionID": "66c1ed72-d02c-5c86-b2b1-5eb2acf8ff78",
+          "LinkedTitle": false,
+          "Name": "Optimize",
+          "Resources": null,
+          "Settings": {
+            "label": "Optimize",
+            "description": "",
+            "icon": "optimize",
+            "action": "workflow:optimize"
+          },
+          "State": 0,
+          "States": [{ "Image": "", "TitleAlignment": "bottom" }],
+          "UUID": "com.todd.streamdeckcodex.keycap"
+        }
+      },
+      "Type": "Keypad"
+    }
+  ],
+  "Icon": "",
+  "Name": "Code Quality 1/2"
+}
