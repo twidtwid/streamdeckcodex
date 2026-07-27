@@ -12,6 +12,8 @@ This is an unofficial community project. It is not affiliated with or endorsed
 by OpenAI, Work Louder, Elgato, or Corsair, and it includes no proprietary
 OpenAI artwork or source.
 
+![Stream Deck Codex Companion running on a Stream Deck +](assets/hardware/stream-deck-plus.jpg)
+
 > **Beta:** the Stream Deck + experience is hardware-tested. The Stream Deck,
 > Mini, Neo, and XL profiles pass automated and Elgato validation; their first
 > independent hardware test is still in progress.
