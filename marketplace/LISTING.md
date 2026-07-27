@@ -59,7 +59,7 @@ Initial public beta:
 - **Gallery 2:** `marketplace/media/gallery-02-controls.png`
 - **Gallery 3:** `marketplace/media/gallery-03-workflows.png`
 - **Gallery 4:** `marketplace/media/gallery-04-key-actions.png`
-- **App icon:** `com.todd.streamdeckcodex.sdPlugin/imgs/plugin.png`
+- **App icon:** `marketplace/media/app-icon.png`
 
 ## Upload package
 

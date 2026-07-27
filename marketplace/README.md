@@ -8,6 +8,7 @@ Console in `marketplace/media/`:
 - `gallery-02-controls.png`
 - `gallery-03-workflows.png`
 - `gallery-04-key-actions.png`
+- `app-icon.png` — 288 × 288 Maker Console app icon
 
 Every image is a 1920 × 960 PNG. The generator builds the compositions from
 the project’s generated profile-key renderings in `.cache/profile-visual-qa`.

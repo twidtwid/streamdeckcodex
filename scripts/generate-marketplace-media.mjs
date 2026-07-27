@@ -11,6 +11,7 @@ const font = resolve(
 );
 const sources = {
   agents: resolve(visualQaRoot, "agents.png"),
+  appIcon: resolve("com.todd.streamdeckcodex.sdPlugin/imgs/plugin@2x.png"),
   commands: resolve(visualQaRoot, "commands.png"),
   keycaps1: resolve(visualQaRoot, "keycaps-1.png"),
   keycaps2: resolve(visualQaRoot, "keycaps-2.png"),
@@ -21,6 +22,7 @@ await ensureVisualQa();
 await mkdir(outputRoot, { recursive: true });
 
 await Promise.all([
+  makeAppIcon(),
   makeThumbnail(),
   makeLiveStatusGallery(),
   makeControlsGallery(),
@@ -30,6 +32,7 @@ await Promise.all([
 
 process.stdout.write(
   `Created Marketplace media in ${outputRoot}\n` +
+    "- app-icon.png\n" +
     "- thumbnail.png\n" +
     "- gallery-01-live-status.png\n" +
     "- gallery-02-controls.png\n" +
@@ -77,6 +80,18 @@ async function makeThumbnail() {
       layer(sources.commands, 1060, 510, 760),
     ],
   );
+}
+
+async function makeAppIcon() {
+  await runAsync(magick, [
+    sources.appIcon,
+    "-resize",
+    "288x288",
+    "-strip",
+    "-define",
+    "png:compression-level=9",
+    resolve(outputRoot, "app-icon.png"),
+  ]);
 }
 
 async function makeLiveStatusGallery() {
