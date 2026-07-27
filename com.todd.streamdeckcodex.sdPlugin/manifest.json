@@ -2,9 +2,7 @@
   "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
   "Actions": [
     {
-      "Controllers": [
-        "Keypad"
-      ],
+      "Controllers": ["Keypad"],
       "Icon": "imgs/actions/command",
       "Name": "Approval Mode",
       "States": [
@@ -18,9 +16,7 @@
       "UUID": "com.todd.streamdeckcodex.approval-mode"
     },
     {
-      "Controllers": [
-        "Keypad"
-      ],
+      "Controllers": ["Keypad"],
       "Icon": "imgs/actions/keycap",
       "Name": "Codex Workflow Key",
       "States": [
@@ -35,9 +31,7 @@
       "VisibleInActionsList": false
     },
     {
-      "Controllers": [
-        "Keypad"
-      ],
+      "Controllers": ["Keypad"],
       "Icon": "imgs/actions/agent",
       "Name": "Agent Status",
       "PropertyInspectorPath": "ui/inspector.html",
@@ -52,10 +46,7 @@
       "UUID": "com.todd.streamdeckcodex.agent-status"
     },
     {
-      "Controllers": [
-        "Keypad",
-        "Encoder"
-      ],
+      "Controllers": ["Keypad", "Encoder"],
       "Encoder": {
         "Icon": "imgs/actions/command",
         "layout": "layouts/command.json",
@@ -78,10 +69,7 @@
       "UUID": "com.todd.streamdeckcodex.command"
     },
     {
-      "Controllers": [
-        "Keypad",
-        "Encoder"
-      ],
+      "Controllers": ["Keypad", "Encoder"],
       "Encoder": {
         "Icon": "imgs/actions/workflow",
         "layout": "$B1",
@@ -104,9 +92,7 @@
       "UUID": "com.todd.streamdeckcodex.workflow"
     },
     {
-      "Controllers": [
-        "Encoder"
-      ],
+      "Controllers": ["Encoder"],
       "Encoder": {
         "Icon": "imgs/actions/model",
         "layout": "$B1",
@@ -127,9 +113,7 @@
       "UUID": "com.todd.streamdeckcodex.model"
     },
     {
-      "Controllers": [
-        "Encoder"
-      ],
+      "Controllers": ["Encoder"],
       "Encoder": {
         "Icon": "imgs/actions/reasoning",
         "layout": "$B1",
@@ -150,9 +134,7 @@
       "UUID": "com.todd.streamdeckcodex.reasoning"
     },
     {
-      "Controllers": [
-        "Encoder"
-      ],
+      "Controllers": ["Encoder"],
       "Encoder": {
         "Icon": "imgs/actions/navigator",
         "layout": "$B1",
@@ -173,9 +155,7 @@
       "UUID": "com.todd.streamdeckcodex.agent-navigator"
     },
     {
-      "Controllers": [
-        "Keypad"
-      ],
+      "Controllers": ["Keypad"],
       "Icon": "imgs/actions/context",
       "Name": "Live Usage",
       "States": [
@@ -188,9 +168,7 @@
       "UUID": "com.todd.streamdeckcodex.usage"
     },
     {
-      "Controllers": [
-        "Keypad"
-      ],
+      "Controllers": ["Keypad"],
       "Icon": "imgs/actions/usage",
       "Name": "Live Context",
       "States": [
@@ -204,9 +182,7 @@
     }
   ],
   "ApplicationsToMonitor": {
-    "mac": [
-      "com.openai.codex"
-    ]
+    "mac": ["com.openai.codex"]
   },
   "Author": "Todd",
   "Category": "Codex Companion",

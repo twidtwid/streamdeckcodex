@@ -51,7 +51,7 @@
     "test": "vitest run",
     "test:unit": "vitest run",
     "validate": "streamdeck validate com.todd.streamdeckcodex.sdPlugin",
-    "pack": "npm run build && streamdeck pack com.todd.streamdeckcodex.sdPlugin --output dist --force",
+    "pack": "npm run build && streamdeck pack com.todd.streamdeckcodex.sdPlugin --output dist --force && prettier --write com.todd.streamdeckcodex.sdPlugin/manifest.json",
     "link": "npm run build && streamdeck link com.todd.streamdeckcodex.sdPlugin",
     "marketplace:media": "node scripts/generate-marketplace-media.mjs",
     "progress": "node scripts/progress-server.mjs",
