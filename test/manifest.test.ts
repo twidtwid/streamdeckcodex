@@ -17,6 +17,7 @@ const manifest = JSON.parse(
     Icon: string;
     VisibleInActionsList?: boolean;
   }>;
+  Author: string;
   Category: string;
   CategoryIcon: string;
   Icon: string;
@@ -24,7 +25,7 @@ const manifest = JSON.parse(
   Profiles: Array<{ DeviceType: number }>;
   SDKVersion: number;
   SupportURL: string;
-  URL?: string;
+  URL: string;
 };
 const profile = JSON.parse(
   readFileSync(
@@ -104,11 +105,12 @@ describe("Stream Deck manifest", () => {
   });
 
   it("ships Marketplace-compliant metadata and action-list artwork", () => {
+    expect(manifest.Author).toBe("Todd Dailey");
     expect(manifest.Category).toBe("Codex Companion");
     expect(manifest.SupportURL).toBe(
       "https://github.com/twidtwid/streamdeckcodex/issues",
     );
-    expect(manifest.URL).toBeUndefined();
+    expect(manifest.URL).toBe("https://github.com/twidtwid/streamdeckcodex");
 
     const pluginIcon = readFileSync(
       resolve(`com.todd.streamdeckcodex.sdPlugin/${manifest.Icon}.png`),

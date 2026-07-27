@@ -16,8 +16,7 @@ It is release evidence, not a substitute for Maker Console review.
 - [x] Profile-only generic keycap action is hidden from the action list.
 - [x] Failed actions use `showAlert`; successful actions use state updates or
       `showOk`.
-- [x] Support URL is declared. The optional public homepage URL will be added
-      when the repository becomes public.
+- [x] Support and public project URLs are declared.
 - [x] `streamdeck validate` passes.
 - [x] `streamdeck pack` creates a directly installable `.streamDeckPlugin`.
 
@@ -59,9 +58,9 @@ It is release evidence, not a substitute for Maker Console review.
 
 Before submitting:
 
-1. Confirm the Marketplace organization name is exactly `Todd`, matching the
-   manifest author and `com.todd.streamdeckcodex` UUID. UUIDs must not change
-   after publication.
+1. Confirm the Marketplace organization name is exactly `Todd Dailey`,
+   matching the manifest author. The established
+   `com.todd.streamdeckcodex` UUID must not change after publication.
 2. Confirm `Codex Companion` is still unique in Marketplace search.
 3. Upload the packaged plugin, 1920 × 960 thumbnail, at least three 1920 × 960
    gallery PNGs, description, support link, and release notes.

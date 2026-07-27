@@ -184,7 +184,7 @@
   "ApplicationsToMonitor": {
     "mac": ["com.openai.codex"]
   },
-  "Author": "Todd",
+  "Author": "Todd Dailey",
   "Category": "Codex Companion",
   "CategoryIcon": "imgs/category",
   "CodePath": "bin/plugin.js",
@@ -242,6 +242,7 @@
     "MinimumVersion": "7.1"
   },
   "SupportURL": "https://github.com/twidtwid/streamdeckcodex/issues",
+  "URL": "https://github.com/twidtwid/streamdeckcodex",
   "UUID": "com.todd.streamdeckcodex",
   "Version": "0.1.0.0"
 }
