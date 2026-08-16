@@ -77,7 +77,7 @@
   },
   "devDependencies": {
     "@electron/asar": "4.2.1",
-    "@elgato/cli": "1.7.4",
+    "@elgato/cli": "1.8.0",
     "@types/node": "26.1.1",
     "acorn": "8.17.0",
     "esbuild": "0.28.1",
