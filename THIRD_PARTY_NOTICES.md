@@ -2,7 +2,7 @@
 
 ## Lucide icons
 
-All pictograms are generated from `lucide-static` v0.468.0, under the ISC
+All pictograms are generated from `lucide-static` v1.31.0, under the ISC
 License. Copyright © Lucide Contributors 2022; portions © Cole Bemis 2013–2022
 under the MIT License.
 
