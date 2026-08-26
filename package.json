@@ -73,7 +73,7 @@
   },
   "dependencies": {
     "@elgato/streamdeck": "2.1.0",
-    "lucide-static": "^0.468.0"
+    "lucide-static": "^1.31.0"
   },
   "devDependencies": {
     "@electron/asar": "4.2.1",
