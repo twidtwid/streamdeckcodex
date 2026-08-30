@@ -72,7 +72,7 @@
     "release:bundle": "npm run check && npm run pack && node scripts/stage-release.mjs"
   },
   "dependencies": {
-    "@elgato/streamdeck": "2.1.0",
+    "@elgato/streamdeck": "2.1.2",
     "lucide-static": "^1.31.0"
   },
   "devDependencies": {
