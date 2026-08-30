@@ -76,7 +76,7 @@
     "lucide-static": "^1.31.0"
   },
   "devDependencies": {
-    "@electron/asar": "4.2.1",
+    "@electron/asar": "4.3.0",
     "@elgato/cli": "1.8.0",
     "@types/node": "26.2.0",
     "acorn": "8.18.0",
