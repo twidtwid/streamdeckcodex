@@ -17,9 +17,24 @@ const native = resolve(
 
 const cache = {
   models: [
-    { slug: "gpt-5.6-sol" },
-    { slug: "gpt-5.6-terra" },
-    { slug: "gpt-5.6-luna" },
+    {
+      slug: "gpt-5.6-sol",
+      display_name: "GPT-5.6-Sol",
+      default_reasoning_level: "low",
+      supported_reasoning_levels: [{ effort: "low" }, { effort: "ultra" }],
+    },
+    {
+      slug: "gpt-5.6-terra",
+      display_name: "GPT-5.6-Terra",
+      default_reasoning_level: "medium",
+      supported_reasoning_levels: [{ effort: "low" }, { effort: "medium" }],
+    },
+    {
+      slug: "gpt-5.6-luna",
+      display_name: "GPT-5.6-Luna",
+      default_reasoning_level: "medium",
+      supported_reasoning_levels: [{ effort: "low" }, { effort: "medium" }],
+    },
     { slug: "gpt-5.5" },
   ],
 };
@@ -28,9 +43,24 @@ const options = supportedModelOptions(cache);
 describe("model dial acceptance", () => {
   it("offers the live Luna, Terra, and Sol model slugs", () => {
     expect(options).toEqual([
-      { slug: "gpt-5.6-luna", label: "LUNA" },
-      { slug: "gpt-5.6-terra", label: "TERRA" },
-      { slug: "gpt-5.6-sol", label: "SOL" },
+      expect.objectContaining({
+        slug: "gpt-5.6-luna",
+        label: "LUNA",
+        pickerLabel: "Luna",
+        supportedReasoning: ["low", "medium"],
+      }),
+      expect.objectContaining({
+        slug: "gpt-5.6-terra",
+        label: "TERRA",
+        pickerLabel: "Terra",
+        supportedReasoning: ["low", "medium"],
+      }),
+      expect.objectContaining({
+        slug: "gpt-5.6-sol",
+        label: "SOL",
+        pickerLabel: "Sol",
+        supportedReasoning: ["low", "ultra"],
+      }),
     ]);
   });
 
@@ -61,7 +91,7 @@ describe("model dial acceptance", () => {
       options,
     );
 
-    expect(confirmation.option).toEqual({
+    expect(confirmation.option).toMatchObject({
       slug: "gpt-5.6-sol",
       label: "SOL",
     });
@@ -87,6 +117,15 @@ describe("model dial acceptance", () => {
     ).toBe(0);
   });
 
+  it.each(["model-future", "model-label-mismatch", "model-unsafe"])(
+    "validates structured native model payload: %s",
+    (scenario) => {
+      expect(
+        spawnSync(native, ["--selection-payload-fixture", scenario]).status,
+      ).toBe(0);
+    },
+  );
+
   it("shows an explicit failed state when live application cannot be proved", () => {
     expect(
       modelFailureFeedback(pickerFailureLabel(new Error("did not confirm"))),
@@ -101,5 +140,39 @@ describe("model dial acceptance", () => {
     expect(supportedModelOptions({ models: [{ slug: "gpt-5.5" }] })).toEqual(
       [],
     );
+  });
+
+  it("supports future family versions and rejects unsafe labels", () => {
+    expect(
+      supportedModelOptions({
+        models: [
+          {
+            slug: "gpt-5.7-terra",
+            display_name: "GPT-5.7-Terra",
+            default_reasoning_level: "minimal",
+            supported_reasoning_levels: [
+              { effort: "none" },
+              { effort: "minimal" },
+            ],
+          },
+        ],
+      })[0],
+    ).toMatchObject({
+      slug: "gpt-5.7-terra",
+      displayName: "GPT-5.7-Terra",
+      pickerLabel: "Terra",
+      defaultReasoning: "minimal",
+      supportedReasoning: ["none", "minimal"],
+    });
+    expect(
+      supportedModelOptions({
+        models: [
+          {
+            slug: "gpt-5.7-terra;open",
+            supported_reasoning_levels: [{ effort: "low" }],
+          },
+        ],
+      }),
+    ).toEqual([]);
   });
 });

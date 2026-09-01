@@ -1,6 +1,12 @@
 // Shared transactional state helper for foreground QA. Callers supply the
 // native runner and the exact task identity that it must use for every call.
-export function snapshotLiveState(native, threadId) {
+export function selectionPayload(value, label) {
+  return Buffer.from(JSON.stringify({ value, label }), "utf8").toString(
+    "base64",
+  );
+}
+
+export function snapshotLiveState(native, threadId, selections = {}) {
   if (!threadId) {
     throw new Error("Transactional QA requires an exact focused task ID.");
   }
@@ -11,6 +17,8 @@ export function snapshotLiveState(native, threadId) {
     fast: native("mode-read", "fast", threadId).active,
     model: picker.model,
     reasoning: picker.effort,
+    modelSelection: selections.model,
+    reasoningSelection: selections.reasoning,
   };
 }
 
@@ -32,35 +40,37 @@ export function restoreLiveState(native, snapshot) {
       );
     }
   }
-  const modelSlug = Object.entries({
-    "5.6 Luna": "gpt-5.6-luna",
-    "5.6 Terra": "gpt-5.6-terra",
-    "5.6 Sol": "gpt-5.6-sol",
-  }).find(([label]) => label === snapshot.model)?.[1];
-  if (modelSlug) {
+  if (snapshot.modelSelection) {
     try {
       if (native("read", undefined, snapshot.threadId).model !== snapshot.model)
-        native("model", modelSlug, snapshot.threadId);
+        native(
+          "model",
+          selectionPayload(
+            snapshot.modelSelection.value,
+            snapshot.modelSelection.label,
+          ),
+          snapshot.threadId,
+        );
     } catch (error) {
       failures.push(
         `model: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
-  const effort = Object.entries({
-    Light: "low",
-    Medium: "medium",
-    High: "high",
-    "Extra High": "xhigh",
-    Ultra: "ultra",
-  }).find(([label]) => label === snapshot.reasoning)?.[1];
-  if (effort) {
+  if (snapshot.reasoningSelection) {
     try {
       if (
         native("read", undefined, snapshot.threadId).effort !==
         snapshot.reasoning
       )
-        native("reasoning", effort, snapshot.threadId);
+        native(
+          "reasoning",
+          selectionPayload(
+            snapshot.reasoningSelection.value,
+            snapshot.reasoningSelection.label,
+          ),
+          snapshot.threadId,
+        );
     } catch (error) {
       failures.push(
         `reasoning: ${error instanceof Error ? error.message : String(error)}`,

@@ -5,6 +5,7 @@ import type {
   SessionSnapshot,
   UsageSnapshot,
 } from "../types.js";
+import type { AvailabilityReason } from "./availability.js";
 import { compactContext, type ContextView } from "./context.js";
 import type { CodexApprovalMode } from "./codex-ui-control.js";
 import { LUCIDE_PATHS } from "./lucide-paths.js";
@@ -252,7 +253,7 @@ export function commandKeySvg(
   </svg>`;
 }
 
-export type ApprovalDisplayMode = CodexApprovalMode | "unknown";
+export type ApprovalDisplayMode = CodexApprovalMode | AvailabilityReason;
 
 const APPROVAL_VISUALS: Record<
   ApprovalDisplayMode,
@@ -262,7 +263,15 @@ const APPROVAL_VISUALS: Record<
   approve: { accent: "#7EE787", label: "Approve" },
   yolo: { accent: "#FFD166", label: "YOLO" },
   custom: { accent: "#C8A4FF", label: "Custom" },
-  unknown: { accent: "#6C7480", label: "Unknown" },
+  "no-focus": { accent: "#6C7480", label: "No Chat" },
+  "codex-background": { accent: "#6C7480", label: "Background" },
+  accessibility: { accent: "#FF7373", label: "Access" },
+  stale: { accent: "#6C7480", label: "Stale" },
+  "unsupported-schema": { accent: "#FF7373", label: "Unsupported" },
+  timeout: { accent: "#FF7373", label: "Timeout" },
+  "target-mismatch": { accent: "#FF7373", label: "Wrong Chat" },
+  busy: { accent: "#FFD166", label: "Busy" },
+  "not-exposed": { accent: "#6C7480", label: "No Data" },
 };
 
 export function approvalKeySvg(mode: ApprovalDisplayMode): string {
@@ -397,6 +406,22 @@ export function contextKeySvg(
     ${valueMarkup}
     <rect x="20" y="96" width="104" height="8" rx="4" fill="#2B313B"/>
     <rect x="20" y="96" width="${barWidth}" height="8" rx="4" fill="${color}"/>
+  </svg>`;
+}
+
+export function healthKeySvg(
+  component: string,
+  value: string,
+  healthy: boolean,
+): string {
+  const color = healthy ? "#35C759" : "#FF7373";
+  const display = value.length > 14 ? `${value.slice(0, 13)}…` : value;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
+    <rect width="144" height="144" fill="#090B0F"/>
+    <circle cx="72" cy="52" r="27" fill="none" stroke="${color}" stroke-width="8"/>
+    <path d="M55 52h10l6-14 9 29 7-15h10" fill="none" stroke="${color}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="72" y="103" text-anchor="middle" fill="#FFFFFF" font-family="-apple-system,system-ui,sans-serif" font-size="15" font-weight="800">${escapeXml(display.toUpperCase())}</text>
+    <text x="72" y="124" text-anchor="middle" fill="#8D97A5" font-family="-apple-system,system-ui,sans-serif" font-size="11" font-weight="700">${escapeXml(component.toUpperCase())}</text>
   </svg>`;
 }
 

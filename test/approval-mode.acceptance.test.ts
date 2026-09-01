@@ -14,8 +14,10 @@ describe("approval-mode key", () => {
     }
   });
 
-  it("renders unverified live state as UNKNOWN", () => {
-    expect(approvalKeySvg("unknown")).toContain(">Unknown</text>");
-    expect(approvalKeySvg("unknown")).toContain(">Permissions</text>");
+  it("renders explicit reasons for unverified live state", () => {
+    expect(approvalKeySvg("not-exposed")).toContain(">No Data</text>");
+    expect(approvalKeySvg("codex-background")).toContain(">Background</text>");
+    expect(approvalKeySvg("accessibility")).toContain(">Access</text>");
+    expect(approvalKeySvg("not-exposed")).toContain(">Permissions</text>");
   });
 });

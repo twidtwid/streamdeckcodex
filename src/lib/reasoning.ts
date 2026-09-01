@@ -43,6 +43,18 @@ export function reasoningDisplayLabel(level: string): string {
   return level.toUpperCase();
 }
 
+export function reasoningPickerLabel(level: string): string | undefined {
+  return {
+    none: "None",
+    minimal: "Minimal",
+    low: "Light",
+    medium: "Medium",
+    high: "High",
+    xhigh: "Extra High",
+    ultra: "Ultra",
+  }[level.toLowerCase()];
+}
+
 export function stepReasoning(
   current: string,
   ticks: number,
@@ -88,6 +100,13 @@ export function reasoningFeedback(
   indicator: { value: number; bar_fill_c: string };
 } {
   const normalized = normalizeReasoningLevels(levels);
+  if (normalized.length === 0) {
+    return {
+      title: "UNAVAILABLE",
+      value: "NO EFFORT",
+      indicator: { value: 0, bar_fill_c: "#8B949E" },
+    };
+  }
   const index = Math.max(0, normalized.indexOf(state.selected));
   const pending = state.selected !== state.applied;
   return {

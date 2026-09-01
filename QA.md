@@ -8,7 +8,10 @@ profile parity and evidence from all seven pages in the live Stream Deck editor.
 
 ```sh
 npm ci
+npm run audit:full
+npm run audit:production
 npm run check
+npm run docs:check
 ```
 
 `npm run check` verifies formatting, types, tests, the complete 144px/72px
@@ -27,17 +30,18 @@ The design evaluator rejects:
 
 ## Physical input matrix
 
-| Surface          | Required behavior                                                                                                                                                                                                                                                 |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Page 1 agents    | Six ordered live sessions use the same compact labels and status palette as Dial 1. The focused session shows `NOW`; an empty slot shows `New chat / EMPTY SLOT` and opens a new chat.                                                                            |
-| Page 1 sessions  | Six ordered live sessions, New Chat, and Plan Mode use the exact 50-key contract.                                                                                                                                                                                 |
-| Page 2 controls  | FAST, Permissions, PTT, Quota, YEET, New Project, Compact, and Context appear once and remain legible at hardware size.                                                                                                                                           |
-| Permissions      | Reads the focused Codex window's visible mode. Press performs one native read-cycle-verify transaction; `APPROVE → YOLO` must confirm and dismiss Codex's interactive Full Access dialog before the key redraws `YOLO`.                                           |
-| Usage            | Defaults to weekly percentage left and compact reset time; press toggles to available resets without consuming one.                                                                                                                                               |
-| Context          | Resolves only the focused primary task's fresh UTC-partitioned token snapshot. Press toggles remaining/exact views. Unknown is `CONTEXT / NO DATA` in both views.                                                                                                 |
-| Pages 3–7        | Git & Delivery, Code Quality, Decisions, Workspace, and Codex Panels preserve every documented functional key; intentionally empty positions remain empty rather than becoming filler.                                                                            |
-| Dials            | Agent, Action, Model, and Reasoning preserve selection-on-turn and apply-on-press semantics with visible feedback. Action cycles Fast, Plan, Compact, Review, Browser, Files, and Side chat; Reasoning labels `low` as `LIGHT` and never offers cache-only `MAX`. |
-| Failure feedback | External failures never show success and always retain a readable failure state or `showAlert()`.                                                                                                                                                                 |
+| Surface          | Required behavior                                                                                                                                                                                                                                                                                                                                          |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Page 1 agents    | Six ordered live sessions use the same compact labels and status palette as Dial 1. The focused session shows `NOW`; an empty slot shows `New chat / EMPTY SLOT` and opens a new chat.                                                                                                                                                                     |
+| Page 1 sessions  | Six ordered live sessions, New Chat, and Plan Mode use the exact 50-key contract.                                                                                                                                                                                                                                                                          |
+| Page 2 controls  | FAST, Permissions, PTT, Quota, YEET, New Project, Compact, and Context appear once and remain legible at hardware size.                                                                                                                                                                                                                                    |
+| Permissions      | Reads the focused Codex window's visible mode. Press performs one native read-cycle-verify transaction; `APPROVE → YOLO` must confirm and dismiss Codex's interactive Full Access dialog before the key redraws `YOLO`.                                                                                                                                    |
+| Usage            | Defaults to weekly percentage left and compact reset time; press toggles to available resets without consuming one.                                                                                                                                                                                                                                        |
+| Context          | Resolves only the focused primary task's fresh UTC-partitioned token snapshot. Press toggles remaining/exact views. Unknown is `CONTEXT / NO DATA` in both views.                                                                                                                                                                                          |
+| Pages 3–7        | Git & Delivery, Code Quality, Decisions, Workspace, and Codex Panels preserve every documented functional key; intentionally empty positions remain empty rather than becoming filler.                                                                                                                                                                     |
+| Dials            | Agent, Action, Model, and Reasoning preserve selection-on-turn and one-apply-on-press semantics with visible feedback. Rotation performs zero Codex mutations. Model families and Reasoning values come from the active model catalog; `none`/`minimal` are supported, cache-only `MAX` is excluded, and Ultra appears only when that model advertises it. |
+| Health           | The optional action and `npm run doctor` are read-only. They expose bounded reason codes and build identity without changing the canonical profile or logging task content.                                                                                                                                                                                |
+| Failure feedback | External failures never show success and always retain a readable failure state or `showAlert()`.                                                                                                                                                                                                                                                          |
 
 ## Connected release gate
 
@@ -84,3 +88,15 @@ npm run qa:modes
 npm run qa:keys:preflight -- --fixture "/path/to/disposable-fixture"
 npm run qa:keys:connected -- --fixture "/path/to/disposable-fixture"
 ```
+
+`qa:dials` is a separate reversible connected event-path gate for Model and
+Reasoning. It requires the exact frontmost task and an empty composer; records
+zero mutation on rotation, one targeted mutation on press, verifies the visible
+picker, and restores the original model/effort. It does not simulate a human
+turning the physical encoder, so physical-device evidence must still be observed
+on the installed build. A connected pass must record plugin SHA, Codex version,
+Stream Deck version, date, postcondition, and restoration result.
+
+The complete non-connected release gate is `npm run release:verify`. It does
+not claim physical-device success. Run `npm run release:verify:connected` only
+with explicit connected QA intent and the required disposable fixture.

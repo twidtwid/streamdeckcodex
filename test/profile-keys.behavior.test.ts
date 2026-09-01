@@ -23,12 +23,28 @@ const harness = vi.hoisted(() => {
     openThread: vi.fn(async () => undefined),
     startDictation: vi.fn(async () => undefined),
     endDictation: vi.fn(async () => undefined),
+    cleanupDictation: vi.fn(async () => ({
+      ok: true,
+      released: false,
+      record: {
+        sequence: 1,
+        action: "push-to-talk",
+        phase: "release",
+        reason: "action-disappear",
+        result: "not-held",
+      },
+    })),
     store: {
       acknowledge: vi.fn(),
       close: vi.fn(),
       contextSnapshot: vi.fn(() => ({
         remainingPercent: 60,
         totalTokens: 1000,
+      })),
+      contextAvailability: vi.fn(() => ({
+        state: "ready",
+        value: { remainingPercent: 60 },
+        observedAt: 1,
       })),
       focusedThread: vi.fn<() => { id: string; cwd: string } | undefined>(
         () => ({
@@ -40,6 +56,11 @@ const harness = vi.hoisted(() => {
       sessions: vi.fn<() => unknown[]>(() => []),
       refreshLiveComposer: vi.fn(async () => undefined),
       liveComposerState: vi.fn(() => ({ approvalMode: state.approvalMode })),
+      permissionAvailability: vi.fn(() => ({
+        state: "ready",
+        value: state.approvalMode,
+        observedAt: 1,
+      })),
       cycleLiveComposerApprovalMode: vi.fn(async () => {
         const modes = ["ask", "approve", "yolo", "custom"] as const;
         const index = modes.indexOf(
@@ -54,12 +75,28 @@ const harness = vi.hoisted(() => {
         fiveHour: { usedPercent: 10 },
       })),
       modelSnapshot: vi.fn(() => ({ current: "", options: [] })),
+      modelAvailability: vi.fn(() => ({
+        state: "unavailable",
+        reason: "unsupported-schema",
+        observedAt: 1,
+      })),
       reasoningSnapshot: vi.fn(() => ({ current: "medium", levels: [] })),
+      reasoningAvailability: vi.fn(() => ({
+        state: "unavailable",
+        reason: "unsupported-schema",
+        observedAt: 1,
+      })),
+      usageAvailability: vi.fn(async () => ({
+        state: "ready",
+        value: { usedPercent: 20, observedAt: 1 },
+        observedAt: 1,
+      })),
     },
   };
 });
 
 vi.mock("../src/lib/automation.js", () => ({
+  cleanupDictation: harness.cleanupDictation,
   endDictation: harness.endDictation,
   executeCommand: harness.executeCommand,
   launchWorkflow: harness.launchWorkflow,
@@ -68,6 +105,7 @@ vi.mock("../src/lib/automation.js", () => ({
   openSkills: harness.openSkills,
   openThread: harness.openThread,
   releaseSynthesizedKeysSync: vi.fn(),
+  inputReleaseSnapshot: vi.fn(() => ({ held: false })),
   startDictation: harness.startDictation,
 }));
 vi.mock("../src/lib/codex-store.js", () => ({ codexStore: harness.store }));
@@ -83,7 +121,12 @@ vi.mock("@elgato/streamdeck", () => ({
     },
     connect: vi.fn(async () => undefined),
     devices: [],
-    logger: { error: vi.fn(), setLevel: vi.fn(), warn: vi.fn() },
+    logger: {
+      error: vi.fn(),
+      info: vi.fn(),
+      setLevel: vi.fn(),
+      warn: vi.fn(),
+    },
     profiles: { switchToProfile: vi.fn(async () => undefined) },
     settings: {
       getGlobalSettings: vi.fn(async () => ({})),
@@ -534,7 +577,7 @@ describe("executable 50-key profile contract", () => {
     }
   });
 
-  it("renders Permissions UNKNOWN without focus and ignores stale saved state", async () => {
+  it("renders Permissions NO CHAT without focus and ignores stale saved state", async () => {
     harness.store.focusedThread.mockReturnValue(undefined);
     const action = new FakeStreamDeckAction({ mode: "yolo" });
     await new ApprovalModeAction().onWillAppear(keyDown(action) as never);
@@ -542,7 +585,7 @@ describe("executable 50-key profile contract", () => {
       ?.value as string;
     expect(
       Buffer.from(image.split(",")[1]!, "base64").toString("utf8"),
-    ).toContain("Unknown");
+    ).toContain("No Chat");
     expect(harness.store.refreshLiveComposer).not.toHaveBeenCalled();
   });
 

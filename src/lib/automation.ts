@@ -18,6 +18,11 @@ import {
   type LivePickerState,
   verifyLiveTarget,
 } from "./codex-ui-control.js";
+import {
+  InputReleaseGuard,
+  type InputReleaseReason,
+  type InputReleaseResult,
+} from "./input-release-guard.js";
 
 const pluginRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const controlScript = resolve(
@@ -28,6 +33,7 @@ const controlScript = resolve(
 const pttGuardScript = resolve(pluginRoot, "scripts", "ptt-guard.mjs");
 let pttGuard: ChildProcess | undefined;
 let pttOperation: Promise<void> = Promise.resolve();
+const inputReleaseGuard = new InputReleaseGuard();
 
 function run(executable: string, args: readonly string[]): Promise<void> {
   return new Promise((resolvePromise, reject) => {
@@ -83,12 +89,28 @@ export async function executeCommand(
 }
 
 export async function endDictation(): Promise<void> {
-  return serializePtt(stopPttGuard);
+  const result = await serializePtt(() => releaseDictationNow("user-release"));
+  if (!result.ok) throw new Error("Failed to release push-to-talk input");
+}
+
+export function cleanupDictation(
+  reason: Exclude<InputReleaseReason, "user-release">,
+): Promise<InputReleaseResult> {
+  return serializePtt(() => releaseDictationNow(reason));
+}
+
+export function inputReleaseSnapshot() {
+  return inputReleaseGuard.snapshot();
 }
 
 export async function startDictation(threadId: string): Promise<void> {
   return serializePtt(async () => {
-    await stopPttGuard();
+    const previous = await releaseDictationNow("restart");
+    if (!previous.ok) {
+      throw new Error(
+        "Could not safely release the previous push-to-talk state",
+      );
+    }
     const witnessToken = await verifyLiveTarget(threadId);
 
     const child = spawn(process.execPath, [pttGuardScript, controlScript], {
@@ -105,6 +127,7 @@ export async function startDictation(threadId: string): Promise<void> {
       },
     });
     pttGuard = child;
+    inputReleaseGuard.markHeld("restart");
     child.stdout?.setEncoding("utf8");
 
     try {
@@ -131,17 +154,30 @@ export async function startDictation(threadId: string): Promise<void> {
         });
       });
     } catch (error) {
-      await stopPttGuard();
+      await releaseDictationNow("start-failed");
       throw error;
     }
   });
 }
 
-export function releaseSynthesizedKeysSync(): void {
-  spawnSync("/usr/bin/osascript", [controlScript, "dictation-up"], {
-    stdio: "ignore",
-    windowsHide: true,
-  });
+export function releaseSynthesizedKeysSync(): boolean {
+  const result = spawnSync(
+    "/usr/bin/osascript",
+    [controlScript, "dictation-up"],
+    {
+      stdio: "ignore",
+      windowsHide: true,
+    },
+  );
+  return !result.error && result.status === 0;
+}
+
+function releaseDictationNow(
+  reason: InputReleaseReason,
+): Promise<InputReleaseResult> {
+  return inputReleaseGuard.release(reason, stopPttGuard, () =>
+    releaseSynthesizedKeysSync(),
+  );
 }
 
 async function stopPttGuard(): Promise<void> {
@@ -153,15 +189,15 @@ async function stopPttGuard(): Promise<void> {
   }
 
   child.stdin?.end();
-  await new Promise<void>((resolvePromise) => {
+  await new Promise<void>((resolvePromise, rejectPromise) => {
     if (child.exitCode !== null) {
       resolvePromise();
       return;
     }
     const timeout = setTimeout(() => {
       child.kill();
-      releaseSynthesizedKeysSync();
-      resolvePromise();
+      if (releaseSynthesizedKeysSync()) resolvePromise();
+      else rejectPromise(new Error("Fallback input release failed"));
     }, 2_000);
     child.once("exit", () => {
       clearTimeout(timeout);
@@ -170,9 +206,12 @@ async function stopPttGuard(): Promise<void> {
   });
 }
 
-function serializePtt(operation: () => Promise<void>): Promise<void> {
+function serializePtt<T>(operation: () => Promise<T>): Promise<T> {
   const next = pttOperation.then(operation, operation);
-  pttOperation = next.catch(() => {});
+  pttOperation = next.then(
+    () => undefined,
+    () => undefined,
+  );
   return next;
 }
 
@@ -212,9 +251,10 @@ export async function openSkills(): Promise<void> {
 
 export async function applyReasoning(
   level: string,
+  pickerLabel: string,
   threadId: string,
 ): Promise<LivePickerState> {
-  return applyLiveReasoning(level, threadId);
+  return applyLiveReasoning(level, pickerLabel, threadId);
 }
 
 export async function openReasoningMenu(): Promise<void> {
@@ -223,9 +263,10 @@ export async function openReasoningMenu(): Promise<void> {
 
 export async function applyModel(
   slug: string,
+  pickerLabel: string,
   threadId: string,
 ): Promise<LivePickerState> {
-  return applyLiveModel(slug, threadId);
+  return applyLiveModel(slug, pickerLabel, threadId);
 }
 
 export async function openModelMenu(): Promise<void> {

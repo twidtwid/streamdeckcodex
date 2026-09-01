@@ -40,6 +40,10 @@ export interface ReasoningSnapshot {
 export interface ModelOption {
   slug: string;
   label: string;
+  displayName: string;
+  pickerLabel: string;
+  defaultReasoning: string;
+  supportedReasoning: string[];
 }
 
 export interface ModelSnapshot {

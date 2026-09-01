@@ -13,6 +13,7 @@ struct ControlResult: Codable {
     var active: Bool? = nil
     var approvalMode: String? = nil
     var pendingInput: Bool? = nil
+    var draftEmpty: Bool? = nil
     var inputKind: String? = nil
     var inputTitle: String? = nil
     var conversationId: String? = nil
@@ -150,6 +151,11 @@ struct RouteRequest: Codable {
     let databasePath: String?
 }
 
+struct PickerSelectionRequest: Codable {
+    let value: String
+    let label: String
+}
+
 struct WorkflowProofState: Codable {
     let uniqueFreshWitness: Bool
     let taskIdWasNew: Bool
@@ -231,19 +237,50 @@ func decodeNativePayload<T: Decodable>(_ value: String, as type: T.Type) -> T? {
     return try? JSONDecoder().decode(type, from: data)
 }
 
-let modelLabels = [
-    "gpt-5.6-luna": "Luna",
-    "gpt-5.6-terra": "Terra",
-    "gpt-5.6-sol": "Sol",
-]
-
 let effortLabels = [
+    "none": "None",
+    "minimal": "Minimal",
     "low": "Light",
     "medium": "Medium",
     "high": "High",
     "xhigh": "Extra High",
     "ultra": "Ultra",
 ]
+
+func validatedModelSelection(_ payload: String) -> PickerSelectionRequest? {
+    guard
+        let request = decodeNativePayload(payload, as: PickerSelectionRequest.self),
+        request.value.count <= 64,
+        request.label.count <= 16,
+        request.value.lowercased().hasPrefix("gpt-"),
+        request.value.unicodeScalars.allSatisfy({ scalar in
+            CharacterSet.alphanumerics.contains(scalar)
+                || scalar == "-" || scalar == "."
+        })
+    else { return nil }
+    let lower = request.value.lowercased()
+    let family = ["luna", "terra", "sol"].first(where: {
+        lower.hasSuffix("-\($0)")
+    })
+    guard let family, normalized(request.label) == normalized(family) else {
+        return nil
+    }
+    return request
+}
+
+func validatedEffortSelection(_ payload: String) -> PickerSelectionRequest? {
+    guard
+        let request = decodeNativePayload(payload, as: PickerSelectionRequest.self),
+        let expectedLabel = effortLabels[request.value.lowercased()],
+        request.value.count <= 16,
+        request.label.count <= 24,
+        normalized(request.label) == normalized(expectedLabel)
+    else { return nil }
+    return PickerSelectionRequest(
+        value: request.value.lowercased(),
+        label: expectedLabel
+    )
+}
 
 func attribute(_ element: AXUIElement, _ name: CFString) -> CFTypeRef? {
     var value: CFTypeRef?
@@ -1487,8 +1524,10 @@ func focusCodex(_ app: NSRunningApplication, appElement: AXUIElement, threadId: 
     guard let url = URL(string: "codex://threads/\(threadId)"), NSWorkspace.shared.open(url) else {
         throw ControlError.failed("Could not open the target Codex task.")
     }
-    guard app.activate() else {
-        throw ControlError.failed("Could not bring Codex to the foreground.")
+    if !isCodexFrontmost(app) {
+        guard app.activate() else {
+            throw ControlError.failed("Could not bring Codex to the foreground.")
+        }
     }
     guard let focusedWitness = waitUntil(timeout: 3.0, operation: {
         freshWitness(threadId: threadId, after: cursor)
@@ -3907,6 +3946,44 @@ if action == "--picker-selection-fixture" {
     )
 }
 
+if action == "--selection-payload-fixture" {
+    let scenario = requested ?? ""
+    func payload(_ value: String, _ label: String) -> String {
+        let data = try! JSONEncoder().encode(
+            PickerSelectionRequest(value: value, label: label)
+        )
+        return data.base64EncodedString()
+    }
+    let accepted: Bool
+    switch scenario {
+    case "model-future":
+        accepted = validatedModelSelection(payload("gpt-5.7-terra", "Terra")) != nil
+    case "model-label-mismatch":
+        accepted = validatedModelSelection(payload("gpt-5.7-terra", "Sol")) == nil
+    case "model-unsafe":
+        accepted = validatedModelSelection(payload("gpt-5.7-terra;open", "Terra")) == nil
+    case "reasoning-minimal":
+        accepted = validatedEffortSelection(payload("minimal", "Minimal")) != nil
+    case "reasoning-label-mismatch":
+        accepted = validatedEffortSelection(payload("minimal", "Ultra")) == nil
+    default:
+        accepted = false
+    }
+    emit(
+        ControlResult(
+            ok: accepted,
+            action: action,
+            requested: scenario,
+            model: nil,
+            effort: nil,
+            message: accepted
+                ? "selection payload fixture accepted"
+                : "selection payload fixture rejected"
+        ),
+        exitCode: accepted ? 0 : 1
+    )
+}
+
 if action == "--workspace-shortcut-fixture" {
     let scenario = arguments.dropFirst().first ?? ""
     let expected: (String, CGKeyCode, CGEventFlags)?
@@ -4648,6 +4725,9 @@ do {
                 effort: nil,
                 approvalMode: observation.approvalMode,
                 pendingInput: observation.pending,
+                draftEmpty: composerCandidates(in: transaction.snapshot).first.map {
+                    composerDraft($0).isEmpty
+                },
                 inputKind: observation.pending ? "approval" : nil,
                 inputTitle: observation.pendingTitle,
                 conversationId: target.witness.conversationId,
@@ -4955,9 +5035,10 @@ do {
             exitCode: 0
         )
     case "model":
-        guard let requested, let label = modelLabels[requested] else {
+        guard let requested, let selection = validatedModelSelection(requested) else {
             throw ControlError.failed("Unsupported model selection.")
         }
+        let label = selection.label
         var transaction = try preflight()
         dismissOpenMenus()
         let operationSnapshot = captureAXSnapshot(transaction.window)
@@ -4988,7 +5069,7 @@ do {
             ControlResult(
                 ok: true,
                 action: action,
-                requested: requested,
+                requested: selection.value,
                 model: state.0,
                 effort: state.1,
                 message: "The live Codex picker now shows \(state.0 ?? label)."
@@ -4996,9 +5077,10 @@ do {
             exitCode: 0
         )
     case "reasoning":
-        guard let requested, let label = effortLabels[requested] else {
+        guard let requested, let selection = validatedEffortSelection(requested) else {
             throw ControlError.failed("Unsupported reasoning selection.")
         }
+        let label = selection.label
         var transaction = try preflight()
         dismissOpenMenus()
         let operationSnapshot = captureAXSnapshot(transaction.window)
@@ -5029,7 +5111,7 @@ do {
             ControlResult(
                 ok: true,
                 action: action,
-                requested: requested,
+                requested: selection.value,
                 model: state.0,
                 effort: state.1,
                 message: "The live Codex picker now shows \(state.1 ?? label) effort."

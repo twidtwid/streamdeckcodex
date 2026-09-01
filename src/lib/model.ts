@@ -1,6 +1,18 @@
 import type { ModelOption } from "../types.js";
+import { normalizeReasoningLevels } from "./reasoning.js";
 
 const MODEL_FAMILIES = ["luna", "terra", "sol"] as const;
+const MODEL_SLUG = /^gpt-[a-z0-9.-]+-(luna|terra|sol)$/i;
+const SAFE_DISPLAY_NAME = /^[a-z0-9 ._-]{1,64}$/i;
+const REASONING_LEVELS = new Set([
+  "none",
+  "minimal",
+  "low",
+  "medium",
+  "high",
+  "xhigh",
+  "ultra",
+]);
 
 export interface ModelDialState {
   selected: string;
@@ -9,6 +21,9 @@ export interface ModelDialState {
 
 interface CachedModel {
   slug?: string;
+  display_name?: string;
+  default_reasoning_level?: string;
+  supported_reasoning_levels?: Array<{ effort?: string }>;
 }
 
 export function supportedModelOptions(parsed: unknown): ModelOption[] {
@@ -21,16 +36,50 @@ export function supportedModelOptions(parsed: unknown): ModelOption[] {
     const model = models.find(
       (candidate) =>
         typeof candidate.slug === "string" &&
+        candidate.slug.length <= 64 &&
+        MODEL_SLUG.test(candidate.slug) &&
         candidate.slug.toLowerCase().endsWith(`-${family}`),
     );
     if (!model?.slug) return [];
+    const supportedReasoning = normalizeReasoningLevels(
+      (model.supported_reasoning_levels ?? [])
+        .map((entry) => entry.effort?.toLowerCase())
+        .filter(
+          (effort): effort is string =>
+            typeof effort === "string" && REASONING_LEVELS.has(effort),
+        ),
+    );
+    if (supportedReasoning.length === 0) return [];
+    const defaultReasoning = model.default_reasoning_level?.toLowerCase() ?? "";
+    const displayName =
+      typeof model.display_name === "string" &&
+      SAFE_DISPLAY_NAME.test(model.display_name)
+        ? model.display_name
+        : model.slug;
     return [
       {
         slug: model.slug,
         label: family.toUpperCase(),
+        displayName,
+        pickerLabel: family[0]!.toUpperCase() + family.slice(1),
+        defaultReasoning: supportedReasoning.includes(defaultReasoning)
+          ? defaultReasoning
+          : supportedReasoning[0]!,
+        supportedReasoning,
       },
     ];
   });
+}
+
+export function supportedReasoningForModel(
+  parsed: unknown,
+  model: string | undefined,
+): string[] {
+  if (!model) return [];
+  return (
+    supportedModelOptions(parsed).find((option) => option.slug === model)
+      ?.supportedReasoning ?? []
+  );
 }
 
 export function previewModel(

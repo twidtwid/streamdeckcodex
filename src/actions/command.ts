@@ -10,6 +10,7 @@ import streamDeck, {
   type WillDisappearEvent,
 } from "@elgato/streamdeck";
 import {
+  cleanupDictation,
   endDictation,
   executeCommand,
   startDictation,
@@ -99,7 +100,12 @@ export class CommandAction extends SingletonAction<CommandSettings> {
     event: WillDisappearEvent<CommandSettings>,
   ): Promise<void> {
     if (configuredCommand(event.payload.settings).id === "dictate") {
-      await endDictation();
+      const result = await cleanupDictation("action-disappear");
+      if (!result.ok) {
+        streamDeck.logger.error(
+          `Push-to-talk cleanup failed at sequence ${result.record.sequence}`,
+        );
+      }
     }
   }
 

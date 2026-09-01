@@ -149,7 +149,8 @@ describe("push-to-talk key lease", () => {
       "utf8",
     );
 
-    expect(plugin.match(/releaseSynthesizedKeysSync\(\)/g)).toHaveLength(2);
+    expect(plugin.match(/releaseSynthesizedKeysSync\(\)/g)).toHaveLength(3);
+    expect(plugin).toContain('process.on("uncaughtExceptionMonitor"');
     expect(plugin).toContain('process.once("exit"');
     expect(command).toContain("async onWillDisappear");
     expect(command).toContain("await endDictation()");

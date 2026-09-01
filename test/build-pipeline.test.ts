@@ -44,6 +44,21 @@ describe("non-repeating check pipeline", () => {
     }
   });
 
+  it("embeds reproducible, privacy-safe build identity", () => {
+    const result = spawnSync(process.execPath, ["scripts/build-bundle.mjs"], {
+      encoding: "utf8",
+      env: { ...process.env, STREAMDECK_BUILD_COMMIT: "fixture-commit" },
+    });
+    expect(result.status, result.stderr).toBe(0);
+    const bundle = readFileSync(
+      "com.todd.streamdeckcodex.sdPlugin/bin/plugin.js",
+      "utf8",
+    );
+    expect(bundle).toContain("fixture-commit");
+    expect(bundle).toContain('treeState: "dirty"');
+    expect(bundle).not.toContain(process.env.HOME ?? "/Users/example");
+  });
+
   it("rejects stale temporary outputs without writing them in check mode", () => {
     const temporary = mkdtempSync(
       join(tmpdir(), "streamdeck-generator-check-"),

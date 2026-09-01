@@ -20,6 +20,7 @@ interface NativeControlResult extends LivePickerState {
   active?: boolean;
   approvalMode?: CodexApprovalMode;
   pendingInput?: boolean;
+  draftEmpty?: boolean;
   inputKind?: "approval";
   inputTitle?: string;
   conversationId?: string;
@@ -220,6 +221,7 @@ export const __nativeControlTest = {
 
 export interface LiveComposerState {
   pendingInput: boolean;
+  draftEmpty?: boolean;
   inputKind?: "approval";
   inputTitle?: string;
   approvalMode?: CodexApprovalMode;
@@ -230,30 +232,27 @@ export interface LiveComposerState {
 export async function readLiveComposerState(
   threadId: string,
 ): Promise<LiveComposerState | undefined> {
-  try {
-    const parsed = await invoke("composer-read", undefined, 1_200, threadId);
-    if (
-      typeof parsed.pendingInput !== "boolean" ||
-      parsed.conversationId !== threadId ||
-      !parsed.conversationId?.trim() ||
-      !parsed.rendererWindowId?.trim()
-    )
-      return undefined;
-    return {
-      pendingInput: parsed.pendingInput,
-      ...(parsed.inputKind === "approval"
-        ? { inputKind: parsed.inputKind }
-        : {}),
-      ...(parsed.inputTitle?.trim()
-        ? { inputTitle: parsed.inputTitle.trim() }
-        : {}),
-      ...(parsed.approvalMode ? { approvalMode: parsed.approvalMode } : {}),
-      conversationId: parsed.conversationId,
-      rendererWindowId: parsed.rendererWindowId,
-    };
-  } catch {
+  const parsed = await invoke("composer-read", undefined, 1_200, threadId);
+  if (
+    typeof parsed.pendingInput !== "boolean" ||
+    parsed.conversationId !== threadId ||
+    !parsed.conversationId?.trim() ||
+    !parsed.rendererWindowId?.trim()
+  )
     return undefined;
-  }
+  return {
+    pendingInput: parsed.pendingInput,
+    ...(typeof parsed.draftEmpty === "boolean"
+      ? { draftEmpty: parsed.draftEmpty }
+      : {}),
+    ...(parsed.inputKind === "approval" ? { inputKind: parsed.inputKind } : {}),
+    ...(parsed.inputTitle?.trim()
+      ? { inputTitle: parsed.inputTitle.trim() }
+      : {}),
+    ...(parsed.approvalMode ? { approvalMode: parsed.approvalMode } : {}),
+    conversationId: parsed.conversationId,
+    rendererWindowId: parsed.rendererWindowId,
+  };
 }
 
 export async function readLivePicker(): Promise<LivePickerState> {
@@ -328,16 +327,28 @@ export async function cycleLiveApprovalMode(
 
 export async function applyLiveModel(
   slug: string,
+  pickerLabel: string,
   threadId: string,
 ): Promise<LivePickerState> {
-  return invoke("model", slug, undefined, threadId);
+  return invoke(
+    "model",
+    encodeNativePayload({ value: slug, label: pickerLabel }),
+    undefined,
+    threadId,
+  );
 }
 
 export async function applyLiveReasoning(
   level: string,
+  pickerLabel: string,
   threadId: string,
 ): Promise<LivePickerState> {
-  return invoke("reasoning", level, undefined, threadId);
+  return invoke(
+    "reasoning",
+    encodeNativePayload({ value: level, label: pickerLabel }),
+    undefined,
+    threadId,
+  );
 }
 
 export async function dispatchLiveControl(

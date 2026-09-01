@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -115,6 +116,13 @@ describe("native compiled action decisions", () => {
 });
 
 describe("native exact-target transaction", () => {
+  it("does not fail activation merely because Codex is already frontmost", () => {
+    const source = readFileSync("native/CodexUIControl.swift", "utf8");
+    expect(source).toMatch(
+      /if !isCodexFrontmost\(app\) \{\s*guard app\.activate\(\)/,
+    );
+  });
+
   it.each([
     "valid",
     "workspace-frontmost",

@@ -1,10 +1,12 @@
 import { spawn, spawnSync } from "node:child_process";
 import { once } from "node:events";
+import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, resolve } from "node:path";
 import { WebSocketServer } from "ws";
 import {
   restoreLiveState,
+  selectionPayload,
   snapshotLiveState,
 } from "./lib/live-state-journal.mjs";
 import { activeForegroundThreadId } from "./lib/foreground-thread.mjs";
@@ -67,16 +69,99 @@ async function waitFor(check, timeout = 8_000) {
 }
 
 const activeThreadId = activeForegroundThreadId();
-const initialState = snapshotLiveState(native, activeThreadId);
+if (!activeThreadId) {
+  throw new Error("Connected dial QA requires one focused primary Codex task.");
+}
+const cache = JSON.parse(
+  readFileSync(resolve(homedir(), ".codex", "models_cache.json"), "utf8"),
+);
+const effortLabels = {
+  none: "None",
+  minimal: "Minimal",
+  low: "Light",
+  medium: "Medium",
+  high: "High",
+  xhigh: "Extra High",
+  ultra: "Ultra",
+};
+const capabilities = ["luna", "terra", "sol"].flatMap((family) => {
+  const model = cache.models?.find(
+    (candidate) =>
+      typeof candidate.slug === "string" &&
+      candidate.slug.toLowerCase().endsWith(`-${family}`),
+  );
+  if (!model) return [];
+  const reasoning = (model.supported_reasoning_levels ?? [])
+    .map((entry) => entry.effort)
+    .filter((effort) => effortLabels[effort]);
+  return reasoning.length
+    ? [
+        {
+          slug: model.slug,
+          family,
+          label: family[0].toUpperCase() + family.slice(1),
+          reasoning,
+        },
+      ]
+    : [];
+});
+if (capabilities.length < 2) {
+  throw new Error("Connected dial QA requires at least two supported models.");
+}
+const initialPicker = native("read", undefined, activeThreadId);
+const initialModelSelection = capabilities.find((option) =>
+  initialPicker.model?.toLowerCase().includes(option.family),
+);
+const initialReasoningSelection = Object.entries(effortLabels).find(
+  ([, label]) => label === initialPicker.effort,
+);
+if (!initialModelSelection || !initialReasoningSelection) {
+  throw new Error(
+    "Connected dial QA cannot prove restoration of the current picker state.",
+  );
+}
+const initialState = snapshotLiveState(native, activeThreadId, {
+  model: {
+    value: initialModelSelection.slug,
+    label: initialModelSelection.label,
+  },
+  reasoning: {
+    value: initialReasoningSelection[0],
+    label: initialReasoningSelection[1],
+  },
+});
+const composer = native("composer-read", undefined, activeThreadId);
+if (composer.draftEmpty !== true) {
+  throw new Error(
+    "Connected dial QA refused a nonempty or unverifiable draft.",
+  );
+}
 const initialPlan = initialState.plan;
 if (initialPlan) {
-  native("mode-toggle", "plan");
+  native("mode-toggle", "plan", activeThreadId);
 }
-if (native("mode-read", "plan").active) {
+if (native("mode-read", "plan", activeThreadId).active) {
   throw new Error("Could not establish a non-Plan QA precondition");
 }
-native("model", "gpt-5.6-sol");
-native("reasoning", "medium");
+const baseModel = capabilities.at(-1);
+const modelTarget = capabilities.at(-2);
+if (!baseModel || !modelTarget) throw new Error("No reversible model pair.");
+const baseReasoningIndex = Math.min(1, baseModel.reasoning.length - 1);
+const baseReasoning = baseModel.reasoning[baseReasoningIndex];
+const reasoningTarget = baseModel.reasoning[baseReasoningIndex - 1];
+if (!baseReasoning || !reasoningTarget) {
+  throw new Error("Connected dial QA requires two reasoning levels.");
+}
+native(
+  "model",
+  selectionPayload(baseModel.slug, baseModel.label),
+  activeThreadId,
+);
+native(
+  "reasoning",
+  selectionPayload(baseReasoning, effortLabels[baseReasoning]),
+  activeThreadId,
+);
 
 const server = new WebSocketServer({ host: "127.0.0.1", port: 0 });
 await once(server, "listening");
@@ -184,6 +269,7 @@ try {
         message.event === "setFeedback" && message.context === modelContext,
     ),
   );
+  const modelBeforeRotate = native("read", undefined, activeThreadId).model;
   socket.send(
     JSON.stringify(
       event(modelAction, modelContext, "dialRotate", { ticks: -1 }),
@@ -194,9 +280,12 @@ try {
       (message) =>
         message.event === "setSettings" &&
         message.context === modelContext &&
-        message.payload?.selectedModel === "gpt-5.6-terra",
+        message.payload?.selectedModel === modelTarget.slug,
     ),
   );
+  if (native("read", undefined, activeThreadId).model !== modelBeforeRotate) {
+    throw new Error("Model rotation mutated Codex before dial press");
+  }
   socket.send(JSON.stringify(event(modelAction, modelContext, "dialUp")));
   await waitFor(
     () =>
@@ -205,12 +294,16 @@ try {
           message.event === "setFeedback" &&
           message.context === modelContext &&
           message.payload?.title === "MODEL" &&
-          message.payload?.value === "TERRA",
+          message.payload?.value === modelTarget.label.toUpperCase(),
       ),
     12_000,
   );
-  if (native("read").model !== "5.6 Terra") {
-    throw new Error("Model dial did not visibly apply Terra");
+  if (
+    !native("read", undefined, activeThreadId)
+      .model?.toLowerCase()
+      .includes(modelTarget.family)
+  ) {
+    throw new Error(`Model dial did not visibly apply ${modelTarget.label}`);
   }
 
   const reasoningAction = "com.todd.streamdeckcodex.reasoning";
@@ -224,6 +317,11 @@ try {
         message.event === "setFeedback" && message.context === reasoningContext,
     ),
   );
+  const reasoningBeforeRotate = native(
+    "read",
+    undefined,
+    activeThreadId,
+  ).effort;
   socket.send(
     JSON.stringify(
       event(reasoningAction, reasoningContext, "dialRotate", { ticks: -1 }),
@@ -234,9 +332,14 @@ try {
       (message) =>
         message.event === "setSettings" &&
         message.context === reasoningContext &&
-        message.payload?.selectedLevel === "low",
+        message.payload?.selectedLevel === reasoningTarget,
     ),
   );
+  if (
+    native("read", undefined, activeThreadId).effort !== reasoningBeforeRotate
+  ) {
+    throw new Error("Reasoning rotation mutated Codex before dial press");
+  }
   socket.send(
     JSON.stringify(event(reasoningAction, reasoningContext, "dialUp")),
   );
@@ -247,12 +350,18 @@ try {
           message.event === "setFeedback" &&
           message.context === reasoningContext &&
           message.payload?.title === "EFFORT" &&
-          message.payload?.value === "LIGHT",
+          message.payload?.value ===
+            effortLabels[reasoningTarget].toUpperCase(),
       ),
     12_000,
   );
-  if (native("read").effort !== "Light") {
-    throw new Error("Reasoning dial did not visibly apply Light");
+  if (
+    native("read", undefined, activeThreadId).effort !==
+    effortLabels[reasoningTarget]
+  ) {
+    throw new Error(
+      `Reasoning dial did not visibly apply ${effortLabels[reasoningTarget]}`,
+    );
   }
 
   const modelActive = outbound.findLast(
@@ -260,14 +369,14 @@ try {
       message.event === "setFeedback" &&
       message.context === modelContext &&
       message.payload?.title === "MODEL" &&
-      message.payload?.value === "TERRA",
+      message.payload?.value === modelTarget.label.toUpperCase(),
   );
   const reasoningActive = outbound.findLast(
     (message) =>
       message.event === "setFeedback" &&
       message.context === reasoningContext &&
       message.payload?.title === "EFFORT" &&
-      message.payload?.value === "LIGHT",
+      message.payload?.value === effortLabels[reasoningTarget].toUpperCase(),
   );
   if (!modelActive || !reasoningActive) {
     throw new Error("The dials did not emit verified steady-state feedback");
@@ -309,16 +418,16 @@ try {
       ),
     12_000,
   );
-  if (!native("mode-read", "plan").active) {
+  if (!native("mode-read", "plan", activeThreadId).active) {
     throw new Error("Plan control did not visibly activate Plan mode");
   }
 
   process.stdout.write(
     `${JSON.stringify({
       ok: true,
-      model: native("read").model,
-      effort: native("read").effort,
-      plan: native("mode-read", "plan").active,
+      model: native("read", undefined, activeThreadId).model,
+      effort: native("read", undefined, activeThreadId).effort,
+      plan: native("mode-read", "plan", activeThreadId).active,
       modelFeedback: modelActive.payload,
       reasoningFeedback: reasoningActive.payload,
       planFeedback: planActive.payload,

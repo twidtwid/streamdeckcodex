@@ -179,6 +179,20 @@
       ],
       "Tooltip": "Display context left in the focused Codex chat; press to toggle used and maximum tokens.",
       "UUID": "com.todd.streamdeckcodex.context"
+    },
+    {
+      "Controllers": ["Keypad"],
+      "Icon": "imgs/actions/context",
+      "Name": "Companion Health",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "States": [
+        {
+          "Image": "imgs/actions/context",
+          "ShowTitle": false
+        }
+      ],
+      "Tooltip": "Read-only local health details; press to cycle components.",
+      "UUID": "com.todd.streamdeckcodex.health"
     }
   ],
   "ApplicationsToMonitor": {

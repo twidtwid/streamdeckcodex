@@ -1,6 +1,5 @@
-import { spawn } from "node:child_process";
 import type { UsageSnapshot } from "../types.js";
-import { resolveCodexBinary } from "./app-server.js";
+import { callReadOnlyAppServer } from "./app-server.js";
 
 export type UsageView = "weekly" | "resets";
 
@@ -76,93 +75,17 @@ export function usageFromRateLimitsResult(
   };
 }
 
-export function fetchAccountUsage(timeoutMs = 5000): Promise<UsageSnapshot> {
-  return new Promise((resolve, reject) => {
-    const child = spawn(resolveCodexBinary(), ["app-server", "--stdio"], {
-      stdio: ["pipe", "pipe", "ignore"],
-      windowsHide: true,
-    });
-    let buffer = "";
-    let settled = false;
-
-    const finish = (
-      error: Error | undefined,
-      snapshot?: UsageSnapshot,
-    ): void => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      child.stdin.end();
-      child.kill("SIGTERM");
-      if (error) reject(error);
-      else if (snapshot) resolve(snapshot);
-      else reject(new Error("Codex returned no usage snapshot"));
-    };
-
-    const send = (message: unknown): void => {
-      child.stdin.write(`${JSON.stringify(message)}\n`);
-    };
-
-    const timer = setTimeout(
-      () => finish(new Error("Timed out reading Codex account usage")),
-      timeoutMs,
-    );
-
-    child.once("error", (error) => finish(error));
-    child.stdout.on("data", (chunk: Buffer) => {
-      buffer += chunk.toString("utf8");
-      while (buffer.includes("\n")) {
-        const newline = buffer.indexOf("\n");
-        const line = buffer.slice(0, newline);
-        buffer = buffer.slice(newline + 1);
-        if (!line.trim()) continue;
-        try {
-          const message = JSON.parse(line) as {
-            id?: number;
-            result?: RateLimitsReadResult;
-            error?: { message?: string };
-          };
-          if (message.id === 1) {
-            if (message.error) {
-              finish(
-                new Error(
-                  message.error.message ?? "Codex initialization failed",
-                ),
-              );
-              return;
-            }
-            send({ method: "initialized", params: {} });
-            send({ method: "account/rateLimits/read", id: 2, params: {} });
-          } else if (message.id === 2) {
-            if (message.error) {
-              finish(
-                new Error(message.error.message ?? "Codex usage read failed"),
-              );
-              return;
-            }
-            finish(
-              undefined,
-              usageFromRateLimitsResult(message.result ?? {}, Date.now()),
-            );
-          }
-        } catch {
-          // Ignore non-JSON tracing output and wait for the requested response.
-        }
-      }
-    });
-
-    send({
-      method: "initialize",
-      id: 1,
-      params: {
-        clientInfo: {
-          name: "streamdeck_codex_companion",
-          title: "Stream Deck Codex Companion",
-          version: "0.1.0",
-        },
-      },
-    });
-  });
+export async function fetchAccountUsage(
+  timeoutMs = 5000,
+): Promise<UsageSnapshot> {
+  const result = (await callReadOnlyAppServer(
+    "account/rateLimits/read",
+    {},
+    timeoutMs,
+  )) as RateLimitsReadResult;
+  const snapshot = usageFromRateLimitsResult(result, Date.now());
+  if (!snapshot) throw new Error("Codex returned no usage snapshot");
+  return snapshot;
 }
 
 export function parseLatestUsage(lines: string): UsageSnapshot | undefined {
