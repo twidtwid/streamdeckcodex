@@ -31,7 +31,7 @@ safety branches.
 
 ## Verified gates
 
-- `npm ci`, 454 unit/acceptance tests, typecheck, native build, all seven
+- `npm ci`, 455 unit/acceptance tests, typecheck, native build, all seven
   generated profile pages, 144px/72px visual QA, public-tree scrub, and the
   official Elgato validator pass.
 - Full and production audits both report zero vulnerabilities.
@@ -39,6 +39,9 @@ safety branches.
   support URL and contains only the expected 29 runtime/profile files.
 - The installed plugin is the saved-project symlink; Context, Model, Reasoning,
   Usage, and input-release health are readable without private content.
+- Post-reload monitoring found Stream Deck currently lacks usable Accessibility
+  authorization; the plugin now renders `Access` and logs only the transition
+  rather than repeating the same failure every refresh tick.
 
 ## Next verified step
 

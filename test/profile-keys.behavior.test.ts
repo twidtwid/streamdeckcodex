@@ -56,6 +56,16 @@ const harness = vi.hoisted(() => {
       sessions: vi.fn<() => unknown[]>(() => []),
       refreshLiveComposer: vi.fn(async () => undefined),
       liveComposerState: vi.fn(() => ({ approvalMode: state.approvalMode })),
+      liveComposerAvailability: vi.fn(() => ({
+        state: "ready",
+        value: {
+          approvalMode: state.approvalMode,
+          conversationId: "thread-1",
+          rendererWindowId: "window-1",
+          pendingInput: false,
+        },
+        observedAt: 1,
+      })),
       permissionAvailability: vi.fn(() => ({
         state: "ready",
         value: state.approvalMode,

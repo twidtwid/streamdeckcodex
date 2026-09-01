@@ -49,25 +49,22 @@ streamDeck.actions.registerAction(reasoning);
 streamDeck.actions.registerAction(usage);
 
 export const refresh = async (): Promise<void> => {
-  try {
-    await codexStore.refreshLiveComposer();
-    await Promise.all([
-      agentStatus.refreshAll(),
-      agentNavigator.refreshAll(),
-      approvalMode.refreshAll(),
-      context.refreshAll(),
-      health.refreshAll(),
-      model.refreshAll(),
-      reasoning.refreshAll(),
-      usage.refreshAll(),
-    ]);
-    const healthSnapshot = await collectHealth(codexStore);
-    healthTransitions.observe(healthSnapshot, (message) =>
-      streamDeck.logger.info(message),
-    );
-  } catch (error) {
-    streamDeck.logger.error("Failed to refresh Codex companion state", error);
-  }
+  // Health owns expected availability failures and logs only transitions.
+  // Rendering continues so every surface can show the same bounded reason.
+  const healthSnapshot = await collectHealth(codexStore);
+  healthTransitions.observe(healthSnapshot, (message) =>
+    streamDeck.logger.info(message),
+  );
+  await Promise.all([
+    agentStatus.refreshAll(),
+    agentNavigator.refreshAll(),
+    approvalMode.refreshAll(),
+    context.refreshAll(),
+    health.refreshAll(),
+    model.refreshAll(),
+    reasoning.refreshAll(),
+    usage.refreshAll(),
+  ]);
 };
 
 const healthTransitions = new HealthTransitionLogger();

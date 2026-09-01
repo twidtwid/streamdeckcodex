@@ -47,6 +47,24 @@ describe("refresh coordinator", () => {
     expect(refresh).toHaveBeenCalledTimes(2);
   });
 
+  it("reports one repeated error until a successful recovery", async () => {
+    const report = vi.fn();
+    const refresh = vi
+      .fn<() => Promise<void>>()
+      .mockRejectedValueOnce(new Error("private first detail"))
+      .mockRejectedValueOnce(new Error("private second detail"))
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error("private third detail"));
+    const coordinator = createRefreshCoordinator(refresh, 1250, report);
+
+    await coordinator.runNow();
+    await coordinator.runNow();
+    expect(report).toHaveBeenCalledTimes(1);
+    await coordinator.runNow();
+    await coordinator.runNow();
+    expect(report).toHaveBeenCalledTimes(2);
+  });
+
   it("stops later interval ticks", async () => {
     let tick!: () => void;
     const refresh = vi.fn(async () => undefined);

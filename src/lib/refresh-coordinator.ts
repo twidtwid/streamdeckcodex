@@ -16,6 +16,18 @@ export function createRefreshCoordinator(
   let running: Promise<void> | undefined;
   let queued = false;
   let stopped = false;
+  let lastErrorFingerprint: string | undefined;
+
+  const errorFingerprint = (error: unknown): string => {
+    if (error instanceof Error) {
+      const reasonCode =
+        "reasonCode" in error
+          ? String((error as Error & { reasonCode?: unknown }).reasonCode ?? "")
+          : "";
+      return `${error.name}:${reasonCode}`;
+    }
+    return typeof error;
+  };
 
   const run = (): Promise<void> => {
     if (stopped) return Promise.resolve();
@@ -28,8 +40,11 @@ export function createRefreshCoordinator(
         queued = false;
         try {
           await callback();
+          lastErrorFingerprint = undefined;
         } catch (error) {
-          onError(error);
+          const fingerprint = errorFingerprint(error);
+          if (fingerprint !== lastErrorFingerprint) onError(error);
+          lastErrorFingerprint = fingerprint;
         }
       } while (!stopped && queued);
     })().finally(() => {

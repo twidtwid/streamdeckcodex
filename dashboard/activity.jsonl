@@ -77,3 +77,20 @@
 {"at":"2026-09-01T07:02:49.491Z","kind":"heartbeat","line":"Still working — Fixed the Permissions diagnostic path: explicit BACKGROUND/ACCESS/NO DATA labels replace Unknown; doctor now probes the installed native helper."}
 {"at":"2026-09-01T07:03:14.494Z","kind":"heartbeat","line":"Still working — Fixed the Permissions diagnostic path: explicit BACKGROUND/ACCESS/NO DATA labels replace Unknown; doctor now probes the installed native helper."}
 {"at":"2026-09-01T07:03:39.495Z","kind":"heartbeat","line":"Still working — Fixed the Permissions diagnostic path: explicit BACKGROUND/ACCESS/NO DATA labels replace Unknown; doctor now probes the installed native helper."}
+{"at":"2026-09-01T07:04:04.497Z","kind":"heartbeat","line":"Still working — Fixed the Permissions diagnostic path: explicit BACKGROUND/ACCESS/NO DATA labels replace Unknown; doctor now probes the installed native helper."}
+{"at":"2026-09-01T07:04:29.499Z","kind":"heartbeat","line":"Still working — Fixed the Permissions diagnostic path: explicit BACKGROUND/ACCESS/NO DATA labels replace Unknown; doctor now probes the installed native helper."}
+{"at":"2026-09-01T07:04:36.164Z","kind":"transition","line":"Reloading the installed saved-project plugin at clean build b4f2c5e; monitoring startup identity and action registration next."}
+{"at":"2026-09-01T07:04:54.502Z","kind":"heartbeat","line":"Still working — Reloading the installed saved-project plugin at clean build b4f2c5e; monitoring startup identity and action registration next."}
+{"at":"2026-09-01T07:05:19.504Z","kind":"heartbeat","line":"Still working — Reloading the installed saved-project plugin at clean build b4f2c5e; monitoring startup identity and action registration next."}
+{"at":"2026-09-01T07:05:44.506Z","kind":"heartbeat","line":"Still working — Reloading the installed saved-project plugin at clean build b4f2c5e; monitoring startup identity and action registration next."}
+{"at":"2026-09-01T07:05:57.651Z","kind":"transition","line":"Reload passed: Stream Deck is running clean build b4f2c5e on Node 24; Context/Model/Reasoning/Usage/input are healthy."}
+{"at":"2026-09-01T07:06:09.508Z","kind":"heartbeat","line":"Still working — Reload passed: Stream Deck is running clean build b4f2c5e on Node 24; Context/Model/Reasoning/Usage/input are healthy."}
+{"at":"2026-09-01T07:06:33.948Z","kind":"transition","line":"Reload monitoring found repeated Accessibility error spam; fixing refresh logging to emit only real availability transitions."}
+{"at":"2026-09-01T07:06:34.510Z","kind":"heartbeat","line":"Still working — Reload monitoring found repeated Accessibility error spam; fixing refresh logging to emit only real availability transitions."}
+{"at":"2026-09-01T07:06:59.512Z","kind":"heartbeat","line":"Still working — Reload monitoring found repeated Accessibility error spam; fixing refresh logging to emit only real availability transitions."}
+{"at":"2026-09-01T07:07:24.513Z","kind":"heartbeat","line":"Still working — Reload monitoring found repeated Accessibility error spam; fixing refresh logging to emit only real availability transitions."}
+{"at":"2026-09-01T07:07:49.516Z","kind":"heartbeat","line":"Still working — Reload monitoring found repeated Accessibility error spam; fixing refresh logging to emit only real availability transitions."}
+{"at":"2026-09-01T07:08:14.518Z","kind":"heartbeat","line":"Still working — Reload monitoring found repeated Accessibility error spam; fixing refresh logging to emit only real availability transitions."}
+{"at":"2026-09-01T07:08:39.519Z","kind":"heartbeat","line":"Still working — Reload monitoring found repeated Accessibility error spam; fixing refresh logging to emit only real availability transitions."}
+{"at":"2026-09-01T07:09:04.521Z","kind":"heartbeat","line":"Still working — Reload monitoring found repeated Accessibility error spam; fixing refresh logging to emit only real availability transitions."}
+{"at":"2026-09-01T07:09:29.523Z","kind":"heartbeat","line":"Still working — Reload monitoring found repeated Accessibility error spam; fixing refresh logging to emit only real availability transitions."}
