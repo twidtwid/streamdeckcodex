@@ -2,8 +2,8 @@
 
 ## Current phase
 
-Final clean build, installed-plugin reload, and release packaging on 2026-09-01.
-There are no known implementation blockers.
+Release candidate installed and verified on Sagan on 2026-09-01. There are no
+known implementation blockers.
 
 ## Completed
 
@@ -38,15 +38,19 @@ There are no known implementation blockers.
   Stream Deck 7.5.1 runs Node 24.13.1, the Codex Companion profile renders all
   keys/dials without question marks, and the plugin survives its former restart
   boundary.
+- Built and packaged clean commit `6b97001`, installed that exact bundle on
+  Sagan, and restarted only the Codex Companion process. The replacement PID
+  remained alive beyond 40 seconds and the connected Stream Deck editor showed
+  the two-page profile with normal keys/dials and no question marks.
 - Passed 483 unit/acceptance tests, typecheck, native build, seven-page profile
   parity, 144px/72px visual QA, public-tree scrub, bundle build, and the official
   Elgato validator.
 
 ## Next verified step
 
-Commit the reviewed tree, rebuild with a clean build identity, reload that exact
-bundle on Sagan, monitor the installed process, verify the device profile still
-renders, and run the final package/release gates.
+No required implementation step remains. User-facing hardware use can now
+exercise the installed Sagan build; any newly observed behavior should be filed
+as a concrete regression rather than inferred from fixture-only evidence.
 
 ## Evidence boundary
 
