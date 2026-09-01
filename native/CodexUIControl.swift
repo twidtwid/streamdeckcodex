@@ -43,6 +43,15 @@ struct AXSnapshot {
     let query: NeutralAXQuery
 }
 
+// Current Codex builds place the visible composer at AX depth 27. Keep one
+// bounded window traversal policy so preflight, postflight, approval reads,
+// and diagnostics cannot silently diverge as the Electron tree gains wrappers.
+let maximumCodexWindowTraversalDepth = 32
+
+func shouldTraverseAXChildren(atDepth depth: Int, maximumDepth: Int) -> Bool {
+    depth < maximumDepth
+}
+
 struct NeutralAXNode {
     let id: String
     let parentId: String?
@@ -386,7 +395,7 @@ func captureAXSnapshot(
                 depth: depth
             )
         )
-        if depth < maximumDepth {
+        if shouldTraverseAXChildren(atDepth: depth, maximumDepth: maximumDepth) {
             let currentIndex = result.count - 1
             queue.append(contentsOf: childElements(element).map { ($0, depth + 1, currentIndex) })
         }
@@ -453,6 +462,60 @@ func click(_ element: AXUIElement) throws {
     down.post(tap: .cghidEventTap)
     postedDown = true
     usleep(35_000)
+}
+
+func clickMenuItem(_ element: AXUIElement) throws {
+    guard let elementFrame = frame(element), !elementFrame.isEmpty else {
+        throw ControlError.failed("The Codex menu item has no clickable frame.")
+    }
+    let target = CGPoint(x: elementFrame.midX, y: elementFrame.midY)
+    let original = CGEvent(source: nil)?.location
+    guard
+        let hover = CGEvent(
+            mouseEventSource: nil,
+            mouseType: .mouseMoved,
+            mouseCursorPosition: target,
+            mouseButton: .left
+        ),
+        let down = CGEvent(
+            mouseEventSource: nil,
+            mouseType: .leftMouseDown,
+            mouseCursorPosition: target,
+            mouseButton: .left
+        ),
+        let up = CGEvent(
+            mouseEventSource: nil,
+            mouseType: .leftMouseUp,
+            mouseCursorPosition: target,
+            mouseButton: .left
+        )
+    else {
+        throw ControlError.failed("Could not create a paired menu-item click.")
+    }
+
+    let restore = original.flatMap { point in
+        CGEvent(
+            mouseEventSource: nil,
+            mouseType: .mouseMoved,
+            mouseCursorPosition: point,
+            mouseButton: .left
+        )
+    }
+    var postedDown = false
+    defer {
+        if postedDown {
+            up.post(tap: .cghidEventTap)
+        }
+        restore?.post(tap: .cghidEventTap)
+    }
+    hover.post(tap: .cghidEventTap)
+    usleep(500_000)
+    down.post(tap: .cghidEventTap)
+    postedDown = true
+    usleep(35_000)
+    up.post(tap: .cghidEventTap)
+    postedDown = false
+    usleep(80_000)
 }
 
 func pressEscape() {
@@ -791,6 +854,79 @@ func fullAccessConfirmationButtonIndex(
     return mostSpecific[0].buttonIndex
 }
 
+func ultraContinueButtonIndex(in query: NeutralAXQuery) -> Int? {
+    let ownerRoles = Set([
+        "AXDialog",
+        "AXGroup",
+        kAXSheetRole as String,
+        kAXWindowRole as String,
+    ])
+    let candidates = query.nodes.indices.compactMap {
+        ownerIndex -> (size: Int, buttonIndex: Int)? in
+        guard
+            ownerRoles.contains(query.nodes[ownerIndex].role),
+            query.ownerIsVisible(ownerIndex),
+            let ownerFrame = query.nodes[ownerIndex].elementFrame,
+            normalized(query.visibleDescendantText[ownerIndex])
+                .contains("useultrawithfullaccess")
+        else { return nil }
+        let buttons = query.nodes.indices.filter { index in
+            query.nodes[index].role == (kAXButtonRole as String)
+                && query.nodes[index].enabled
+                && query.ownerIsVisible(index)
+                && (query.isDescendant(index, of: ownerIndex)
+                    || query.nodes[index].elementFrame.map {
+                        ownerFrame.contains(
+                            CGPoint(x: $0.midX, y: $0.midY)
+                        )
+                    } == true)
+        }
+        let continueButtons = buttons.filter {
+            normalized(query.visibleDescendantText[$0]) == "continue"
+        }
+        let fullAccessButtons = buttons.filter {
+            normalized(query.visibleDescendantText[$0]) == "usefullaccess"
+        }
+        guard continueButtons.count == 1, fullAccessButtons.count == 1
+        else { return nil }
+        return (query.subtreeSizes[ownerIndex], continueButtons[0])
+    }
+    if let minimum = candidates.map(\.size).min() {
+        let smallest = candidates.filter { $0.size == minimum }
+        if smallest.count == 1 { return smallest[0].buttonIndex }
+    }
+
+    // Chromium currently exposes this native-looking confirmation's buttons
+    // as spatial siblings instead of AX descendants of the dialog text. Bind
+    // only the unique, adjacent button pair; any ambiguity remains fail-closed.
+    let visibleButtons = query.nodes.indices.filter { index in
+        query.nodes[index].role == (kAXButtonRole as String)
+            && query.nodes[index].enabled
+            && !query.nodes[index].hidden
+            && query.nodes[index].elementFrame != nil
+    }
+    let continueButtons = visibleButtons.filter {
+        normalized(neutralNodeText(query.nodes[$0])) == "continue"
+    }
+    let fullAccessButtons = visibleButtons.filter {
+        normalized(neutralNodeText(query.nodes[$0])) == "usefullaccess"
+    }
+    guard continueButtons.count == 1, fullAccessButtons.count == 1,
+          let continueFrame = query.nodes[continueButtons[0]].elementFrame,
+          let fullAccessFrame = query.nodes[fullAccessButtons[0]].elementFrame,
+          continueFrame.midX > fullAccessFrame.midX,
+          abs(continueFrame.midY - fullAccessFrame.midY) <= 80,
+          continueFrame.minX - fullAccessFrame.maxX <= 160
+    else { return nil }
+    return continueButtons[0]
+}
+
+func ultraContinueButton(in snapshot: AXSnapshot) -> ElementInfo? {
+    ultraContinueButtonIndex(in: snapshot.query).map {
+        snapshot.elements[$0]
+    }
+}
+
 func addProjectOwnerIndices(in query: NeutralAXQuery) -> [Int] {
     let candidates = query.nodes.indices.compactMap {
         index -> (index: Int, size: Int)? in
@@ -853,6 +989,42 @@ func pickerSelectionConfirmed(
         return normalized(effort ?? "") == normalized(targetLabel)
     }
     return false
+}
+
+func waitForPickerSelection(
+    categoryPrefix: String,
+    targetLabel: String,
+    timeout: TimeInterval = 4.0,
+    interval: useconds_t = 120_000,
+    readState: () -> (String?, String?)?
+) -> (String?, String?)? {
+    let deadline = Date().addingTimeInterval(timeout)
+    repeat {
+        if let state = readState(),
+           pickerSelectionConfirmed(
+               categoryPrefix: categoryPrefix,
+               targetLabel: targetLabel,
+               model: state.0,
+               effort: state.1
+           ) {
+            return state
+        }
+        usleep(interval)
+    } while Date() < deadline
+    return nil
+}
+
+func waitForFastState(
+    timeout: TimeInterval = 1.5,
+    interval: useconds_t = 80_000,
+    readState: () -> Bool?
+) -> Bool? {
+    let deadline = Date().addingTimeInterval(timeout)
+    repeat {
+        if let state = readState() { return state }
+        usleep(interval)
+    } while Date() < deadline
+    return nil
 }
 
 struct WorkspaceShortcutSpec {
@@ -1564,7 +1736,12 @@ func preflightTargetTransaction(
     let poll = SinglePassCapture<AXSnapshot>()
     guard let snapshot = singlePassQuery(
         poll: poll,
-        capture: { captureAXSnapshot(target.window, maximumDepth: 24) },
+        capture: {
+            captureAXSnapshot(
+                target.window,
+                maximumDepth: maximumCodexWindowTraversalDepth
+            )
+        },
         query: { $0 }
     ) else {
         throw ControlError.failed("The exact-target snapshot was captured more than once.", "TARGET_MISMATCH")
@@ -1605,7 +1782,12 @@ func postflightTargetTransaction(
     let poll = SinglePassCapture<AXSnapshot>()
     guard let snapshot = singlePassQuery(
         poll: poll,
-        capture: { captureAXSnapshot(transaction.window, maximumDepth: 24) },
+        capture: {
+            captureAXSnapshot(
+                transaction.window,
+                maximumDepth: maximumCodexWindowTraversalDepth
+            )
+        },
         query: { $0 }
     ) else {
         throw ControlError.failed("The exact-target postflight captured more than once.", "TARGET_MISMATCH")
@@ -1659,12 +1841,43 @@ func menuItem(
     return matches.count == 1 ? matches[0] : nil
 }
 
+func exposeAdvancedPickerControls(
+    in appElement: AXUIElement
+) throws -> AXSnapshot {
+    func advancedSnapshot() -> AXSnapshot? {
+        let snapshot = captureAXSnapshot(appElement)
+        guard
+            menuItem(in: snapshot.elements, descriptionPrefix: "Model ") != nil,
+            menuItem(in: snapshot.elements, descriptionPrefix: "Effort ") != nil
+        else { return nil }
+        return snapshot
+    }
+
+    if let snapshot = advancedSnapshot() { return snapshot }
+    let opened = captureAXSnapshot(appElement)
+    guard let advanced = opened.elements.first(where: { info in
+        info.role == (kAXMenuItemRole as String)
+            && normalized(elementText(info)).contains("showadvancedoptions")
+    }) else {
+        throw ControlError.failed(
+            "Codex opened no advanced Model/Effort controls."
+        )
+    }
+    try clickMenuItem(advanced.element)
+    guard let snapshot = waitUntil(timeout: 1.5, operation: advancedSnapshot)
+    else {
+        throw ControlError.failed(
+            "Codex did not expose advanced Model/Effort controls."
+        )
+    }
+    return snapshot
+}
+
 func selectableMenuItem(
     in elements: [ElementInfo],
     label: String,
     excludingDescriptionPrefix: String
 ) -> ElementInfo? {
-    let target = normalized(label)
     let matches = elements.filter { info in
         guard info.role == (kAXMenuItemRole as String) else { return false }
         let description = info.description
@@ -1676,12 +1889,20 @@ func selectableMenuItem(
             return false
         }
         let text = normalized("\(info.title) \(description)")
-        return text == target
-            || text.hasSuffix(target)
-            || text.contains("model\(target)")
-            || text.contains("effort\(target)")
+        return pickerMenuTextMatches(text, label: label)
     }
     return matches.count == 1 ? matches[0] : nil
+}
+
+func pickerMenuTextMatches(_ rawText: String, label: String) -> Bool {
+    let text = normalized(rawText)
+    let target = normalized(label)
+    return !target.isEmpty
+        && (text == target
+            || text.hasPrefix(target)
+            || text.hasSuffix(target)
+            || text.contains("model\(target)")
+            || text.contains("effort\(target)"))
 }
 
 func readPickerState(_ appElement: AXUIElement) throws -> (String?, String?) {
@@ -1690,29 +1911,20 @@ func readPickerState(_ appElement: AXUIElement) throws -> (String?, String?) {
     let picker = try requirePicker(in: initial.elements)
     try click(picker.element)
     defer { pressEscape() }
-
+    let snapshot = try exposeAdvancedPickerControls(in: appElement)
     guard
-        let modelItem = waitUntil(timeout: 1.5, operation: {
-            () -> (ElementInfo, ElementInfo)? in
-            let snapshot = captureAXSnapshot(appElement)
-            guard
-                let model = menuItem(
-                    in: snapshot.elements,
-                    descriptionPrefix: "Model "
-                ),
-                let effort = menuItem(
-                    in: snapshot.elements,
-                    descriptionPrefix: "Effort "
-                )
-            else { return nil }
-            return (model, effort)
-        })
-    else {
-        throw ControlError.failed("Codex opened no readable Model/Effort menu.")
-    }
+        let modelItem = menuItem(
+            in: snapshot.elements,
+            descriptionPrefix: "Model "
+        ),
+        let effortItem = menuItem(
+            in: snapshot.elements,
+            descriptionPrefix: "Effort "
+        )
+    else { throw ControlError.failed("Codex opened no readable Model/Effort menu.") }
 
-    let model = String(modelItem.0.description.dropFirst("Model ".count))
-    let effort = String(modelItem.1.description.dropFirst("Effort ".count))
+    let model = String(modelItem.description.dropFirst("Model ".count))
+    let effort = String(effortItem.description.dropFirst("Effort ".count))
     return (model, effort)
 }
 
@@ -1841,19 +2053,20 @@ func exposeFastControl(in appElement: AXUIElement) throws {
     let initial = captureAXSnapshot(appElement)
     let picker = try requirePicker(in: initial.elements)
     try click(picker.element)
+    if waitForFastState(readState: {
+        pickerFastState(in: captureAXSnapshot(appElement).elements)
+    }) != nil { return }
+
     let opened = captureAXSnapshot(appElement)
-    if pickerFastState(in: opened.elements) != nil { return }
 
     if let advanced = opened.elements.first(where: { info in
         info.role == (kAXMenuItemRole as String)
             && normalized(elementText(info)).contains("advanced")
     }) {
         try click(advanced.element)
-        guard
-            waitUntil(timeout: 1.2, operation: {
-                let snapshot = captureAXSnapshot(appElement)
-                return pickerFastState(in: snapshot.elements)
-            }) != nil
+        guard waitForFastState(timeout: 1.2, readState: {
+            pickerFastState(in: captureAXSnapshot(appElement).elements)
+        }) != nil
         else {
             throw ControlError.failed(
                 "Codex opened no verifiable Fast mode control."
@@ -2205,14 +2418,36 @@ func applyApprovalMode(
     return confirmed
 }
 
+func resolvedComposerDraft(value rawValue: String, description rawDescription: String) -> String {
+    let value = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+    let description = rawDescription.trimmingCharacters(
+        in: .whitespacesAndNewlines
+    )
+    if value == description { return "" }
+
+    // Current Chromium-backed Codex builds expose the empty composer hint as
+    // AXValue while AXDescription and AXPlaceholderValue are both empty.
+    // Treat only the exact product placeholder as empty; all other text stays
+    // protected by the draft-preservation guard.
+    let emptyComposerPlaceholders = [
+        "Ask Codex...",
+        "Ask anything",
+        "Do anything",
+        "Describe your task to generate a plan...",
+    ]
+    if description.isEmpty && emptyComposerPlaceholders.contains(where: {
+        value.caseInsensitiveCompare($0) == .orderedSame
+    }) {
+        return ""
+    }
+    return value
+}
+
 func composerDraft(_ composer: ElementInfo) -> String {
-    let value = composer.value.trimmingCharacters(
-        in: .whitespacesAndNewlines
+    resolvedComposerDraft(
+        value: composer.value,
+        description: composer.description
     )
-    let placeholder = composer.description.trimmingCharacters(
-        in: .whitespacesAndNewlines
-    )
-    return value == placeholder ? "" : value
 }
 
 func typeCommandAndReturn(_ command: String) throws {
@@ -2360,30 +2595,25 @@ func applySelection(
 ) throws {
     let picker = try requirePicker(in: initial.elements)
     try click(picker.element)
-
-    guard
-        let categoryItem = waitUntil(timeout: 1.5, operation: {
-            let snapshot = captureAXSnapshot(appElement)
-            return menuItem(
-                in: snapshot.elements,
-                descriptionPrefix: categoryPrefix
-            )
-        })
-    else {
+    let advanced = try exposeAdvancedPickerControls(in: appElement)
+    guard let categoryItem = menuItem(
+        in: advanced.elements,
+        descriptionPrefix: categoryPrefix
+    ) else {
         pressEscape()
         throw ControlError.failed("Codex did not expose the \(categoryPrefix) control.")
     }
     try click(categoryItem.element)
 
     guard
-        let target = waitUntil(timeout: 1.5, operation: {
+        waitUntil(timeout: 1.5, operation: {
             let snapshot = captureAXSnapshot(appElement)
             return selectableMenuItem(
                 in: snapshot.elements,
                 label: targetLabel,
                 excludingDescriptionPrefix: categoryPrefix
             )
-        })
+        }) != nil
     else {
         let snapshot = captureAXSnapshot(appElement)
         let available = snapshot.elements
@@ -2396,8 +2626,59 @@ func applySelection(
             "Codex does not offer \(targetLabel) in the live \(categoryPrefix) menu. Available: \(available)"
         )
     }
-    try click(target.element)
-    usleep(250_000)
+    // Chromium exposes submenu AX nodes before its opening animation has
+    // settled. Reacquire the exact unique item so the click never targets a
+    // stale frame or element identity.
+    usleep(220_000)
+    let settledSnapshot = captureAXSnapshot(appElement)
+    guard let settledTarget = selectableMenuItem(
+        in: settledSnapshot.elements,
+        label: targetLabel,
+        excludingDescriptionPrefix: categoryPrefix
+    ) else {
+        pressEscape()
+        throw ControlError.failed(
+            "Codex's \(targetLabel) menu item did not remain uniquely selectable."
+        )
+    }
+    let pressResult = AXUIElementPerformAction(
+        settledTarget.element,
+        kAXPressAction as CFString
+    )
+    guard pressResult == .success else {
+        pressEscape()
+        throw ControlError.failed(
+            "Codex rejected the \(targetLabel) menu-item press."
+        )
+    }
+    usleep(500_000)
+    if normalized(targetLabel) == "ultra" {
+        if let continueButton = waitUntil(timeout: 1.2, operation: {
+            ultraContinueButton(in: captureAXSnapshot(appElement))
+        }) {
+            try click(continueButton.element)
+            guard waitUntil(timeout: 1.5, operation: {
+                ultraContinueButton(in: captureAXSnapshot(appElement)) == nil
+                    ? true : nil
+            }) != nil else {
+                throw ControlError.failed(
+                    "Codex did not dismiss the Ultra confirmation."
+                )
+            }
+        } else {
+            let observed = try? readPickerState(appElement)
+            guard pickerSelectionConfirmed(
+                categoryPrefix: categoryPrefix,
+                targetLabel: targetLabel,
+                model: observed?.0,
+                effort: observed?.1
+            ) else {
+                throw ControlError.failed(
+                    "Codex showed no bounded Ultra confirmation."
+                )
+            }
+        }
+    }
 }
 
 func pressKey(_ key: CGKeyCode, flags: CGEventFlags = []) throws {
@@ -2554,7 +2835,10 @@ func dispatchControl(
         }
         try pressKey(36)
         guard waitUntil(timeout: 1.8, operation: { () -> Bool? in
-            let snapshot = captureAXSnapshot(appElement, maximumDepth: 24)
+            let snapshot = captureAXSnapshot(
+                appElement,
+                maximumDepth: maximumCodexWindowTraversalDepth
+            )
             return approvalResolutionObserved(
                 pendingRemains: observeComposer(
                     in: snapshot.elements,
@@ -2573,7 +2857,10 @@ func dispatchControl(
         }
         try pressKey(53)
         guard waitUntil(timeout: 1.8, operation: { () -> Bool? in
-            let snapshot = captureAXSnapshot(appElement, maximumDepth: 24)
+            let snapshot = captureAXSnapshot(
+                appElement,
+                maximumDepth: maximumCodexWindowTraversalDepth
+            )
             return approvalResolutionObserved(
                 pendingRemains: observeComposer(
                     in: snapshot.elements,
@@ -3946,6 +4233,181 @@ if action == "--picker-selection-fixture" {
     )
 }
 
+if action == "--picker-label-fixture" {
+    let scenario = arguments.dropFirst().first ?? ""
+    let valid: Bool
+    switch scenario {
+    case "versioned-model":
+        valid = pickerMenuTextMatches("5.6 Terra", label: "Terra")
+    case "annotated-ultra":
+        valid = pickerMenuTextMatches(
+            "Ultra Consumes usage limits faster",
+            label: "Ultra"
+        )
+    case "unrelated":
+        valid = !pickerMenuTextMatches("High", label: "Medium")
+    default:
+        valid = false
+    }
+    emit(
+        ControlResult(
+            ok: valid,
+            action: action,
+            requested: scenario,
+            model: nil,
+            effort: nil,
+            message: valid
+                ? "picker label fixture accepted"
+                : "picker label fixture rejected"
+        ),
+        exitCode: valid ? 0 : 1
+    )
+}
+
+if action == "--ultra-confirmation-fixture" {
+    let scenario = arguments.dropFirst().first ?? ""
+    let root = selectorFixtureNode(
+        "root",
+        parentId: nil,
+        role: kAXWindowRole as String,
+        text: "",
+        frame: CGRect(x: 0, y: 0, width: 900, height: 700)
+    )
+    let dialog = selectorFixtureNode(
+        "dialog",
+        parentId: "root",
+        role: "AXGroup",
+        text: "Use Ultra with Full access?",
+        frame: CGRect(x: 200, y: 180, width: 500, height: 240),
+        depth: 1
+    )
+    var nodes = [
+        root,
+        dialog,
+        selectorFixtureNode(
+            "full",
+            parentId: "dialog",
+            role: kAXButtonRole as String,
+            text: "Use Full access",
+            frame: CGRect(x: 250, y: 340, width: 180, height: 44),
+            depth: 2
+        ),
+        selectorFixtureNode(
+            "continue",
+            parentId: "dialog",
+            role: kAXButtonRole as String,
+            text: "Continue",
+            frame: CGRect(x: 450, y: 340, width: 180, height: 44),
+            depth: 2
+        ),
+    ]
+    if scenario == "missing-full-access" {
+        nodes.remove(at: 2)
+    } else if scenario == "duplicate-continue" {
+        nodes.append(selectorFixtureNode(
+            "continue-2",
+            parentId: "dialog",
+            role: kAXButtonRole as String,
+            text: "Continue",
+            frame: CGRect(x: 450, y: 285, width: 180, height: 44),
+            depth: 2
+        ))
+    } else if scenario == "spatial-siblings" {
+        nodes[2] = selectorFixtureNode(
+            "full",
+            parentId: "root",
+            role: kAXButtonRole as String,
+            text: "Use Full access",
+            frame: CGRect(x: 250, y: 340, width: 180, height: 44),
+            depth: 1
+        )
+        nodes[3] = selectorFixtureNode(
+            "continue",
+            parentId: "root",
+            role: kAXButtonRole as String,
+            text: "Continue",
+            frame: CGRect(x: 450, y: 340, width: 180, height: 44),
+            depth: 1
+        )
+    }
+    let selected = ultraContinueButtonIndex(in: NeutralAXQuery(nodes: nodes))
+    let valid = ["valid", "spatial-siblings"].contains(scenario)
+        ? selected != nil
+        : selected == nil
+    emit(
+        ControlResult(
+            ok: valid,
+            action: action,
+            requested: scenario,
+            model: nil,
+            effort: nil,
+            message: valid
+                ? "Ultra confirmation fixture accepted"
+                : "Ultra confirmation fixture rejected"
+        ),
+        exitCode: valid ? 0 : 1
+    )
+}
+
+if action == "--picker-wait-fixture" {
+    let scenario = arguments.dropFirst().first ?? ""
+    var reads = 0
+    let valid: Bool
+    switch scenario {
+    case "selection-delayed":
+        let state = waitForPickerSelection(
+            categoryPrefix: "Effort ",
+            targetLabel: "Medium",
+            timeout: 0.2,
+            interval: 1_000,
+            readState: {
+                reads += 1
+                return ("Sol", reads >= 3 ? "Medium" : "High")
+            }
+        )
+        valid = state?.1 == "Medium" && reads == 3
+    case "selection-unchanged":
+        valid = waitForPickerSelection(
+            categoryPrefix: "Effort ",
+            targetLabel: "Medium",
+            timeout: 0.01,
+            interval: 1_000,
+            readState: { ("Sol", "High") }
+        ) == nil
+    case "fast-delayed":
+        let state = waitForFastState(
+            timeout: 0.2,
+            interval: 1_000,
+            readState: {
+                reads += 1
+                return reads >= 3 ? false : nil
+            }
+        )
+        valid = state == false && reads == 3
+    case "fast-unavailable":
+        valid = waitForFastState(
+            timeout: 0.01,
+            interval: 1_000,
+            readState: { nil }
+        ) == nil
+    default:
+        valid = false
+    }
+    emit(
+        ControlResult(
+            ok: valid,
+            action: action,
+            requested: scenario,
+            model: nil,
+            effort: nil,
+            message: valid
+                ? "picker wait fixture accepted"
+                : "picker wait fixture rejected"
+        ),
+        exitCode: valid ? 0 : 1
+    )
+}
+
 if action == "--selection-payload-fixture" {
     let scenario = requested ?? ""
     func payload(_ value: String, _ label: String) -> String {
@@ -4345,6 +4807,100 @@ if action == "--current-witness-fixture" {
     )
 }
 
+if action == "--traversal-depth-fixture" {
+    let scenario = arguments.dropFirst().first ?? ""
+    let valid: Bool
+    switch scenario {
+    case "current-composer":
+        valid = shouldTraverseAXChildren(
+            atDepth: 26,
+            maximumDepth: maximumCodexWindowTraversalDepth
+        )
+    case "at-bound":
+        valid = shouldTraverseAXChildren(
+            atDepth: maximumCodexWindowTraversalDepth - 1,
+            maximumDepth: maximumCodexWindowTraversalDepth
+        )
+    case "beyond-bound":
+        valid = !shouldTraverseAXChildren(
+            atDepth: maximumCodexWindowTraversalDepth,
+            maximumDepth: maximumCodexWindowTraversalDepth
+        )
+    default:
+        valid = false
+    }
+    emit(
+        ControlResult(
+            ok: valid,
+            action: action,
+            requested: scenario,
+            model: nil,
+            effort: nil,
+            message: valid
+                ? "traversal depth fixture accepted"
+                : "traversal depth fixture rejected"
+        ),
+        exitCode: valid ? 0 : 1
+    )
+}
+
+if action == "--composer-draft-fixture" {
+    let scenario = arguments.dropFirst().first ?? ""
+    let valid: Bool
+    switch scenario {
+    case "chromium-placeholder":
+        valid = resolvedComposerDraft(
+            value: "Ask Codex...",
+            description: ""
+        ).isEmpty
+    case "description-placeholder":
+        valid = resolvedComposerDraft(
+            value: "Ask Codex...",
+            description: "Ask Codex..."
+        ).isEmpty
+    case "chatgpt-placeholder":
+        valid = resolvedComposerDraft(
+            value: "Ask anything",
+            description: ""
+        ).isEmpty
+    case "current-codex-placeholder":
+        valid = resolvedComposerDraft(
+            value: "\nDo anything",
+            description: ""
+        ).isEmpty
+    case "plan-placeholder":
+        valid = resolvedComposerDraft(
+            value: "\nDescribe your task to generate a plan...",
+            description: ""
+        ).isEmpty
+    case "real-draft":
+        valid = resolvedComposerDraft(
+            value: "Please fix the tests",
+            description: ""
+        ) == "Please fix the tests"
+    case "placeholder-with-draft":
+        valid = resolvedComposerDraft(
+            value: "Ask Codex... then summarize",
+            description: ""
+        ) == "Ask Codex... then summarize"
+    default:
+        valid = false
+    }
+    emit(
+        ControlResult(
+            ok: valid,
+            action: action,
+            requested: scenario,
+            model: nil,
+            effort: nil,
+            message: valid
+                ? "composer draft fixture accepted"
+                : "composer draft fixture rejected"
+        ),
+        exitCode: valid ? 0 : 1
+    )
+}
+
 if action == "--multi-log-fixture" {
     let payload = arguments.dropFirst().first ?? ""
     guard let request = decodeNativePayload(payload, as: MultiLogFixtureRequest.self),
@@ -4602,7 +5158,7 @@ do {
         if action == "input-dump" {
             let dumpElements = allElements(
                 focusedWindow,
-                maximumDepth: 24
+                maximumDepth: maximumCodexWindowTraversalDepth
             )
             let approvalLabels = dumpElements.filter {
                 normalized(elementText($0)) == "awaitingapproval"
@@ -4610,7 +5166,30 @@ do {
             let approvalFrames = approvalLabels.compactMap {
                 frame($0.element)
             }
-            let summary = dumpElements
+            let composerDiagnostics = dumpElements
+                .filter { info in
+                    info.role == (kAXTextAreaRole as String)
+                        && info.enabled
+                }
+                .map { info -> String in
+                    let elementFrame = frame(info.element)
+                    let frameText = elementFrame.map {
+                        "\(Int($0.minX)),\(Int($0.minY)),\(Int($0.width)),\(Int($0.height))"
+                    } ?? "no-frame"
+                    let visible = elementFrame.map {
+                        $0.width >= 240 && $0.height >= 36 && !$0.isEmpty
+                    } ?? false
+                    let placeholder = stringAttribute(
+                        info.element,
+                        kAXPlaceholderValueAttribute as CFString
+                    )
+                    let resolvedEmpty = resolvedComposerDraft(
+                        value: info.value,
+                        description: info.description
+                    ).isEmpty
+                    return "composer|\(frameText)|visible=\(visible)|value-length=\(info.value.count)|description-length=\(info.description.count)|placeholder-length=\(placeholder.count)|placeholder-match=\(info.value == placeholder)|resolved-empty=\(resolvedEmpty)"
+                }
+            let approvalDiagnostics = dumpElements
             .compactMap { info -> String? in
                 let text = elementText(info)
                     .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -4640,7 +5219,8 @@ do {
                 )
                 return "\(info.role)|\(frameText)|selected=\(selected)|focused=\(focused)|\(text)"
             }
-            .joined(separator: "\n")
+            let summary = (composerDiagnostics + approvalDiagnostics)
+                .joined(separator: "\n")
             emit(
                 ControlResult(
                     ok: true,
@@ -5048,13 +5628,12 @@ do {
             targetLabel: label,
             initial: operationSnapshot
         )
-        let state = try readPickerState(transaction.window)
-        guard pickerSelectionConfirmed(
+        guard let state = waitForPickerSelection(
             categoryPrefix: "Model ",
             targetLabel: label,
-            model: state.0,
-            effort: state.1
+            readState: { try? readPickerState(transaction.window) }
         ) else {
+            let state = try readPickerState(transaction.window)
             throw ControlError.failed(
                 "Codex still shows \(state.0 ?? "no model") after selecting \(label)."
             )
@@ -5090,13 +5669,12 @@ do {
             targetLabel: label,
             initial: operationSnapshot
         )
-        let state = try readPickerState(transaction.window)
-        guard pickerSelectionConfirmed(
+        guard let state = waitForPickerSelection(
             categoryPrefix: "Effort ",
             targetLabel: label,
-            model: state.0,
-            effort: state.1
+            readState: { try? readPickerState(transaction.window) }
         ) else {
+            let state = try readPickerState(transaction.window)
             throw ControlError.failed(
                 "Codex still shows \(state.1 ?? "no effort") after selecting \(label)."
             )

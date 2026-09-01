@@ -150,6 +150,11 @@ describe("push-to-talk key lease", () => {
     );
 
     expect(plugin.match(/releaseSynthesizedKeysSync\(\)/g)).toHaveLength(3);
+    const connectIndex = plugin.indexOf("await streamDeck.connect()");
+    expect(connectIndex).toBeGreaterThan(0);
+    expect(
+      plugin.indexOf("\nreleaseSynthesizedKeysSync();", connectIndex),
+    ).toBeGreaterThan(connectIndex);
     expect(plugin).toContain('process.on("uncaughtExceptionMonitor"');
     expect(plugin).toContain('process.once("exit"');
     expect(command).toContain("async onWillDisappear");
@@ -159,5 +164,14 @@ describe("push-to-talk key lease", () => {
     expect(control).toContain('key up "d"');
     expect(control).toContain("key up shift");
     expect(control).toContain("key up control");
+  });
+
+  it("bounds every AppleScript cleanup so missing Accessibility cannot block boot", () => {
+    const automation = readFileSync("src/lib/automation.ts", "utf8");
+
+    expect(automation).toContain("timeout: 1_500");
+    expect(automation).toContain('killSignal: "SIGKILL"');
+    expect(automation).toContain('child.kill("SIGKILL")');
+    expect(automation).toContain("timed out after ${timeoutMs} ms");
   });
 });

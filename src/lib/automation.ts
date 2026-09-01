@@ -35,17 +35,33 @@ let pttGuard: ChildProcess | undefined;
 let pttOperation: Promise<void> = Promise.resolve();
 const inputReleaseGuard = new InputReleaseGuard();
 
-function run(executable: string, args: readonly string[]): Promise<void> {
+function run(
+  executable: string,
+  args: readonly string[],
+  timeoutMs = 5_000,
+): Promise<void> {
   return new Promise((resolvePromise, reject) => {
     const child = spawn(executable, [...args], {
       stdio: "ignore",
       windowsHide: true,
     });
-    child.once("error", reject);
+    let settled = false;
+    const finish = (error?: Error): void => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      if (error) reject(error);
+      else resolvePromise();
+    };
+    const timeout = setTimeout(() => {
+      child.kill("SIGKILL");
+      finish(new Error(`${executable} timed out after ${timeoutMs} ms`));
+    }, timeoutMs);
+    child.once("error", (error) => finish(error));
     child.once("exit", (code) => {
-      if (code === 0) resolvePromise();
+      if (code === 0) finish();
       else
-        reject(
+        finish(
           new Error(`${executable} exited with code ${code ?? "unknown"}`),
         );
     });
@@ -167,6 +183,8 @@ export function releaseSynthesizedKeysSync(): boolean {
     {
       stdio: "ignore",
       windowsHide: true,
+      timeout: 1_500,
+      killSignal: "SIGKILL",
     },
   );
   return !result.error && result.status === 0;

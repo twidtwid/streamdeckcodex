@@ -6,19 +6,36 @@ export function selectionPayload(value, label) {
   );
 }
 
-export function snapshotLiveState(native, threadId, selections = {}) {
+export function requireConnectedQaTarget(activeThreadId, expectedThreadId) {
+  if (!activeThreadId) {
+    throw new Error("Connected QA requires one focused primary Codex task.");
+  }
+  if (expectedThreadId && activeThreadId !== expectedThreadId) {
+    throw new Error(
+      "Connected QA refused because the focused task is not the explicit disposable target.",
+    );
+  }
+  return activeThreadId;
+}
+
+export function snapshotLiveState(native, threadId, options = {}) {
   if (!threadId) {
     throw new Error("Transactional QA requires an exact focused task ID.");
   }
+  const modes = options.modes ?? ["plan", "fast"];
   const picker = native("read", undefined, threadId);
   return {
     threadId,
-    plan: native("mode-read", "plan", threadId).active,
-    fast: native("mode-read", "fast", threadId).active,
+    plan: modes.includes("plan")
+      ? native("mode-read", "plan", threadId).active
+      : undefined,
+    fast: modes.includes("fast")
+      ? native("mode-read", "fast", threadId).active
+      : undefined,
     model: picker.model,
     reasoning: picker.effort,
-    modelSelection: selections.model,
-    reasoningSelection: selections.reasoning,
+    modelSelection: options.model,
+    reasoningSelection: options.reasoning,
   };
 }
 
@@ -31,6 +48,7 @@ export function restoreLiveState(native, snapshot) {
     ["plan", snapshot.plan],
     ["fast", snapshot.fast],
   ]) {
+    if (typeof expected !== "boolean") continue;
     try {
       if (native("mode-read", mode, snapshot.threadId).active !== expected)
         native("mode-toggle", mode, snapshot.threadId);
@@ -78,4 +96,13 @@ export function restoreLiveState(native, snapshot) {
     }
   }
   return failures;
+}
+
+export function createLiveStateRestorer(native, snapshot) {
+  let restored = false;
+  return () => {
+    if (restored) return [];
+    restored = true;
+    return restoreLiveState(native, snapshot);
+  };
 }

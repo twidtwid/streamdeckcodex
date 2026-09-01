@@ -6,12 +6,14 @@ import { fileURLToPath } from "node:url";
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const dashboard = join(root, "dashboard");
 const runtime = join(root, ".cache", "progress");
-const activityPath = join(runtime, "activity.jsonl");
+const activityPath =
+  process.env.CODEX_PROGRESS_ACTIVITY_PATH || join(runtime, "activity.jsonl");
 const port = Number.parseInt(process.env.CODEX_PROGRESS_PORT || "4317", 10);
 const host = "127.0.0.1";
 let appendQueue = Promise.resolve();
 let activityLeaseUntil = 0;
 let latestWorkLine = "Build work continues.";
+let latestTransitionAt = 0;
 
 const types = {
   ".html": "text/html; charset=utf-8",
@@ -82,10 +84,24 @@ function appendActivity(line, kind = "transition") {
     kind,
     line: clean,
   };
+  if (kind === "transition") {
+    latestTransitionAt = Date.parse(entry.at);
+  }
   appendQueue = appendQueue.then(() =>
     appendFile(activityPath, `${JSON.stringify(entry)}\n`, "utf8"),
   );
   return appendQueue.then(() => entry);
+}
+
+async function syncExternalTransition() {
+  const entries = await activityEntries();
+  const newest = entries.findLast((entry) => entry.kind === "transition");
+  if (!newest) return;
+  const observedAt = Date.parse(newest.at);
+  if (!Number.isFinite(observedAt) || observedAt <= latestTransitionAt) return;
+  latestTransitionAt = observedAt;
+  latestWorkLine = newest.line;
+  activityLeaseUntil = Math.max(activityLeaseUntil, observedAt + 5 * 60_000);
 }
 
 async function combinedStatus() {
@@ -162,6 +178,7 @@ server.listen(port, host, () => {
 
 const heartbeat = setInterval(async () => {
   try {
+    await syncExternalTransition();
     if (Date.now() > activityLeaseUntil) return;
     await appendActivity(`Still working — ${latestWorkLine}`, "heartbeat");
   } catch {

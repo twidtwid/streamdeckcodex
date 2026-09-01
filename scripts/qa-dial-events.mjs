@@ -5,7 +5,8 @@ import { homedir } from "node:os";
 import { dirname, resolve } from "node:path";
 import { WebSocketServer } from "ws";
 import {
-  restoreLiveState,
+  createLiveStateRestorer,
+  requireConnectedQaTarget,
   selectionPayload,
   snapshotLiveState,
 } from "./lib/live-state-journal.mjs";
@@ -68,10 +69,12 @@ async function waitFor(check, timeout = 8_000) {
   throw new Error("Timed out waiting for the plugin event result");
 }
 
-const activeThreadId = activeForegroundThreadId();
-if (!activeThreadId) {
-  throw new Error("Connected dial QA requires one focused primary Codex task.");
-}
+const activeThreadId = requireConnectedQaTarget(
+  activeForegroundThreadId(),
+  process.env.STREAMDECK_QA_THREAD_ID,
+);
+spawnSync("/usr/bin/open", [`codex://threads/${activeThreadId}`]);
+await delay(3_000);
 const cache = JSON.parse(
   readFileSync(resolve(homedir(), ".codex", "models_cache.json"), "utf8"),
 );
@@ -121,6 +124,7 @@ if (!initialModelSelection || !initialReasoningSelection) {
   );
 }
 const initialState = snapshotLiveState(native, activeThreadId, {
+  modes: ["plan"],
   model: {
     value: initialModelSelection.slug,
     label: initialModelSelection.label,
@@ -137,12 +141,6 @@ if (composer.draftEmpty !== true) {
   );
 }
 const initialPlan = initialState.plan;
-if (initialPlan) {
-  native("mode-toggle", "plan", activeThreadId);
-}
-if (native("mode-read", "plan", activeThreadId).active) {
-  throw new Error("Could not establish a non-Plan QA precondition");
-}
 const baseModel = capabilities.at(-1);
 const modelTarget = capabilities.at(-2);
 if (!baseModel || !modelTarget) throw new Error("No reversible model pair.");
@@ -152,17 +150,6 @@ const reasoningTarget = baseModel.reasoning[baseReasoningIndex - 1];
 if (!baseReasoning || !reasoningTarget) {
   throw new Error("Connected dial QA requires two reasoning levels.");
 }
-native(
-  "model",
-  selectionPayload(baseModel.slug, baseModel.label),
-  activeThreadId,
-);
-native(
-  "reasoning",
-  selectionPayload(baseReasoning, effortLabels[baseReasoning]),
-  activeThreadId,
-);
-
 const server = new WebSocketServer({ host: "127.0.0.1", port: 0 });
 await once(server, "listening");
 const address = server.address();
@@ -247,7 +234,40 @@ child.once("exit", (code, signal) => {
   childResult = { code, signal };
 });
 
+const restoreOnce = createLiveStateRestorer(native, initialState);
+const signals = ["SIGINT", "SIGTERM"];
+const onSignal = (signal) => {
+  child.kill("SIGTERM");
+  for (const client of server.clients) client.terminate();
+  server.close();
+  const failures = restoreOnce();
+  if (failures.length) {
+    process.stderr.write(`restore failures: ${failures.join("; ")}\n`);
+  }
+  process.exit(failures.length ? 1 : signal === "SIGINT" ? 130 : 143);
+};
+const signalHandlers = new Map(
+  signals.map((signal) => [signal, () => onSignal(signal)]),
+);
+for (const [signal, handler] of signalHandlers) process.once(signal, handler);
+
 try {
+  if (initialPlan) {
+    native("mode-toggle", "plan", activeThreadId);
+  }
+  if (native("mode-read", "plan", activeThreadId).active) {
+    throw new Error("Could not establish a non-Plan QA precondition");
+  }
+  native(
+    "model",
+    selectionPayload(baseModel.slug, baseModel.label),
+    activeThreadId,
+  );
+  native(
+    "reasoning",
+    selectionPayload(baseReasoning, effortLabels[baseReasoning]),
+    activeThreadId,
+  );
   await waitFor(() => {
     if (childResult) {
       throw new Error(
@@ -437,11 +457,12 @@ try {
   process.stderr.write(`${output.join("")}\n`);
   throw error;
 } finally {
+  for (const [signal, handler] of signalHandlers) process.off(signal, handler);
   child.kill("SIGTERM");
   await Promise.race([once(child, "exit"), delay(2_000)]);
   for (const client of server.clients) client.close();
   server.close();
-  const failures = restoreLiveState(native, initialState);
+  const failures = restoreOnce();
   if (failures.length) {
     process.stderr.write(`restore failures: ${failures.join("; ")}\n`);
     process.exitCode = 1;

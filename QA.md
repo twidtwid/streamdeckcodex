@@ -97,6 +97,24 @@ turning the physical encoder, so physical-device evidence must still be observed
 on the installed build. A connected pass must record plugin SHA, Codex version,
 Stream Deck version, date, postcondition, and restoration result.
 
+The 2026-09-01 Sagan gate used Stream Deck 7.5.1, Node 24.13.1, Codex desktop
+26.715.72359, and an attached Stream Deck Plus. The profile rendered normally.
+The live adapter visibly changed 5.6 Sol/High to 5.6 Terra/Light. The separate
+action-event gate exercised Model, Reasoning, and Plan, then restored
+Terra/Light with Plan off. Rotation was preview-only and press applied once.
+The follow-up gate also toggled Plan and Fast on then off with one task-bound
+dispatch per press. Terra's live Ultra confirmation used the bounded Continue
+button, read back Ultra, and restored Light without enabling Full access.
+This is registered-action plus visible-UI evidence, not a claim that a human
+physically turned every encoder.
+
+Current Codex exposes compact picker state in the popup title and Model/Effort
+inside **Show advanced options**. Empty composers may expose `Do anything` or
+the Plan hint through AXValue rather than AXPlaceholderValue. The native gate
+has compiled fixtures for these placeholders, traverses the advanced picker,
+uses semantic AXPress for the final selection, and still rejects arbitrary
+draft text.
+
 The complete non-connected release gate is `npm run release:verify`. It does
 not claim physical-device success. Run `npm run release:verify:connected` only
 with explicit connected QA intent and the required disposable fixture.

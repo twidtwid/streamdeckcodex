@@ -5,7 +5,8 @@ import { homedir, tmpdir } from "node:os";
 import { dirname, resolve } from "node:path";
 import { WebSocketServer } from "ws";
 import {
-  restoreLiveState,
+  createLiveStateRestorer,
+  requireConnectedQaTarget,
   snapshotLiveState,
 } from "./lib/live-state-journal.mjs";
 import { activeForegroundThreadId } from "./lib/foreground-thread.mjs";
@@ -53,7 +54,17 @@ async function waitFor(check, timeout = 12_000) {
   throw new Error("Timed out waiting for a mode event result");
 }
 
-const activeThreadId = activeForegroundThreadId();
+async function waitForMode(mode, expected) {
+  return waitFor(() => {
+    const read = native("mode-read", mode, activeThreadId);
+    return read.active === expected ? read : undefined;
+  }, 5_000);
+}
+
+const activeThreadId = requireConnectedQaTarget(
+  activeForegroundThreadId(),
+  process.env.STREAMDECK_QA_THREAD_ID,
+);
 const initialState = snapshotLiveState(native, activeThreadId);
 const initialPlan = { active: initialState.plan };
 if (typeof initialPlan.active !== "boolean") {
@@ -155,6 +166,23 @@ child.once("exit", (code, signal) => {
   childResult = { code, signal };
 });
 
+const restoreOnce = createLiveStateRestorer(native, initialState);
+const signals = ["SIGINT", "SIGTERM"];
+const onSignal = (signal) => {
+  child.kill("SIGTERM");
+  for (const client of server.clients) client.terminate();
+  server.close();
+  const failures = restoreOnce();
+  if (failures.length) {
+    process.stderr.write(`restore failures: ${failures.join("; ")}\n`);
+  }
+  process.exit(failures.length ? 1 : signal === "SIGINT" ? 130 : 143);
+};
+const signalHandlers = new Map(
+  signals.map((signal) => [signal, () => onSignal(signal)]),
+);
+for (const [signal, handler] of signalHandlers) process.once(signal, handler);
+
 const action = "com.todd.streamdeckcodex.command";
 const contexts = [];
 
@@ -183,7 +211,8 @@ async function pressMode(mode, commandIndex, expectedTitle) {
       (message) =>
         message.context === context &&
         message.event === "setFeedback" &&
-        message.payload?.value === mode.toUpperCase(),
+        message.payload?.title === "ACTION" &&
+        message.payload?.value?.toLowerCase() === mode,
     ),
   );
   const before = outbound.length;
@@ -204,7 +233,7 @@ async function pressMode(mode, commandIndex, expectedTitle) {
           message.context === context &&
           message.event === "setFeedback" &&
           message.payload?.title === expectedTitle &&
-          message.payload?.value === mode.toUpperCase(),
+          message.payload?.value?.toLowerCase() === mode,
       ),
   );
   return feedback.payload;
@@ -226,43 +255,34 @@ try {
   const firstExpected = initialPlan.active ? "OFF" : "ACTIVE";
   const secondExpected = initialPlan.active ? "ACTIVE" : "OFF";
   const firstPlanFeedback = await pressMode("plan", 1, firstExpected);
-  const afterFirst = native("mode-read", "plan");
-  if (afterFirst.active === initialPlan.active) {
-    throw new Error("First Plan press did not visibly toggle the composer.");
-  }
+  const afterFirst = await waitForMode("plan", !initialPlan.active);
   const secondPlanFeedback = await pressMode("plan", 1, secondExpected);
-  const restoredPlan = native("mode-read", "plan");
-  if (restoredPlan.active !== initialPlan.active) {
-    throw new Error("Second Plan press did not visibly restore the composer.");
-  }
+  const restoredPlan = await waitForMode("plan", initialPlan.active);
 
   const firstFastExpected = fastRead.active ? "OFF" : "ACTIVE";
   const secondFastExpected = fastRead.active ? "ACTIVE" : "OFF";
   const firstFastFeedback = await pressMode("fast", 0, firstFastExpected);
-  const afterFirstFast = native("mode-read", "fast");
-  if (afterFirstFast.active === fastRead.active) {
-    throw new Error("First Fast press did not visibly toggle the composer.");
-  }
+  const afterFirstFast = await waitForMode("fast", !fastRead.active);
   const secondFastFeedback = await pressMode("fast", 0, secondFastExpected);
-  const restoredFast = native("mode-read", "fast");
-  if (restoredFast.active !== fastRead.active) {
-    throw new Error("Second Fast press did not visibly restore the composer.");
-  }
+  const restoredFast = await waitForMode("fast", fastRead.active);
 
   const calls = readFileSync(nativeLog, "utf8")
     .trim()
     .split("\n")
     .filter(Boolean)
     .map((line) => JSON.parse(line));
-  if (calls.length !== 4) {
-    throw new Error(`Expected 4 native dispatches, observed ${calls.length}.`);
-  }
-  if (calls.some((call) => typeof call[2] !== "string" || !call[2])) {
+  const dispatches = calls.filter((call) => call[0] === "mode-toggle");
+  if (dispatches.length !== 4) {
     throw new Error(
-      `Mode dispatches were not bound to the focused task: ${JSON.stringify(calls)}`,
+      `Expected 4 native dispatches, observed ${dispatches.length}.`,
     );
   }
-  const dispatchedModes = calls.map((call) => call.slice(0, 2));
+  if (dispatches.some((call) => typeof call[2] !== "string" || !call[2])) {
+    throw new Error(
+      `Mode dispatches were not bound to the focused task: ${JSON.stringify(dispatches)}`,
+    );
+  }
+  const dispatchedModes = dispatches.map((call) => call.slice(0, 2));
   if (
     JSON.stringify(dispatchedModes) !==
     JSON.stringify([
@@ -272,7 +292,9 @@ try {
       ["mode-toggle", "fast"],
     ])
   ) {
-    throw new Error(`Unexpected native dispatches: ${JSON.stringify(calls)}`);
+    throw new Error(
+      `Unexpected native dispatches: ${JSON.stringify(dispatches)}`,
+    );
   }
 
   process.stdout.write(
@@ -290,7 +312,7 @@ try {
         second: secondFastFeedback,
         restored: restoredFast.active,
       },
-      dispatches: calls,
+      dispatches,
     })}\n`,
   );
 } catch (error) {
@@ -304,11 +326,12 @@ try {
   );
   throw error;
 } finally {
+  for (const [signal, handler] of signalHandlers) process.off(signal, handler);
   child.kill("SIGTERM");
   await Promise.race([once(child, "exit"), delay(2_000)]);
   for (const client of server.clients) client.close();
   server.close();
-  const failures = restoreLiveState(native, initialState);
+  const failures = restoreOnce();
   if (failures.length) {
     process.stderr.write(`restore failures: ${failures.join("; ")}\n`);
     process.exitCode = 1;

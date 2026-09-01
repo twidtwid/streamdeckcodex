@@ -16,27 +16,27 @@ testing only representative keys.
 
 ## Execution order and status
 
-| Plan | Title                                                        | Priority | Effort | Depends on    | Status                                                         |
-| ---- | ------------------------------------------------------------ | -------- | ------ | ------------- | -------------------------------------------------------------- |
-| 002  | Bind every task mutation to the exact focused Codex window   | P1       | L      | —             | DONE                                                           |
-| 001  | Establish the executable 48-key contract                     | P1       | L      | 002           | DONE                                                           |
-| 003  | Report success only after truthful live-state postconditions | P1       | L      | 001, 002      | DONE                                                           |
-| 004  | Make the connected 48-key release gate transactional         | P1       | L      | 001, 002, 003 | BLOCKED — fail-closed; no complete reversible 48-key verifier  |
-| 005  | Native shortcuts and project affinity (parallel record)      | P1       | M      | —             | DONE — reconciled into the exact-target implementation         |
-| 006  | Add direct Browser, Files, and Side chat workspace keys      | P1       | S      | 001, 003      | DONE — seven installed pages and 51-key contract verified      |
-| 007  | Make one focused-task identity authoritative end to end      | P1       | L      | —             | DONE — approved at `c58909b`; all release gates pass           |
-| 008  | Replace overlapping polls with one composer snapshot         | P1       | L      | 007           | DONE — approved at `3afac58`; all release gates pass           |
-| 009  | Make runtime refresh incremental and change-driven           | P2       | L      | 007, 008      | DONE — approved at `5eab6d5`; all release gates pass           |
-| 010  | Use one native target transaction and AX snapshot per poll   | P2       | L      | 007, 008      | BLOCKED — final gaps closed by approved follow-up Plan 012     |
-| 011  | Generate every profile consumer from one 51-key contract     | P2       | L      | 007–009, 012  | DONE — approved at `49230d1`; all release gates pass           |
-| 012  | Close the remaining native visibility regressions            | P1       | S      | 007–010       | DONE — approved at `02ca64c`; all release gates pass           |
-| 013  | Reconcile the canonical baseline and installed lineage       | P0       | L      | —             | DONE — public descendant; prior work preserved                 |
-| 014  | Make synthesized-input cleanup non-fatal and attributable    | P0       | M      | 013           | DONE — reload stable; input released; failures deduplicated    |
-| 015  | Make Model and Reasoning QA execute the real event path      | P1       | M      | 013, 014      | BLOCKED — desktop not frontmost; connected gate refused        |
-| 016  | Unify dynamic Model and Reasoning capabilities end to end    | P1       | M      | 013, 015      | BLOCKED — implementation passes; connected restore unavailable |
-| 017  | Add explicit availability reasons and Health/Doctor          | P1       | L      | 013, 014, 016 | DONE — reason-coded read-only doctor verified                  |
-| 018  | Patch Stream Deck tooling and dependency advisories          | P1       | S      | 013           | DONE — zero audits; official validation/package pass           |
-| 019  | Refresh operator documentation and release/install proof     | P1       | M      | 013–018       | DONE — clean identity/reload proof; blocked gates explicit     |
+| Plan | Title                                                        | Priority | Effort | Depends on    | Status                                                        |
+| ---- | ------------------------------------------------------------ | -------- | ------ | ------------- | ------------------------------------------------------------- |
+| 002  | Bind every task mutation to the exact focused Codex window   | P1       | L      | —             | DONE                                                          |
+| 001  | Establish the executable 48-key contract                     | P1       | L      | 002           | DONE                                                          |
+| 003  | Report success only after truthful live-state postconditions | P1       | L      | 001, 002      | DONE                                                          |
+| 004  | Make the connected 48-key release gate transactional         | P1       | L      | 001, 002, 003 | BLOCKED — fail-closed; no complete reversible 48-key verifier |
+| 005  | Native shortcuts and project affinity (parallel record)      | P1       | M      | —             | DONE — reconciled into the exact-target implementation        |
+| 006  | Add direct Browser, Files, and Side chat workspace keys      | P1       | S      | 001, 003      | DONE — seven installed pages and 51-key contract verified     |
+| 007  | Make one focused-task identity authoritative end to end      | P1       | L      | —             | DONE — approved at `c58909b`; all release gates pass          |
+| 008  | Replace overlapping polls with one composer snapshot         | P1       | L      | 007           | DONE — approved at `3afac58`; all release gates pass          |
+| 009  | Make runtime refresh incremental and change-driven           | P2       | L      | 007, 008      | DONE — approved at `5eab6d5`; all release gates pass          |
+| 010  | Use one native target transaction and AX snapshot per poll   | P2       | L      | 007, 008      | BLOCKED — final gaps closed by approved follow-up Plan 012    |
+| 011  | Generate every profile consumer from one 51-key contract     | P2       | L      | 007–009, 012  | DONE — approved at `49230d1`; all release gates pass          |
+| 012  | Close the remaining native visibility regressions            | P1       | S      | 007–010       | DONE — approved at `02ca64c`; all release gates pass          |
+| 013  | Reconcile the canonical baseline and installed lineage       | P0       | L      | —             | DONE — public descendant; prior work preserved                |
+| 014  | Make synthesized-input cleanup non-fatal and attributable    | P0       | M      | 013           | DONE — reload stable; input released; failures deduplicated   |
+| 015  | Make Model and Reasoning QA execute the real event path      | P1       | M      | 013, 014      | DONE — Sagan event gate passed and restored visible state     |
+| 016  | Unify dynamic Model and Reasoning capabilities end to end    | P1       | M      | 013, 015      | DONE — live Terra/Light apply and capability gate verified    |
+| 017  | Add explicit availability reasons and Health/Doctor          | P1       | L      | 013, 014, 016 | DONE — reason-coded read-only doctor verified                 |
+| 018  | Patch Stream Deck tooling and dependency advisories          | P1       | S      | 013           | DONE — zero audits; official validation/package pass          |
+| 019  | Refresh operator documentation and release/install proof     | P1       | M      | 013–018       | DONE — clean identity/reload proof; blocked gates explicit    |
 
 Status values: READY | IN PROGRESS | DONE | BLOCKED (with one-line reason) |
 REJECTED (with one-line rationale)

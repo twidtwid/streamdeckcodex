@@ -92,6 +92,17 @@ describe("native workflow postcondition fixture", () => {
     expect(run("no-event-within-cap")).toBe(1);
   });
 
+  it("includes the current depth-27 composer while preserving a hard traversal bound", () => {
+    const run = (scenario: string) =>
+      spawnSync(native, ["--traversal-depth-fixture", scenario], {
+        encoding: "utf8",
+      }).status;
+    expect(run("current-composer")).toBe(0);
+    expect(run("at-bound")).toBe(0);
+    expect(run("beyond-bound")).toBe(0);
+    expect(run("unknown")).toBe(1);
+  });
+
   it("fails closed for command postcondition divergences", () => {
     const run = (state: Record<string, unknown>) =>
       spawnSync(native, ["--dispatch-fixture", encodeNativePayload(state)], {

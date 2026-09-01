@@ -8,10 +8,14 @@ const native = resolve(
 );
 
 type FixtureAction =
+  | "--composer-draft-fixture"
   | "--selector-fixture"
   | "--transaction-fixture"
   | "--mode-transition-fixture"
   | "--picker-selection-fixture"
+  | "--picker-label-fixture"
+  | "--picker-wait-fixture"
+  | "--ultra-confirmation-fixture"
   | "--workspace-shortcut-fixture";
 
 function run(action: FixtureAction, scenario: string) {
@@ -91,6 +95,21 @@ describe("native single-pass AX selectors", () => {
 
 describe("native compiled action decisions", () => {
   it.each([
+    "chromium-placeholder",
+    "chatgpt-placeholder",
+    "current-codex-placeholder",
+    "plan-placeholder",
+    "description-placeholder",
+    "real-draft",
+    "placeholder-with-draft",
+  ])(
+    "preserves drafts while recognizing Codex's empty placeholder: %s",
+    (scenario) => {
+      expect(run("--composer-draft-fixture", scenario).status).toBe(0);
+    },
+  );
+
+  it.each([
     "plan-on",
     "plan-off",
     "fast-changed",
@@ -107,12 +126,53 @@ describe("native compiled action decisions", () => {
     },
   );
 
+  it.each(["versioned-model", "annotated-ultra", "unrelated"])(
+    "matches current picker labels without accepting unrelated values: %s",
+    (scenario) => {
+      expect(run("--picker-label-fixture", scenario).status).toBe(0);
+    },
+  );
+
+  it.each([
+    "valid",
+    "spatial-siblings",
+    "missing-full-access",
+    "duplicate-continue",
+  ])("selects only the bounded Ultra Continue confirmation: %s", (scenario) => {
+    expect(run("--ultra-confirmation-fixture", scenario).status).toBe(0);
+  });
+
+  it.each([
+    "selection-delayed",
+    "selection-unchanged",
+    "fast-delayed",
+    "fast-unavailable",
+  ])("waits for bounded picker state without inventing it: %s", (scenario) => {
+    expect(run("--picker-wait-fixture", scenario).status).toBe(0);
+  });
+
   it.each(["review-panel", "browser", "files", "side-chat"])(
     "uses the typed native workspace shortcut registry: %s",
     (scenario) => {
       expect(run("--workspace-shortcut-fixture", scenario).status).toBe(0);
     },
   );
+
+  it("pairs pointer clicks and uses semantic press for final picker selection", () => {
+    const source = readFileSync("native/CodexUIControl.swift", "utf8");
+    const implementation = source.match(
+      /func clickMenuItem[\s\S]*?\n}\n\nfunc pressEscape/,
+    )?.[0];
+    expect(implementation).toContain("mouseType: .mouseMoved");
+    expect(implementation).toContain("mouseType: .leftMouseDown");
+    expect(implementation).toContain("mouseType: .leftMouseUp");
+    expect(implementation).toContain("restore?.post");
+    expect(implementation).toContain("if postedDown");
+    expect(source).toContain("try clickMenuItem(advanced.element)");
+    expect(source).toContain("AXUIElementPerformAction(");
+    expect(source).toContain("settledTarget.element");
+    expect(source).toContain("kAXPressAction as CFString");
+  });
 });
 
 describe("native exact-target transaction", () => {

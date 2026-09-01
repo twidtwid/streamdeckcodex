@@ -129,6 +129,12 @@ before reporting success. If Codex changes focus, contains a draft where that
 would be unsafe, or does not expose the expected control, the action fails
 closed and displays an alert.
 
+Current Codex builds may expose the empty composer hint as its accessibility
+value and keep Model/Reasoning under the picker's advanced options. The
+companion recognizes the exact empty hints, preserves all other draft text,
+opens the advanced controls when needed, and verifies the visible picker after
+each apply.
+
 Push-to-talk is guarded by a watchdog. Releasing the key, leaving the page,
 stopping the plugin, losing the parent process, a partial key-down failure, or
 the 60-second maximum hold releases every synthesized modifier.

@@ -1,6 +1,6 @@
 # Plan 015: Make Model and Reasoning QA execute the real event path
 
-**Status:** BLOCKED — connected gate refused because no empty frontmost Codex composer is available  
+**Status:** DONE — connected registered-action gate passed and restored state on Sagan
 **Priority:** P1  
 **Effort:** M  
 **Risk:** Medium  
@@ -12,6 +12,15 @@
 Model and Reasoning controls have repeatedly passed stored-state or helper-level tests while doing nothing in the visible Codex task. The existing connected-QA script discovers an active thread ID but omits it from mode/model/reasoning native calls. Several tests exercise pure functions or source strings instead of the actual Stream Deck `dialUp` handler. Passing QA therefore does not prove that a physical encoder press targets the visible task or mutates it exactly once.
 
 ## Current state and evidence
+
+### 2026-09-01 connected-gate result
+
+Accessibility is restored and the exact frontmost task/window witness succeeds.
+The bounded traversal now includes the observed depth-27 composer. Current
+Chromium placeholder and advanced-picker changes are covered by compiled
+fixtures. On Sagan, the registered action-event gate proved preview-only rotate,
+one apply per press, visible Model/Reasoning/Plan postconditions, and restoration
+of the original Terra/Light/Plan-off state.
 
 The audited connected-QA script has this effective pattern:
 
@@ -134,13 +143,13 @@ Expected connected output includes the build SHA, verified focus, empty composer
 
 ## Machine-checkable done criteria
 
-- [ ] Every target-sensitive QA call carries the exact captured visible task ID.
-- [ ] Real `dialRotate` handler tests observe zero model/reasoning dispatches.
-- [ ] Real `dialUp` handler tests observe exactly one dispatch with the selected value.
-- [ ] `APPLIED` feedback requires a visible postcondition match.
-- [ ] Connected QA restores the original model and reasoning on the same task.
-- [ ] Connected QA is opt-in and cannot pass when no device/focused task is available.
-- [ ] PTT safety and Plan/Fast targeting regressions pass after reload.
+- [x] Every target-sensitive QA call carries the exact captured visible task ID.
+- [x] Real `dialRotate` handler tests observe zero model/reasoning dispatches.
+- [x] Real `dialUp` handler tests observe exactly one dispatch with the selected value.
+- [x] `APPLIED` feedback requires a visible postcondition match.
+- [x] Connected QA restores the original model and reasoning on the same task.
+- [x] Connected QA is opt-in and cannot pass when no device/focused task is available.
+- [x] PTT safety and Plan/Fast targeting regressions pass after reload.
 
 ## STOP conditions
 

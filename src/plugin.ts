@@ -15,7 +15,8 @@ import { releaseSynthesizedKeysSync } from "./lib/automation.js";
 import { createRefreshCoordinator } from "./lib/refresh-coordinator.js";
 import {
   BUNDLED_PROFILE_VERSION,
-  bundledProfileForDevice,
+  bundledProfileTargets,
+  bundledProfileTargetsVisible,
 } from "./lib/bundled-profiles.js";
 import { BUILD_INFO } from "./lib/build-info.js";
 import { collectHealth, HealthTransitionLogger } from "./lib/health.js";
@@ -77,17 +78,24 @@ const activateBundledProfileOnce = async (): Promise<void> => {
   if (globalSettings.profileActivationVersion === BUNDLED_PROFILE_VERSION)
     return;
 
-  const profiles = [...streamDeck.devices].flatMap((device) => {
-    const profile = bundledProfileForDevice(device.type);
-    return profile ? [{ device, profile }] : [];
-  });
+  const profiles = bundledProfileTargets(streamDeck.devices);
   if (profiles.length === 0) return;
 
-  await Promise.all(
-    profiles.map(({ device, profile }) =>
-      streamDeck.profiles.switchToProfile(device.id, profile, 0),
-    ),
-  );
+  // Stream Deck serializes bundled-profile imports. Concurrent requests race
+  // and are rejected as "another operation is already in progress".
+  for (const { device, profile } of profiles) {
+    await streamDeck.profiles.switchToProfile(device.id, profile, 0);
+  }
+
+  const deadline = Date.now() + 3_000;
+  while (!bundledProfileTargetsVisible(profiles) && Date.now() < deadline) {
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, 100));
+  }
+  if (!bundledProfileTargetsVisible(profiles)) {
+    throw new Error(
+      "Bundled profile activation did not expose actions; it remains pending.",
+    );
+  }
   await streamDeck.settings.setGlobalSettings({
     ...globalSettings,
     profileActivated: true,
@@ -102,7 +110,6 @@ const refreshCoordinator = createRefreshCoordinator(refresh, 1250, (error) =>
   streamDeck.logger.error("Failed to refresh Codex companion state", error),
 );
 refreshCoordinator.start();
-releaseSynthesizedKeysSync();
 process.on("uncaughtExceptionMonitor", () => {
   releaseSynthesizedKeysSync();
 });
@@ -113,6 +120,10 @@ process.once("exit", () => {
 });
 
 await streamDeck.connect();
+// Connect and register actions before attempting the defensive PTT cleanup.
+// macOS may block an untrusted AppleScript on its Accessibility prompt; the
+// cleanup is bounded and must never put Stream Deck into a plugin restart loop.
+releaseSynthesizedKeysSync();
 try {
   await activateBundledProfileOnce();
 } catch (error) {
