@@ -94,3 +94,15 @@
 {"at":"2026-09-01T07:08:39.519Z","kind":"heartbeat","line":"Still working — Reload monitoring found repeated Accessibility error spam; fixing refresh logging to emit only real availability transitions."}
 {"at":"2026-09-01T07:09:04.521Z","kind":"heartbeat","line":"Still working — Reload monitoring found repeated Accessibility error spam; fixing refresh logging to emit only real availability transitions."}
 {"at":"2026-09-01T07:09:29.523Z","kind":"heartbeat","line":"Still working — Reload monitoring found repeated Accessibility error spam; fixing refresh logging to emit only real availability transitions."}
+{"at":"2026-09-01T07:09:54.524Z","kind":"heartbeat","line":"Still working — Reload monitoring found repeated Accessibility error spam; fixing refresh logging to emit only real availability transitions."}
+{"at":"2026-09-01T07:10:13.891Z","kind":"transition","line":"Reloading clean build 7785d2f with transition-only health logging; watching the new log segment for repeated failures."}
+{"at":"2026-09-01T07:10:19.526Z","kind":"heartbeat","line":"Still working — Reloading clean build 7785d2f with transition-only health logging; watching the new log segment for repeated failures."}
+{"at":"2026-09-01T07:10:44.528Z","kind":"heartbeat","line":"Still working — Reloading clean build 7785d2f with transition-only health logging; watching the new log segment for repeated failures."}
+{"at":"2026-09-01T07:11:09.531Z","kind":"heartbeat","line":"Still working — Reloading clean build 7785d2f with transition-only health logging; watching the new log segment for repeated failures."}
+{"at":"2026-09-01T07:11:34.532Z","kind":"heartbeat","line":"Still working — Reloading clean build 7785d2f with transition-only health logging; watching the new log segment for repeated failures."}
+{"at":"2026-09-01T07:11:59.536Z","kind":"heartbeat","line":"Still working — Reloading clean build 7785d2f with transition-only health logging; watching the new log segment for repeated failures."}
+{"at":"2026-09-01T07:12:24.538Z","kind":"heartbeat","line":"Still working — Reloading clean build 7785d2f with transition-only health logging; watching the new log segment for repeated failures."}
+{"at":"2026-09-01T07:12:49.539Z","kind":"heartbeat","line":"Still working — Reloading clean build 7785d2f with transition-only health logging; watching the new log segment for repeated failures."}
+{"at":"2026-09-01T07:13:14.542Z","kind":"heartbeat","line":"Still working — Reloading clean build 7785d2f with transition-only health logging; watching the new log segment for repeated failures."}
+{"at":"2026-09-01T07:13:21.411Z","kind":"transition","line":"Two-minute monitor passed: build 7785d2f stayed alive, logged each health transition once, and kept synthesized input released."}
+{"at":"2026-09-01T07:13:39.542Z","kind":"heartbeat","line":"Still working — Two-minute monitor passed: build 7785d2f stayed alive, logged each health transition once, and kept synthesized input released."}

@@ -1,6 +1,6 @@
 # Plan 019: Refresh operator documentation and release/install proof
 
-**Status:** IN PROGRESS — clean build identity and installed reload pending  
+**Status:** DONE
 **Priority:** P1  
 **Effort:** M  
 **Risk:** Low  

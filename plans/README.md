@@ -31,12 +31,12 @@ testing only representative keys.
 | 011  | Generate every profile consumer from one 51-key contract     | P2       | L      | 007–009, 012  | DONE — approved at `49230d1`; all release gates pass           |
 | 012  | Close the remaining native visibility regressions            | P1       | S      | 007–010       | DONE — approved at `02ca64c`; all release gates pass           |
 | 013  | Reconcile the canonical baseline and installed lineage       | P0       | L      | —             | DONE — public descendant; prior work preserved                 |
-| 014  | Make synthesized-input cleanup non-fatal and attributable    | P0       | M      | 013           | IN PROGRESS — implementation/tests pass; reload pending        |
+| 014  | Make synthesized-input cleanup non-fatal and attributable    | P0       | M      | 013           | DONE — reload stable; input released; failures deduplicated    |
 | 015  | Make Model and Reasoning QA execute the real event path      | P1       | M      | 013, 014      | BLOCKED — desktop not frontmost; connected gate refused        |
 | 016  | Unify dynamic Model and Reasoning capabilities end to end    | P1       | M      | 013, 015      | BLOCKED — implementation passes; connected restore unavailable |
 | 017  | Add explicit availability reasons and Health/Doctor          | P1       | L      | 013, 014, 016 | DONE — reason-coded read-only doctor verified                  |
 | 018  | Patch Stream Deck tooling and dependency advisories          | P1       | S      | 013           | DONE — zero audits; official validation/package pass           |
-| 019  | Refresh operator documentation and release/install proof     | P1       | M      | 013–018       | IN PROGRESS — clean identity/reload pending                    |
+| 019  | Refresh operator documentation and release/install proof     | P1       | M      | 013–018       | DONE — clean identity/reload proof; blocked gates explicit     |
 
 Status values: READY | IN PROGRESS | DONE | BLOCKED (with one-line reason) |
 REJECTED (with one-line rationale)

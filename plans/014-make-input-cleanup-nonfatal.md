@@ -1,6 +1,6 @@
 # Plan 014: Make synthesized-input cleanup non-fatal and attributable
 
-**Status:** IN PROGRESS — implementation and automated gates pass; installed reload pending  
+**Status:** DONE
 **Priority:** P0  
 **Effort:** M  
 **Risk:** Medium  

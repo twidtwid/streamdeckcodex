@@ -45,11 +45,13 @@ safety branches.
 
 ## Next verified step
 
-- Commit the exact release candidate, rebuild so the embedded SHA is clean,
-  reload only this installed plugin, and monitor its process/logs.
-- Reversible connected Model/Reasoning and mode mutation is intentionally
-  blocked while macOS exposes Login Window/background instead of an empty
-  frontmost Codex composer. The gate fails closed and performs no mutation.
+- Clean build `7785d2f` was loaded through the installed saved-project link and
+  monitored for two minutes. The process stayed alive, emitted each health
+  transition once, and retained released input state.
+- Restore Stream Deck under **System Settings → Privacy & Security →
+  Accessibility**, then put an empty Codex composer frontmost before running
+  reversible connected Model/Reasoning and mode QA. Until then those gates are
+  intentionally blocked and perform no mutation.
 
 ## Release rule
 
