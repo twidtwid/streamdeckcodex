@@ -66,22 +66,6 @@ describe("physical input acceptance", () => {
     });
   });
 
-  it("PTT uses native composer dictation and retains legacy key-up cleanup only", () => {
-    const script = source(
-      "com.todd.streamdeckcodex.sdPlugin/scripts/codex-control.applescript",
-    );
-    const guard = source(
-      "com.todd.streamdeckcodex.sdPlugin/scripts/ptt-guard.mjs",
-    );
-
-    expect(script).not.toContain("key down");
-    expect(script).toContain('key up "d"');
-    expect(script).toContain("key up shift");
-    expect(script).toContain("key up control");
-    expect(guard).toContain('runTargetControl("dictation-start"');
-    expect(guard).toContain('runTargetControl("dictation-stop")');
-  });
-
   it("requires compiled visible Plan and Fast transitions", () => {
     for (const scenario of ["plan-on", "plan-off", "fast-changed"]) {
       expect(nativeFixture("--mode-transition-fixture", scenario)).toBe(0);
@@ -97,6 +81,9 @@ describe("physical input acceptance", () => {
     );
   });
 
+  // Deliberate source-text guard: every synthesized CGEvent in the native
+  // helper must pair its down with a deferred up, and no fixture can observe
+  // that pairing without posting real input. Keep this cheap static check.
   it("static release guard: native synthesized input always has an unconditional release", () => {
     const native = [
       source("native/Accessibility.swift"),

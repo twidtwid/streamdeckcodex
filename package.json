@@ -47,7 +47,6 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:unit": "vitest run",
     "validate": "streamdeck validate com.todd.streamdeckcodex.sdPlugin",
     "pack:artifact": "streamdeck pack com.todd.streamdeckcodex.sdPlugin --output dist --force && prettier --write com.todd.streamdeckcodex.sdPlugin/manifest.json",
     "pack": "npm run build && npm run pack:artifact",
@@ -69,10 +68,11 @@
     "qa:visuals": "node scripts/render-profile-visuals.mjs",
     "qa:design": "npm run qa:visuals && node scripts/evaluate-profile-design.mjs",
     "qa:design:release": "npm run qa:visuals && node scripts/evaluate-profile-design.mjs --release",
-    "check": "npm run public:check && npm run generated:check && npm run native:build && npm run format:check && npm run typecheck && npm run test:unit && npm run qa:design && npm run build:bundle && npm run validate",
+    "check": "npm run public:check && npm run generated:check && npm run format:check && npm run typecheck && npm test && npm run qa:design && npm run build:bundle && npm run validate",
     "release:bundle": "npm run check && npm run pack:artifact && node scripts/stage-release.mjs",
     "release:verify": "npm run audit:full && npm run audit:production && npm run check && npm run docs:check && npm run pack:artifact && npm run doctor -- --json --allow-degraded",
-    "release:verify:connected": "npm run qa:dials && npm run qa:modes && npm run qa:release:connected"
+    "release:verify:connected": "npm run qa:dials && npm run qa:modes && npm run qa:release:connected",
+    "test:fast": "vitest run --project unit"
   },
   "dependencies": {
     "@elgato/streamdeck": "2.1.2"

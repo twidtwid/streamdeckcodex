@@ -1,5 +1,11 @@
 import { spawnSync } from "node:child_process";
-import { cpSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -14,64 +20,77 @@ const manifest = JSON.parse(
 ) as { Version: string };
 const temporaryRoots: string[] = [];
 
+// Every generator that `generated:check` covers, enumerated directly so the
+// test cannot silently skip one behind an `&&` inside an npm script string.
+const GENERATORS = [
+  "scripts/generate-lucide-paths.mjs",
+  "scripts/generate-static-icons.mjs",
+  "scripts/generate-wordmark-paths.mjs",
+  "scripts/generate-bundled-licenses.mjs",
+  "scripts/generate-profile.mjs",
+  "scripts/generate-keypad-profiles.mjs",
+];
+
 afterEach(() => {
   for (const path of temporaryRoots.splice(0)) {
     spawnSync("trash", [path]);
   }
 });
 
+function temporaryRoot(prefix: string): string {
+  const root = mkdtempSync(join(tmpdir(), prefix));
+  temporaryRoots.push(root);
+  return root;
+}
+
 describe("non-repeating check pipeline", () => {
   it("keeps the package and four-part Stream Deck versions aligned", () => {
     expect(manifest.Version).toBe(`${packageJson.version}.0`);
   });
 
-  it("checks generated sources, builds native once, and uses a pretest-free unit stage", () => {
-    const check = packageJson.scripts.check!;
-    expect(check).toBe(
-      "npm run public:check && npm run generated:check && npm run native:build && npm run format:check && npm run typecheck && npm run test:unit && npm run qa:design && npm run build:bundle && npm run validate",
-    );
-    expect(check.match(/native:build/g) ?? []).toHaveLength(1);
-    expect(packageJson.scripts["test:unit"]!).toBe("vitest run");
-    expect(packageJson.scripts.test).toBe("vitest run");
+  it("builds the native helper exactly once per check", () => {
+    // `pretest` owns the native build, so `check` must reach it through
+    // `npm test` and never call the build a second time itself.
     expect(packageJson.scripts.pretest).toBe("npm run native:build");
+    expect(packageJson.scripts.check).toContain("npm test");
+    expect(packageJson.scripts.check).not.toContain("native:build");
+    expect(packageJson.scripts["test:unit"]).toBeUndefined();
   });
 
   it("accepts every generated artifact without rewriting it", () => {
-    for (const script of [
-      "icons:lucide",
-      "icons:static",
-      "icons:wordmarks",
-      "licenses:bundle",
-      "profile:check",
-    ]) {
-      const [command = "", ...args] = packageJson.scripts[script]!.split(" ");
-      const result = spawnSync(command, [...args, "--check"], {
+    for (const script of GENERATORS) {
+      const result = spawnSync(process.execPath, [resolve(script), "--check"], {
         encoding: "utf8",
       });
-      expect(result.status, result.stderr).toBe(0);
+      expect(result.status, `${script}: ${result.stderr}`).toBe(0);
     }
   });
 
   it("embeds reproducible, privacy-safe build identity", () => {
+    const shipped = "com.todd.streamdeckcodex.sdPlugin/bin/plugin.js";
+    const shippedBefore = existsSync(shipped) ? readFileSync(shipped) : null;
+    const outfile = join(temporaryRoot("streamdeck-bundle-"), "plugin.js");
     const result = spawnSync(process.execPath, ["scripts/build-bundle.mjs"], {
       encoding: "utf8",
-      env: { ...process.env, STREAMDECK_BUILD_COMMIT: "fixture-commit" },
+      env: {
+        ...process.env,
+        STREAMDECK_BUILD_COMMIT: "fixture-commit",
+        STREAMDECK_BUNDLE_OUTFILE: outfile,
+      },
     });
     expect(result.status, result.stderr).toBe(0);
-    const bundle = readFileSync(
-      "com.todd.streamdeckcodex.sdPlugin/bin/plugin.js",
-      "utf8",
-    );
+    const bundle = readFileSync(outfile, "utf8");
     expect(bundle).toContain("fixture-commit");
     expect(bundle).toContain('treeState: "dirty"');
     expect(bundle).not.toContain(process.env.HOME ?? "/Users/example");
+    // The fixture build never touches the shipped bundle, whether or not one
+    // has been built yet in this checkout.
+    const shippedAfter = existsSync(shipped) ? readFileSync(shipped) : null;
+    expect(shippedAfter).toEqual(shippedBefore);
   });
 
   it("rejects stale temporary outputs without writing them in check mode", () => {
-    const temporary = mkdtempSync(
-      join(tmpdir(), "streamdeck-generator-check-"),
-    );
-    temporaryRoots.push(temporary);
+    const temporary = temporaryRoot("streamdeck-generator-check-");
 
     const profileSource = join(temporary, "profile-source");
     cpSync(resolve("profile-src/streamdeckcodex-plus"), profileSource, {
@@ -88,6 +107,37 @@ describe("non-repeating check pipeline", () => {
       script: "scripts/generate-profile.mjs",
       destination: profileManifest,
       environment: { STREAMDECK_PROFILE_SOURCE_ROOT: profileSource },
+    });
+
+    const keypadRoot = join(temporary, "keypad-profiles");
+    cpSync(
+      resolve("profile-src/streamdeckcodex-mini"),
+      join(keypadRoot, "streamdeckcodex-mini"),
+      {
+        recursive: true,
+      },
+    );
+    for (const device of [
+      "streamdeckcodex-stream-deck",
+      "streamdeckcodex-xl",
+      "streamdeckcodex-neo",
+    ]) {
+      cpSync(resolve("profile-src", device), join(keypadRoot, device), {
+        recursive: true,
+      });
+    }
+    const keypadManifest = join(
+      keypadRoot,
+      "streamdeckcodex-mini",
+      "manifest.json",
+    );
+    const staleKeypad = JSON.parse(readFileSync(keypadManifest, "utf8"));
+    staleKeypad.Name = "stale keypad source";
+    writeFileSync(keypadManifest, `${JSON.stringify(staleKeypad, null, 2)}\n`);
+    assertCheckDoesNotWrite({
+      script: "scripts/generate-keypad-profiles.mjs",
+      destination: keypadManifest,
+      environment: { STREAMDECK_KEYPAD_PROFILE_ROOT: keypadRoot },
     });
 
     const lucideDestination = copyAndCorrupt(

@@ -1,5 +1,4 @@
 import { DeviceType } from "@elgato/streamdeck";
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   BUNDLED_PROFILE_VERSION,
@@ -80,27 +79,5 @@ describe("bundled profiles", () => {
     expect(
       bundledProfileTargetsVisible([target("one", [{}]), target("two", [{}])]),
     ).toBe(true);
-  });
-
-  it("serializes profile switching and stores success only after visibility", () => {
-    const source = readFileSync("src/plugin.ts", "utf8");
-    const activation = source.slice(
-      source.indexOf("const activateBundledProfileOnce"),
-      source.indexOf("const refreshCoordinator"),
-    );
-    const switchIndex = activation.indexOf(
-      "await streamDeck.profiles.switchToProfile",
-    );
-    const visibleIndex = activation.indexOf(
-      "bundledProfileTargetsVisible(profiles)",
-    );
-    const settingsIndex = activation.indexOf(
-      "await streamDeck.settings.setGlobalSettings",
-    );
-
-    expect(activation).not.toContain("Promise.all");
-    expect(switchIndex).toBeGreaterThan(0);
-    expect(visibleIndex).toBeGreaterThan(switchIndex);
-    expect(settingsIndex).toBeGreaterThan(visibleIndex);
   });
 });

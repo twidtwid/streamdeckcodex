@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
   availabilityReasonFromError,
   ready,
@@ -24,11 +27,45 @@ function contextLine(timestamp: string, info: unknown): string {
 }
 
 describe("reason-coded health diagnostics", () => {
-  it("runs the doctor against the built plugin helper, not its cache path", () => {
-    const runner = readFileSync("scripts/run-doctor.mjs", "utf8");
-    expect(runner).toContain("CODEX_UI_CONTROL: resolve(");
-    expect(runner).toContain('"com.todd.streamdeckcodex.sdPlugin"');
-    expect(runner).toContain('"codex-ui-control"');
+  it("runs bundled entries with the build identity and the caller's environment", async () => {
+    // The doctor and qa:store both go through this runner; it must embed the
+    // same build identity as the plugin bundle and forward env such as the
+    // native helper path.
+    const { runBundled } = await import(
+      new URL("../scripts/lib/bundle-entry.mjs", import.meta.url).href
+    );
+    const directory = mkdtempSync(join(tmpdir(), "streamdeck-bundle-entry-"));
+    const entry = join(directory, "entry.mjs");
+    const report = join(directory, "report.json");
+    writeFileSync(
+      entry,
+      [
+        'import { writeFileSync } from "node:fs";',
+        "writeFileSync(process.env.FIXTURE_REPORT, JSON.stringify({",
+        "  helper: process.env.CODEX_UI_CONTROL,",
+        "  build: __STREAMDECK_CODEX_BUILD__,",
+        "}));",
+      ].join("\n"),
+    );
+    const status = await runBundled({
+      root: process.cwd(),
+      entry,
+      cacheName: "bundle-entry-test",
+      env: {
+        CODEX_UI_CONTROL: "/fixture/codex-ui-control",
+        FIXTURE_REPORT: report,
+      },
+    });
+    expect(status).toBe(0);
+    const written = JSON.parse(readFileSync(report, "utf8"));
+    expect(written.helper).toBe("/fixture/codex-ui-control");
+    expect(written.build).toMatchObject({
+      schemaVersion: 1,
+      pluginVersion: expect.stringMatching(/^\d+\.\d+\.\d+\.\d+$/),
+      commit: expect.stringMatching(/^[0-9a-f]{40}$/),
+    });
+    expect(["clean", "dirty"]).toContain(written.build.treeState);
+    spawnSync("trash", [directory]);
   });
 
   it("distinguishes missing, malformed, stale, and ready context", () => {

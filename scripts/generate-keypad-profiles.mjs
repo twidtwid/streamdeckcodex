@@ -5,6 +5,11 @@ import { format } from "prettier";
 
 const root = resolve(".");
 const check = process.argv.includes("--check");
+// Tests point this at a scratch copy so a stale fixture can be checked
+// without touching the tracked sources.
+const keypadRoot = resolve(
+  process.env.STREAMDECK_KEYPAD_PROFILE_ROOT ?? join(root, "profile-src"),
+);
 const contract = JSON.parse(
   await readFile(join(root, "profile-src", "profile-contract.json"), "utf8"),
 );
@@ -27,7 +32,7 @@ console.log(
 );
 
 async function generateDeviceProfile(device) {
-  const sourceRoot = join(root, "profile-src", device.archiveName);
+  const sourceRoot = join(keypadRoot, device.archiveName);
   const pages = createPages(device);
   const defaultPageId = deterministicUuid(`${device.slug}:default`);
   const rootManifest = {

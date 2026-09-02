@@ -18,12 +18,11 @@ await build({
   define: {
     __STREAMDECK_CODEX_BUILD__: JSON.stringify(buildInfo),
   },
-  outfile: resolve(
-    root,
-    "com.todd.streamdeckcodex.sdPlugin",
-    "bin",
-    "plugin.js",
-  ),
+  // Tests override the destination so a fixture build never replaces the
+  // shipped bundle.
+  outfile:
+    process.env.STREAMDECK_BUNDLE_OUTFILE ??
+    resolve(root, "com.todd.streamdeckcodex.sdPlugin", "bin", "plugin.js"),
   sourcemap: true,
 });
 
