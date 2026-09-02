@@ -103,11 +103,6 @@ const harness = vi.hoisted(() => {
         reason: "unsupported-schema",
         observedAt: 1,
       })),
-      usageAvailability: vi.fn(async () => ({
-        state: "ready",
-        value: { usedPercent: 20, observedAt: 1 },
-        observedAt: 1,
-      })),
     },
   };
 });
@@ -286,10 +281,10 @@ describe("executable 50-key profile contract", () => {
 
   it("completes a tick while the usage fetch is in flight", async () => {
     const { refresh } = await import("../src/plugin.js");
-    harness.store.usageSnapshot.mockImplementation(
+    harness.store.usageSnapshot.mockImplementationOnce(
       () => new Promise(() => undefined),
     );
-    harness.store.usageSnapshotCached.mockReturnValue(undefined as never);
+    harness.store.usageSnapshotCached.mockReturnValueOnce(undefined as never);
     const agent = harness.registrations.find(
       (handler) => handler instanceof AgentStatusAction,
     ) as AgentStatusAction;

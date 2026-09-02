@@ -43,7 +43,7 @@ export class HealthAction extends SingletonAction {
 
   private async draw(actionInstance: Action): Promise<void> {
     if (!actionInstance.isKey()) return;
-    const snapshot = await collectHealth(codexStore);
+    const snapshot = collectHealth(codexStore);
     const component = HEALTH_COMPONENTS[
       this.#selection.get(actionInstance.id) ?? 0
     ] as HealthComponent;

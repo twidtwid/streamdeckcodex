@@ -340,7 +340,10 @@ export class CodexStore {
     if (cached && sameFile(cached.identity, identity)) return cached;
     const tail = this.#rolloutReader(canonicalPath);
     const events = this.#rolloutParser(tail);
-    if (identity)
+    // The reader reports a failed read as an empty tail. Never pin that for a
+    // file the stat says has content, or a transient error would stick until
+    // the file changed.
+    if (identity && (tail !== "" || identity.size === 0))
       this.#rolloutCache.set(canonicalPath, { identity, tail, events });
     else this.#rolloutCache.delete(canonicalPath);
     return { tail, events };
@@ -782,14 +785,13 @@ export class CodexStore {
         reason = availabilityReasonFromError(error);
         try {
           snapshot = this.recentThreads(12)
-            .map((thread) => parseLatestUsage(readFileTail(thread.rolloutPath)))
+            .map((thread) =>
+              parseLatestUsage(this.#rolloutTail(thread.rolloutPath)),
+            )
             .filter((usage): usage is UsageSnapshot => usage !== undefined)
             .sort((left, right) => right.observedAt - left.observedAt)[0];
-        } catch (fallbackError) {
-          // Keep the more specific fetch reason (timeout, busy) over a generic
-          // fallback failure.
-          if (reason === "not-exposed")
-            reason = availabilityReasonFromError(fallbackError);
+        } catch {
+          // The fetch reason is the useful one; a fallback failure adds nothing.
         }
       }
       this.#usageCache = {
@@ -803,7 +805,11 @@ export class CodexStore {
     return this.#usagePromise;
   }
 
-  /** The last fetched usage, served synchronously while a refresh is in flight. */
+  /**
+   * The last successful fetch within the current window, served synchronously
+   * while a refresh is in flight. A failed refresh clears it so stale usage is
+   * never shown as current.
+   */
   usageSnapshotCached(): UsageSnapshot | undefined {
     return this.#usageCache?.snapshot;
   }
@@ -812,12 +818,10 @@ export class CodexStore {
     const snapshot = this.#usageCache?.snapshot;
     return snapshot
       ? ready(snapshot, snapshot.observedAt)
-      : unavailable(this.#usageCache?.reason ?? "not-exposed");
-  }
-
-  async usageAvailability(): Promise<Availability<UsageSnapshot>> {
-    await this.usageSnapshot();
-    return this.usageAvailabilityCached();
+      : unavailable(
+          this.#usageCache?.reason ?? "not-exposed",
+          this.#usageCache?.at,
+        );
   }
 
   #open(): DatabaseSync {

@@ -71,7 +71,7 @@ describe("reason-coded health diagnostics", () => {
     spawnSync("trash", [directory]);
   });
 
-  it("collects cached state by default and observes live sources only when asked", async () => {
+  it("summarizes only what the store has observed", async () => {
     const root = mkdtempSync(join(tmpdir(), "streamdeck-health-"));
     const databasePath = join(root, "state.sqlite");
     const rollout = join(root, "focused.jsonl");
@@ -106,7 +106,7 @@ describe("reason-coded health diagnostics", () => {
       usageFetcher: fetcher,
     });
     try {
-      const cached = await collectHealth(store);
+      const cached = collectHealth(store);
       expect(reader).not.toHaveBeenCalled();
       expect(fetcher).not.toHaveBeenCalled();
       expect(cached.components.focus).toMatchObject({
@@ -118,7 +118,9 @@ describe("reason-coded health diagnostics", () => {
         reason: "not-exposed",
       });
 
-      const live = await collectHealth(store, { refresh: true });
+      await store.refreshLiveComposer();
+      await store.usageSnapshot();
+      const live = collectHealth(store);
       expect(reader).toHaveBeenCalledTimes(1);
       expect(fetcher).toHaveBeenCalledTimes(1);
       expect(live.components.focus).toMatchObject({
