@@ -858,7 +858,7 @@ function normalizeKey(key) {
 }
 
 function runMagick(args) {
-  const result = spawnSync("/opt/homebrew/bin/magick", args, {
+  const result = spawnSync(process.env.MAGICK ?? "magick", args, {
     encoding: "utf8",
   });
   if (result.status !== 0) {

@@ -6,7 +6,6 @@ import {
 } from "./helpers/fake-streamdeck-action.js";
 import {
   PROFILE_KEY_CONTRACT,
-  assertProfileContract,
   type ProfileKeyContract,
 } from "./helpers/profile-key-contract.js";
 
@@ -15,6 +14,8 @@ const harness = vi.hoisted(() => {
   return {
     state,
     registrations: [] as unknown[],
+    connect: vi.fn(async () => undefined),
+    releaseSynthesizedKeysSync: vi.fn(() => true),
     executeCommand: vi.fn(async () => undefined),
     launchWorkflow: vi.fn(async () => undefined),
     openNewChat: vi.fn(async () => undefined),
@@ -114,7 +115,7 @@ vi.mock("../src/lib/automation.js", () => ({
   openNewProject: harness.openNewProject,
   openSkills: harness.openSkills,
   openThread: harness.openThread,
-  releaseSynthesizedKeysSync: vi.fn(),
+  releaseSynthesizedKeysSync: harness.releaseSynthesizedKeysSync,
   inputReleaseSnapshot: vi.fn(() => ({ held: false })),
   startDictation: harness.startDictation,
 }));
@@ -129,7 +130,7 @@ vi.mock("@elgato/streamdeck", () => ({
     actions: {
       registerAction: (handler: unknown) => harness.registrations.push(handler),
     },
-    connect: vi.fn(async () => undefined),
+    connect: harness.connect,
     devices: [],
     logger: {
       error: vi.fn(),
@@ -231,8 +232,25 @@ describe("executable 50-key profile contract", () => {
     });
   });
 
-  it("matches every literal contract row to the seven-page profile", () => {
-    assertProfileContract();
+  it("releases legacy input after connecting and on an uncaught exception", async () => {
+    await import("../src/plugin.js");
+    const connectOrder = harness.connect.mock.invocationCallOrder[0];
+    const releaseOrders =
+      harness.releaseSynthesizedKeysSync.mock.invocationCallOrder;
+    expect(connectOrder).toBeDefined();
+    // The defensive cleanup must not run before the SDK connection exists, or
+    // a blocked Accessibility prompt could put the plugin in a restart loop.
+    expect(releaseOrders.some((order) => order > connectOrder!)).toBe(true);
+
+    const before = harness.releaseSynthesizedKeysSync.mock.calls.length;
+    process.emit(
+      "uncaughtExceptionMonitor",
+      new Error("fixture"),
+      "uncaughtException",
+    );
+    expect(harness.releaseSynthesizedKeysSync.mock.calls.length).toBe(
+      before + 1,
+    );
   });
 
   it("does not poll static keycaps but still renders them when they appear", async () => {

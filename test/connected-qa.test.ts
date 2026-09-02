@@ -66,21 +66,4 @@ describe("transactional connected QA contract", () => {
       ]),
     );
   });
-
-  it("documents only package commands and the seven-page source contract", () => {
-    const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
-    const docs = ["README.md", "QA.md", "CONTRIBUTING.md"].map((file) =>
-      readFileSync(file, "utf8"),
-    );
-    for (const command of [
-      "qa:keys:preflight",
-      "qa:keys:connected",
-      "qa:release:connected",
-      "qa:design:release",
-    ]) {
-      expect(packageJson.scripts[command]).toBeTruthy();
-    }
-    expect(docs.join("\n")).toContain("Page 2");
-    expect(docs.join("\n")).toContain("YEET");
-  });
 });

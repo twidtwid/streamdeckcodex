@@ -1,9 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { COMMANDS } from "../src/lib/commands.js";
-import { KEYCAP_WORKFLOWS } from "../src/lib/keycap-workflows.js";
-import { LUCIDE_PATHS } from "../src/lib/lucide-paths.js";
+import { assertProfileContract } from "./helpers/profile-key-contract.js";
 
 const contractPath = resolve("profile-src/profile-contract.json");
 const contract = JSON.parse(readFileSync(contractPath, "utf8")) as unknown;
@@ -99,15 +97,12 @@ describe("neutral 50-key profile contract", () => {
           ? `${key.label} — ${key.settings.description}`
           : key.label,
       );
-      const action = String(key.settings.action ?? "");
-      if (action.startsWith("command:"))
-        expect(COMMANDS.some(({ id }) => id === action.slice(8))).toBe(true);
-      if (action.startsWith("workflow:"))
-        expect(KEYCAP_WORKFLOWS.some(({ id }) => id === action.slice(9))).toBe(
-          true,
-        );
-      if (key.icon && key.icon !== "yeet")
-        expect(LUCIDE_PATHS[key.icon]).toBeTruthy();
     }
+  });
+
+  it("matches the generated Stream Deck + pages and the action registries", () => {
+    // The shared helper owns the contract-to-profile and registry mapping so
+    // no other test re-walks the seven pages.
+    assertProfileContract();
   });
 });

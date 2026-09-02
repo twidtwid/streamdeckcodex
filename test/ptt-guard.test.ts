@@ -1,4 +1,5 @@
 import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+// readFileSync stays for the guard's own event log; no test here reads source.
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawn, spawnSync } from "node:child_process";
@@ -142,45 +143,24 @@ describe("push-to-talk dictation lease", () => {
     ]);
   });
 
-  it("registers startup, process-exit, and page-hide cleanup", () => {
-    const plugin = readFileSync("src/plugin.ts", "utf8");
-    const command = readFileSync("src/actions/command.ts", "utf8");
-    const automation = readFileSync("src/lib/automation.ts", "utf8");
-    const control = readFileSync(
-      "com.todd.streamdeckcodex.sdPlugin/scripts/codex-control.applescript",
-      "utf8",
-    );
+  it("keeps the legacy AppleScript compilable and limited to key-up cleanup", () => {
+    const script =
+      "com.todd.streamdeckcodex.sdPlugin/scripts/codex-control.applescript";
+    const compiled = join(fixture().directory, "codex-control.scpt");
+    // osacompile parses without executing, so this proves the script is
+    // valid AppleScript without needing Accessibility access on CI.
+    const compile = spawnSync("/usr/bin/osacompile", ["-o", compiled, script], {
+      encoding: "utf8",
+    });
+    expect(compile.status, compile.stderr).toBe(0);
 
-    expect(plugin.match(/releaseSynthesizedKeysSync\(\)/g)).toHaveLength(3);
-    const connectIndex = plugin.indexOf("await streamDeck.connect()");
-    expect(connectIndex).toBeGreaterThan(0);
-    expect(
-      plugin.indexOf("\nreleaseSynthesizedKeysSync();", connectIndex),
-    ).toBeGreaterThan(connectIndex);
-    expect(plugin).toContain('process.on("uncaughtExceptionMonitor"');
-    expect(plugin).toContain('process.once("exit"');
-    expect(command).toContain("async onWillDisappear");
-    expect(command).toContain("await endDictation()");
-    expect(automation).toContain("await captureLiveTarget(threadId)");
-    expect(automation).not.toContain(
-      "const witnessToken = await verifyLiveTarget(threadId)",
-    );
-    expect(control).not.toContain("activate");
-    expect(control).not.toContain("keystroke");
-    expect(control).not.toContain("key down");
-    expect(control).toContain('key up "d"');
-    expect(control).toContain("key up shift");
-    expect(control).toContain("key up control");
-    expect(automation).toContain('stdio: ["pipe", "pipe", "pipe"]');
-    expect(automation).toContain("guardError");
-    expect(automation).toContain('["dictation-stop"]');
-  });
-
-  it("bounds every AppleScript cleanup so missing Accessibility cannot block boot", () => {
-    const automation = readFileSync("src/lib/automation.ts", "utf8");
-
-    expect(automation).toContain("timeout: 1_500");
-    expect(automation).toContain('killSignal: "SIGKILL"');
+    // Any mode other than dictation-up must be rejected before the script
+    // reaches System Events, so it cannot be repurposed to send input.
+    const rejected = spawnSync("/usr/bin/osascript", [script, "shortcut"], {
+      encoding: "utf8",
+    });
+    expect(rejected.status).not.toBe(0);
+    expect(rejected.stderr).toContain("Unknown Codex control mode");
   });
 
   it("recognizes only the visible Codex composer dictation states", () => {

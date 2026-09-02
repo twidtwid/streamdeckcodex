@@ -1,8 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { COMMANDS } from "../src/lib/commands.js";
-import { KEYCAP_WORKFLOWS } from "../src/lib/keycap-workflows.js";
 
 const manifest = JSON.parse(
   readFileSync(
@@ -261,50 +259,6 @@ describe("Stream Deck manifest", () => {
     expect(actionFor("Browser")).toBe("command:browser");
     expect(actionFor("Files")).toBe("command:files");
     expect(actionFor("Side chat")).toBe("command:side-chat");
-  });
-
-  it("resolves every workflow and command key through an exact registry ID", () => {
-    const workflowIds = new Set(
-      KEYCAP_WORKFLOWS.map((workflow) => workflow.id),
-    );
-    const commandIds = new Set(COMMANDS.map((command) => command.id));
-    const allKeycaps = [
-      ...Object.values(
-        agentPage.Controllers.find(
-          (controller) => controller.Type === "Keypad",
-        )!.Actions,
-      ),
-      ...curatedPageIds.flatMap((pageId) => {
-        const page = JSON.parse(
-          readFileSync(
-            resolve(
-              `profile-src/streamdeckcodex-plus/Profiles/${pageId}/manifest.json`,
-            ),
-            "utf8",
-          ),
-        ) as typeof agentPage;
-        return Object.values(
-          page.Controllers.find((controller) => controller.Type === "Keypad")!
-            .Actions,
-        );
-      }),
-    ].filter((key) => key.UUID === "com.todd.streamdeckcodex.keycap");
-
-    for (const key of allKeycaps) {
-      const action = String(key.Settings.action ?? "");
-      if (action.startsWith("workflow:")) {
-        expect(
-          workflowIds.has(action.slice("workflow:".length)),
-          key.Name,
-        ).toBe(true);
-      } else if (action.startsWith("command:")) {
-        expect(commandIds.has(action.slice("command:".length)), key.Name).toBe(
-          true,
-        );
-      } else {
-        expect(action, key.Name).toBe("skills");
-      }
-    }
   });
 
   it("maps the primary page to six agents plus New Chat and Plan", () => {

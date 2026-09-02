@@ -26,8 +26,24 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Cache Homebrew bottles
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/Homebrew
+          key: brew-${{ runner.os }}-librsvg-imagemagick
+
+      - name: Cache Swift module cache
+        uses: actions/cache@v4
+        with:
+          path: .cache/clang-modules
+          key: swift-modules-${{ runner.os }}-${{ hashFiles('native/*.swift') }}
+
       - name: Install visual QA tools
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "1"
         run: brew install librsvg imagemagick
 
       - name: Run verification gate
+        env:
+          CLANG_MODULE_CACHE_PATH: ${{ github.workspace }}/.cache/clang-modules
         run: npm run check
