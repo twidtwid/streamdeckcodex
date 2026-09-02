@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { BoundedTextBuffer, terminateAndReap } from "./bounded-process.js";
 
 const pluginRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const executable =
@@ -20,6 +21,7 @@ interface NativeControlResult extends LivePickerState {
   active?: boolean;
   approvalMode?: CodexApprovalMode;
   pendingInput?: boolean;
+  draftEmpty?: boolean;
   inputKind?: "approval";
   inputTitle?: string;
   conversationId?: string;
@@ -78,6 +80,7 @@ function invoke(
     | "new-project"
     | "workflow"
     | "route"
+    | "target-capture"
     | "target-check"
     | "target-verify",
   requested?: string,
@@ -96,46 +99,67 @@ function invoke(
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
     });
-    let stdout = "";
-    let stderr = "";
+    const stdout = new BoundedTextBuffer(
+      256 * 1024,
+      "Live Codex control stdout",
+    );
+    const stderr = new BoundedTextBuffer(
+      64 * 1024,
+      "Live Codex control stderr",
+    );
     let settled = false;
     let exited = false;
     let closed = false;
     let exitCode: number | null = null;
     const effectiveTimeoutMs = timeoutMs ?? 5_000;
     let timedOut = false;
-    let terminationGrace: ReturnType<typeof setTimeout> | undefined;
-    let postKillDeadline: ReturnType<typeof setTimeout> | undefined;
-    const timeout = setTimeout(() => {
+    const timeout = setTimeout(async () => {
       timedOut = true;
-      child.kill("SIGTERM");
-      terminationGrace = setTimeout(() => {
-        child.kill("SIGKILL");
-        // A hostile child can keep stdio open after the process signal.  Do
-        // not leave a Stream Deck action pending forever: this is the final
-        // bounded reap deadline, and `settle` makes later exit/close inert.
-        postKillDeadline = setTimeout(() => {
-          settle(
-            new NativeControlError("Live Codex control timed out.", "TIMEOUT"),
-          );
-        }, 500);
-        postKillDeadline.unref();
-      }, 250);
-      terminationGrace.unref();
+      const reaped = await terminateAndReap(child, {
+        naturalExitMs: 0,
+        termGraceMs: 250,
+        killGraceMs: 500,
+      });
+      settle(
+        new NativeControlError(
+          reaped
+            ? "Live Codex control timed out."
+            : "Live Codex control timed out and could not be reaped.",
+          "TIMEOUT",
+        ),
+      );
     }, effectiveTimeoutMs);
     timeout.unref();
     child.stdout.setEncoding("utf8");
     child.stderr.setEncoding("utf8");
     child.stdout.on("data", (chunk: string) => {
-      stdout += chunk;
+      try {
+        stdout.append(chunk);
+      } catch (error) {
+        void terminateAndReap(child);
+        settle(
+          new NativeControlError(
+            error instanceof Error ? error.message : String(error),
+            "UNAVAILABLE",
+          ),
+        );
+      }
     });
     child.stderr.on("data", (chunk: string) => {
-      stderr += chunk;
+      try {
+        stderr.append(chunk);
+      } catch (error) {
+        void terminateAndReap(child);
+        settle(
+          new NativeControlError(
+            error instanceof Error ? error.message : String(error),
+            "UNAVAILABLE",
+          ),
+        );
+      }
     });
     const cleanup = (): void => {
       clearTimeout(timeout);
-      if (terminationGrace) clearTimeout(terminationGrace);
-      if (postKillDeadline) clearTimeout(postKillDeadline);
       child.stdout.removeAllListeners("data");
       child.stderr.removeAllListeners("data");
     };
@@ -161,7 +185,7 @@ function invoke(
       }
       let result: NativeControlResult | undefined;
       try {
-        result = JSON.parse(stdout.trim()) as NativeControlResult;
+        result = JSON.parse(stdout.text().trim()) as NativeControlResult;
       } catch {
         // Preserve the native diagnostic below.
       }
@@ -172,7 +196,7 @@ function invoke(
       settle(
         new NativeControlError(
           result?.message ||
-            stderr.trim() ||
+            stderr.text().trim() ||
             `Live Codex picker control exited with ${exitCode ?? "unknown status"}`,
           result?.reasonCode,
         ),
@@ -220,6 +244,7 @@ export const __nativeControlTest = {
 
 export interface LiveComposerState {
   pendingInput: boolean;
+  draftEmpty?: boolean;
   inputKind?: "approval";
   inputTitle?: string;
   approvalMode?: CodexApprovalMode;
@@ -227,34 +252,73 @@ export interface LiveComposerState {
   rendererWindowId: string;
 }
 
+const composerWitnesses = new Map<string, string>();
+
+type NativeInvoker = typeof invoke;
+
+async function readLiveComposerStateUsing(
+  threadId: string,
+  invokeControl: NativeInvoker,
+): Promise<LiveComposerState | undefined> {
+  const cachedWitness = composerWitnesses.get(threadId);
+  let parsed: NativeControlResult;
+  try {
+    parsed = await invokeControl(
+      "composer-read",
+      cachedWitness,
+      1_200,
+      threadId,
+    );
+  } catch (error) {
+    if (
+      !cachedWitness ||
+      !(error instanceof Error) ||
+      !("reasonCode" in error) ||
+      error.reasonCode !== "TARGET_MISMATCH"
+    ) {
+      throw error;
+    }
+    composerWitnesses.delete(threadId);
+    parsed = await invokeControl("composer-read", undefined, 1_200, threadId);
+  }
+  if (
+    typeof parsed.pendingInput !== "boolean" ||
+    parsed.conversationId !== threadId ||
+    !parsed.conversationId?.trim() ||
+    !parsed.rendererWindowId?.trim()
+  ) {
+    composerWitnesses.delete(threadId);
+    return undefined;
+  }
+  composerWitnesses.clear();
+  if (parsed.witnessToken) composerWitnesses.set(threadId, parsed.witnessToken);
+  return {
+    pendingInput: parsed.pendingInput,
+    ...(typeof parsed.draftEmpty === "boolean"
+      ? { draftEmpty: parsed.draftEmpty }
+      : {}),
+    ...(parsed.inputKind === "approval" ? { inputKind: parsed.inputKind } : {}),
+    ...(parsed.inputTitle?.trim()
+      ? { inputTitle: parsed.inputTitle.trim() }
+      : {}),
+    ...(parsed.approvalMode ? { approvalMode: parsed.approvalMode } : {}),
+    conversationId: parsed.conversationId,
+    rendererWindowId: parsed.rendererWindowId,
+  };
+}
+
 export async function readLiveComposerState(
   threadId: string,
 ): Promise<LiveComposerState | undefined> {
-  try {
-    const parsed = await invoke("composer-read", undefined, 1_200, threadId);
-    if (
-      typeof parsed.pendingInput !== "boolean" ||
-      parsed.conversationId !== threadId ||
-      !parsed.conversationId?.trim() ||
-      !parsed.rendererWindowId?.trim()
-    )
-      return undefined;
-    return {
-      pendingInput: parsed.pendingInput,
-      ...(parsed.inputKind === "approval"
-        ? { inputKind: parsed.inputKind }
-        : {}),
-      ...(parsed.inputTitle?.trim()
-        ? { inputTitle: parsed.inputTitle.trim() }
-        : {}),
-      ...(parsed.approvalMode ? { approvalMode: parsed.approvalMode } : {}),
-      conversationId: parsed.conversationId,
-      rendererWindowId: parsed.rendererWindowId,
-    };
-  } catch {
-    return undefined;
-  }
+  return readLiveComposerStateUsing(threadId, invoke);
 }
+
+export const __liveComposerTest = {
+  readWithInvoker: readLiveComposerStateUsing,
+  reset(): void {
+    composerWitnesses.clear();
+  },
+};
 
 export async function readLivePicker(): Promise<LivePickerState> {
   return invoke("read");
@@ -294,11 +358,23 @@ export async function toggleLiveMode(
   mode: CodexMode,
   threadId: string,
 ): Promise<LiveModeState> {
+  return toggleLiveModeUsing(mode, threadId, invoke);
+}
+
+async function toggleLiveModeUsing(
+  mode: CodexMode,
+  threadId: string,
+  invokeControl: NativeInvoker,
+): Promise<LiveModeState> {
   return verifiedModeResult(
     mode,
-    await invoke("mode-toggle", mode, undefined, threadId),
+    await invokeControl("mode-toggle", mode, 12_000, threadId),
   );
 }
+
+export const __liveModeTest = {
+  toggleWithInvoker: toggleLiveModeUsing,
+};
 
 export async function cycleLiveApprovalMode(
   threadId: string,
@@ -328,16 +404,28 @@ export async function cycleLiveApprovalMode(
 
 export async function applyLiveModel(
   slug: string,
+  pickerLabel: string,
   threadId: string,
 ): Promise<LivePickerState> {
-  return invoke("model", slug, undefined, threadId);
+  return invoke(
+    "model",
+    encodeNativePayload({ value: slug, label: pickerLabel }),
+    undefined,
+    threadId,
+  );
 }
 
 export async function applyLiveReasoning(
   level: string,
+  pickerLabel: string,
   threadId: string,
 ): Promise<LivePickerState> {
-  return invoke("reasoning", level, undefined, threadId);
+  return invoke(
+    "reasoning",
+    encodeNativePayload({ value: level, label: pickerLabel }),
+    undefined,
+    threadId,
+  );
 }
 
 export async function dispatchLiveControl(
@@ -380,6 +468,14 @@ export async function verifyLiveTarget(threadId: string): Promise<string> {
   const result = await invoke("target-check", undefined, undefined, threadId);
   if (!result.witnessToken) {
     throw new Error("Codex returned no exact focused window witness.");
+  }
+  return result.witnessToken;
+}
+
+export async function captureLiveTarget(threadId: string): Promise<string> {
+  const result = await invoke("target-capture", undefined, undefined, threadId);
+  if (!result.witnessToken) {
+    throw new Error("Codex returned no exact current focused window witness.");
   }
   return result.witnessToken;
 }

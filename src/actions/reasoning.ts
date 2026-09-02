@@ -14,6 +14,7 @@ import {
   previewReasoning,
   reasoningFailureFeedback,
   reasoningFeedback,
+  reasoningPickerLabel,
   type ReasoningDialState,
 } from "../lib/reasoning.js";
 import { renderFeedback } from "../lib/render-cache.js";
@@ -29,7 +30,7 @@ function supportedSelection(
 ): string {
   if (levels.includes(current)) return current;
   if (levels.includes("xhigh")) return "xhigh";
-  return levels.at(-1) ?? "medium";
+  return levels.at(-1) ?? "";
 }
 
 @action({ UUID: "com.todd.streamdeckcodex.reasoning" })
@@ -138,7 +139,9 @@ export class ReasoningAction extends SingletonAction<ReasoningSettings> {
       if (optionIndex < 0)
         throw new Error(`Unsupported reasoning level ${level}`);
       if (!snapshot.threadId) throw new Error("No active Codex task");
-      const live = await applyReasoning(level, snapshot.threadId);
+      const pickerLabel = reasoningPickerLabel(level);
+      if (!pickerLabel) throw new Error(`Unsupported reasoning level ${level}`);
+      const live = await applyReasoning(level, pickerLabel, snapshot.threadId);
       const expected = level === "low" ? "light" : level;
       const actual = live.effort
         ?.toLowerCase()

@@ -44,8 +44,22 @@ describe("official Codex Micro session status palette", () => {
     expect(STATUS_COLOR["needs-input"]).not.toBe(PENDING_AMBER);
     expect(
       modelFeedback({ selected: "gpt-5.6-terra", applied: "gpt-5.6-sol" }, [
-        { slug: "gpt-5.6-sol", label: "SOL" },
-        { slug: "gpt-5.6-terra", label: "TERRA" },
+        {
+          slug: "gpt-5.6-sol",
+          label: "SOL",
+          displayName: "GPT-5.6-Sol",
+          pickerLabel: "Sol",
+          defaultReasoning: "medium",
+          supportedReasoning: ["low", "medium"],
+        },
+        {
+          slug: "gpt-5.6-terra",
+          label: "TERRA",
+          displayName: "GPT-5.6-Terra",
+          pickerLabel: "Terra",
+          defaultReasoning: "medium",
+          supportedReasoning: ["low", "medium"],
+        },
       ]).indicator.bar_fill_c,
     ).toBe(PENDING_AMBER);
     expect(

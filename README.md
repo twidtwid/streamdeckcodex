@@ -89,7 +89,11 @@ Codex version, and the failing action when
 - Displays weekly quota, banked resets, and focused-chat context from local
   Codex data.
 - On Stream Deck +, previews and applies Model and Reasoning selections with
-  live dial feedback.
+  live dial feedback. Available models and reasoning levels come from the
+  signed-in Codex model catalog; Ultra appears only when the selected model
+  advertises it.
+- Provides an optional read-only Companion Health action and `npm run doctor`
+  report without adding another key to the bundled profiles.
 
 ### Live status colors
 
@@ -104,12 +108,12 @@ Codex version, and the failing action when
 
 ### Stream Deck + dials
 
-| Dial      | Turn                          | Press                     |
-| --------- | ----------------------------- | ------------------------- |
-| Agent     | Browse recent chats           | Open selected chat        |
-| Action    | Select a curated Codex action | Run the displayed action  |
-| Model     | Preview Luna, Terra, or Sol   | Apply the displayed model |
-| Reasoning | Preview a supported level     | Apply the displayed level |
+| Dial      | Turn                                      | Press                          |
+| --------- | ----------------------------------------- | ------------------------------ |
+| Agent     | Browse recent chats                       | Open selected chat             |
+| Action    | Select a curated Codex action             | Run the displayed action       |
+| Model     | Preview available Luna/Terra/Sol families | Apply once to the focused chat |
+| Reasoning | Preview a level supported by that model   | Apply once to the focused chat |
 
 Touch-strip taps and holds are intentionally inert so a page swipe cannot run a
 command accidentally.
@@ -125,9 +129,19 @@ before reporting success. If Codex changes focus, contains a draft where that
 would be unsafe, or does not expose the expected control, the action fails
 closed and displays an alert.
 
-Push-to-talk is guarded by a watchdog. Releasing the key, leaving the page,
-stopping the plugin, losing the parent process, a partial key-down failure, or
-the 60-second maximum hold releases every synthesized modifier.
+Current Codex builds may expose the empty composer hint as its accessibility
+value and keep Model/Reasoning under the picker's advanced options. The
+companion recognizes the exact empty hints, preserves all other draft text,
+opens the advanced controls when needed, and verifies the visible picker after
+each apply.
+
+Push-to-talk uses the focused composer's native **Dictate** accessibility
+control and does not hold a keyboard shortcut. The watchdog verifies that
+**Stop dictation** appears before reporting a successful start. Releasing the
+key, leaving the page, stopping the plugin, losing the parent process, a failed
+start, or the 60-second maximum hold invokes the native stop path. A bounded
+legacy key-up cleanup remains only to recover from older installed builds that
+may have left a modifier pressed.
 
 ## Privacy and security
 
@@ -158,11 +172,14 @@ See [SECURITY.md](SECURITY.md) for private vulnerability reporting.
 
 The plugin refuses ambiguous focus instead of sending input to another chat.
 
-### Permissions says Unknown
+### Permissions shows a failure reason
 
-Open the intended Codex chat and send or receive one message so Codex has an
-active composer, then press Permissions again. The key reads the visible
-composer; it does not guess from saved configuration.
+Open the intended Codex chat and keep its composer frontmost, then press
+Permissions again. The key reads the visible composer; it does not guess from
+saved configuration or another chat. It now shows a compact cause such as
+`No Chat`, `Background`, `Access`, `Timeout`, `Wrong Chat`, or `No Data` instead
+of the ambiguous `Unknown`. The read-only doctor reports the same stable reason
+codes in full.
 
 ### No profile appeared
 
@@ -174,13 +191,22 @@ recognizes the device, then include its exact model in a beta bug report.
 
 Usage needs a working signed-in Codex App session. Context needs a recent token
 snapshot from the focused chat. Both display no data rather than borrowing a
-value from another chat.
+value from another chat. Run:
+
+```sh
+npm run doctor
+```
+
+The report gives a compact reason such as `no-focus`, `codex-background`,
+`stale`, or `unsupported-schema`. It is local and omits task IDs, titles,
+prompts, transcripts, URLs, and full paths by default.
 
 ### Reporting a bug
 
 Use the [bug report
 template](https://github.com/twidtwid/streamdeckcodex/issues/new?template=bug_report.yml).
 Do not attach Codex transcripts, rollout files, credentials, or private paths.
+Include the plugin build SHA printed by `npm run doctor -- --json`.
 
 ## Known limitations
 
@@ -213,7 +239,11 @@ Useful commands:
 npm run check       # formatting, types, tests, visual QA, build, validation
 npm run pack        # create dist/com.todd.streamdeckcodex.streamDeckPlugin
 npm run qa:design   # render and evaluate every profile key
+npm run doctor      # read-only installed/runtime health and build identity
 ```
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the runtime boundaries, source
+layout, polling model, and safety invariants.
 
 The connected mutation gate is intentionally separate from CI and fails closed
 unless it can prove a disposable fixture, exact foreground chat, empty
@@ -223,10 +253,14 @@ composer, and cleanup. See [QA.md](QA.md) before running connected QA.
 
 ```sh
 npm ci
-npm run check
-npm audit --omit=dev
-npm run pack
+npm run release:verify
 ```
+
+`release:verify` runs full and production dependency audits, generated-source
+parity, type/unit/native/visual checks, the official Elgato validator, package
+creation, documentation checks, and a read-only doctor report. Connected
+mutations remain separate and must be run explicitly with
+`npm run release:verify:connected` only after the visible composer is empty.
 
 The release should contain:
 

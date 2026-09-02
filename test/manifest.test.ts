@@ -94,6 +94,7 @@ describe("Stream Deck manifest", () => {
         "com.todd.streamdeckcodex.agent-navigator",
         "com.todd.streamdeckcodex.usage",
         "com.todd.streamdeckcodex.context",
+        "com.todd.streamdeckcodex.health",
       ]),
     );
     expect(ids).not.toContain("com.todd.streamdeckcodex.session-navigation");

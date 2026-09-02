@@ -1,9 +1,5 @@
 import { spawnSync } from "node:child_process";
 
-const controlScript = process.argv[2];
-if (!controlScript) throw new Error("Missing Codex control script path");
-
-const runner = process.env.STREAMDECK_PTT_RUNNER ?? "/usr/bin/osascript";
 const targetRunner = process.env.STREAMDECK_PTT_TARGET_RUNNER;
 const targetWitnessToken = process.env.STREAMDECK_PTT_WITNESS_TOKEN;
 const maxHoldMs = Math.max(
@@ -16,23 +12,42 @@ const stopped = new Promise((resolve) => {
 });
 let released = false;
 
-function runControl(...args) {
-  const result = spawnSync(runner, [controlScript, ...args], {
-    stdio: "ignore",
+function runTargetControl(action, witnessToken) {
+  if (!targetRunner) {
+    throw new Error("Missing Codex accessibility control for push-to-talk.");
+  }
+  const args = witnessToken ? [action, witnessToken] : [action];
+  const result = spawnSync(targetRunner, args, {
+    encoding: "utf8",
     windowsHide: true,
   });
   if (result.error) throw result.error;
   if (result.status !== 0) {
+    const detail = processFailureDetail(result);
     throw new Error(
-      `Codex PTT control exited with ${result.status ?? "unknown"}`,
+      `Codex PTT ${action} exited with ${result.status ?? "unknown"}${detail}`,
     );
+  }
+}
+
+function processFailureDetail(result) {
+  const stderr = String(result.stderr ?? "").trim();
+  if (stderr) return `: ${stderr.slice(0, 600)}`;
+  const stdout = String(result.stdout ?? "").trim();
+  if (!stdout) return "";
+  try {
+    const parsed = JSON.parse(stdout);
+    const message = String(parsed.message ?? parsed.reasonCode ?? "").trim();
+    return message ? `: ${message.slice(0, 600)}` : "";
+  } catch {
+    return `: ${stdout.slice(0, 600)}`;
   }
 }
 
 function release() {
   if (released) return;
   released = true;
-  runControl("dictation-up");
+  runTargetControl("dictation-stop");
 }
 
 function verifyTarget() {
@@ -43,12 +58,13 @@ function verifyTarget() {
   const result = spawnSync(
     targetRunner,
     ["target-verify", targetWitnessToken],
-    { stdio: "ignore", windowsHide: true },
+    { encoding: "utf8", windowsHide: true },
   );
   if (result.error) throw result.error;
   if (result.status !== 0) {
+    const detail = processFailureDetail(result);
     throw new Error(
-      "Push-to-talk target witness was not valid at key boundary.",
+      `Push-to-talk target witness was not valid at key boundary${detail}.`,
     );
   }
 }
@@ -63,18 +79,12 @@ process.stdin.resume();
 const timeout = setTimeout(stop, maxHoldMs);
 try {
   verifyTarget();
-  runControl("shortcut", "dictation-down");
+  runTargetControl("dictation-start", targetWitnessToken);
   process.stdout.write("READY\n");
   await stopped;
 } finally {
   clearTimeout(timeout);
-  // Revalidate when possible, but unconditional release is required even if
-  // Codex changed windows while the key was held.
-  try {
-    verifyTarget();
-  } catch {
-    // The key-up is a safety cleanup, not a task mutation.
-  }
+  // Stop the recording unconditionally even if focus changed while held.
   release();
   process.stdin.destroy();
 }

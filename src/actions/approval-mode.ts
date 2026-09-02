@@ -13,6 +13,7 @@ import {
   type ApprovalDisplayMode,
 } from "../lib/visuals.js";
 import { renderKey } from "../lib/render-cache.js";
+import { availabilityReasonFromError } from "../lib/availability.js";
 
 type ApprovalSettings = { mode?: CodexApprovalMode };
 
@@ -35,7 +36,7 @@ export class ApprovalModeAction extends SingletonAction<ApprovalSettings> {
       await event.action.showOk();
     } catch (error) {
       streamDeck.logger.error("Permission mode cycle failed", error);
-      await this.draw(event.action, "unknown");
+      await this.draw(event.action, availabilityReasonFromError(error));
       await event.action.showAlert();
     }
   }
@@ -52,19 +53,21 @@ export class ApprovalModeAction extends SingletonAction<ApprovalSettings> {
     actionInstance: Action<ApprovalSettings>,
   ): Promise<void> {
     if (!codexStore.focusedThread()?.id) {
-      await this.draw(actionInstance, "unknown");
+      await this.draw(actionInstance, "no-focus");
       return;
     }
-    let mode: CodexApprovalMode | undefined;
     try {
       await codexStore.refreshLiveComposer();
-      mode = codexStore.liveComposerState()?.approvalMode;
     } catch {
       // A read-only refresh is allowed to be unavailable while Codex is in
-      // the background or between composers. The key renders Unknown; only a
-      // user-initiated press is an actionable error.
+      // the background or between composers. The key renders the structured
+      // reason; only a user-initiated press is an actionable error.
     }
-    await this.draw(actionInstance, mode ?? "unknown");
+    const availability = codexStore.permissionAvailability();
+    await this.draw(
+      actionInstance,
+      availability.state === "ready" ? availability.value : availability.reason,
+    );
   }
 
   private async draw(

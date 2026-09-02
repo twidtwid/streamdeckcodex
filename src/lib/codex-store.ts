@@ -19,11 +19,7 @@ import type {
 } from "../types.js";
 import type { SessionSnapshot } from "../types.js";
 import { projectSessions } from "./chat-label.js";
-import {
-  DEFAULT_REASONING_LEVELS,
-  normalizeReasoningLevels,
-} from "./reasoning.js";
-import { supportedModelOptions } from "./model.js";
+import { supportedModelOptions, supportedReasoningForModel } from "./model.js";
 import {
   parseRolloutEvents,
   reduceRolloutEvents,
@@ -31,7 +27,14 @@ import {
 } from "./rollout-status.js";
 import { fetchAccountUsage, parseLatestUsage } from "./usage.js";
 import { activeDesktopThreadId } from "./desktop-active.js";
-import { parseLatestContext } from "./context.js";
+import { contextAvailabilityFromLines } from "./context.js";
+import {
+  availabilityReasonFromError,
+  ready,
+  unavailable,
+  type Availability,
+  type AvailabilityReason,
+} from "./availability.js";
 import {
   cycleLiveApprovalMode,
   readLiveComposerState,
@@ -39,7 +42,7 @@ import {
   type LiveComposerState,
 } from "./codex-ui-control.js";
 
-const LIVE_COMPOSER_CACHE_MS = 1_000;
+export const LIVE_COMPOSER_CACHE_MS = 2_500;
 
 export {
   activeDesktopThreadId,
@@ -150,37 +153,7 @@ export function supportedReasoningLevels(
   parsed: unknown,
   model?: string,
 ): string[] {
-  if (typeof parsed === "object" && parsed !== null) {
-    const models = Array.isArray((parsed as { models?: unknown }).models)
-      ? (
-          parsed as {
-            models: Array<{
-              slug?: string;
-              supported_reasoning_levels?: Array<{ effort?: string }>;
-            }>;
-          }
-        ).models
-      : [];
-    const active = model
-      ? models.find((candidate) => candidate.slug === model)
-      : undefined;
-    const activeLevels = active?.supported_reasoning_levels
-      ?.map((entry) => entry.effort)
-      .filter((effort): effort is string => typeof effort === "string");
-    if (activeLevels?.length) return normalizeReasoningLevels(activeLevels);
-
-    const fallbackLevels = models.flatMap(
-      (candidate) =>
-        candidate.supported_reasoning_levels
-          ?.map((entry) => entry.effort)
-          .filter((effort): effort is string => typeof effort === "string") ??
-        [],
-    );
-    if (fallbackLevels.length) {
-      return normalizeReasoningLevels(fallbackLevels);
-    }
-  }
-  return [...DEFAULT_REASONING_LEVELS];
+  return supportedReasoningForModel(parsed, model);
 }
 
 export type FileIdentity = {
@@ -227,7 +200,12 @@ export class CodexStore {
   #usageCache: { at: number; snapshot?: UsageSnapshot } | undefined;
   #usagePromise: Promise<UsageSnapshot | undefined> | undefined;
   #contextCache:
-    { at: number; threadId?: string; snapshot?: ContextSnapshot } | undefined;
+    | {
+        at: number;
+        threadId?: string;
+        availability: Availability<ContextSnapshot>;
+      }
+    | undefined;
   readonly #activeThreadId: () => string | undefined;
   readonly #liveComposerReader: (
     threadId: string,
@@ -245,6 +223,7 @@ export class CodexStore {
   #liveComposerGeneration = 0;
   #liveComposerMutating = false;
   #liveComposerUnavailable = false;
+  #liveComposerUnavailableReason: AvailabilityReason = "not-exposed";
   #activeDesktopCache: { at: number; threadId: string | undefined } | undefined;
   #focusedProjectionCache:
     { at: number; threadId: string; snapshot?: AgentSnapshot } | undefined;
@@ -451,13 +430,35 @@ export class CodexStore {
       : this.#liveComposerCache?.state;
   }
 
+  liveComposerAvailability(): Availability<LiveComposerState> {
+    const now = Date.now();
+    if (!this.focusedThread()?.id) return unavailable("no-focus", now);
+    const state = this.liveComposerState();
+    return state
+      ? ready(state, now)
+      : unavailable(this.#liveComposerUnavailableReason, now);
+  }
+
+  permissionAvailability(): Availability<CodexApprovalMode> {
+    const now = Date.now();
+    const composer = this.liveComposerAvailability();
+    if (composer.state === "unavailable") return composer;
+    return composer.value.approvalMode
+      ? ready(composer.value.approvalMode, now)
+      : unavailable("not-exposed", now);
+  }
+
   async refreshLiveComposer(force = false): Promise<void> {
     if (this.#liveComposerPromise) {
       if (force) this.#liveComposerFollowup = true;
       return this.#liveComposerPromise;
     }
     const threadId = this.#resolveFocusedThreadId();
-    if (!threadId) return;
+    if (!threadId) {
+      this.#liveComposerUnavailable = true;
+      this.#liveComposerUnavailableReason = "no-focus";
+      return;
+    }
     if (
       !force &&
       this.#liveComposerReadAt > 0 &&
@@ -470,10 +471,19 @@ export class CodexStore {
       const requestedThreadId = this.#resolveFocusedThreadId();
       if (!requestedThreadId) {
         this.#liveComposerUnavailable = true;
+        this.#liveComposerUnavailableReason = "no-focus";
         this.#liveComposerReadAt = Date.now();
         return;
       }
-      const state = await this.#liveComposerReader(requestedThreadId);
+      let state: LiveComposerState | undefined;
+      try {
+        state = await this.#liveComposerReader(requestedThreadId);
+      } catch (error) {
+        this.#liveComposerUnavailable = true;
+        this.#liveComposerUnavailableReason =
+          availabilityReasonFromError(error);
+        throw error;
+      }
       this.#liveComposerReadAt = Date.now();
       if (
         generation === this.#liveComposerGeneration &&
@@ -485,6 +495,9 @@ export class CodexStore {
           // Keep a confirmed snapshot for projection/race protection, but
           // expose this failed observation as Unknown to live controls.
           this.#liveComposerUnavailable = true;
+          this.#liveComposerUnavailableReason = state
+            ? "target-mismatch"
+            : "not-exposed";
         }
       }
     };
@@ -542,6 +555,7 @@ export class CodexStore {
     } catch (error) {
       this.#liveComposerCache = undefined;
       this.#liveComposerUnavailable = true;
+      this.#liveComposerUnavailableReason = availabilityReasonFromError(error);
       this.#cache = undefined;
       this.#focusedProjectionCache = undefined;
       throw error;
@@ -555,6 +569,7 @@ export class CodexStore {
     this.#liveComposerCache = { at: now, state };
     this.#liveComposerReadAt = now;
     this.#liveComposerUnavailable = false;
+    this.#liveComposerUnavailableReason = "not-exposed";
     this.#cache = undefined;
     this.#focusedProjectionCache = undefined;
   }
@@ -587,28 +602,33 @@ export class CodexStore {
     return projectSessions(threads, activeId);
   }
 
-  contextSnapshot(): ContextSnapshot | undefined {
+  contextAvailability(): Availability<ContextSnapshot> {
     const now = Date.now();
     const thread = this.focusedThread();
-    if (!thread) return undefined;
+    if (!thread) return unavailable("no-focus", now);
     if (
       this.#contextCache &&
       this.#contextCache.threadId === thread.id &&
       now - this.#contextCache.at < 1_000
     ) {
-      return this.#contextCache.snapshot;
+      return this.#contextCache.availability;
     }
-    const snapshot = parseLatestContext(
-      readFileTail(thread.rolloutPath),
+    const availability = contextAvailabilityFromLines(
+      this.#rolloutReader(thread.rolloutPath),
       thread.id,
       now,
     );
     this.#contextCache = {
       at: now,
       threadId: thread.id,
-      ...(snapshot ? { snapshot } : {}),
+      availability,
     };
-    return snapshot;
+    return availability;
+  }
+
+  contextSnapshot(): ContextSnapshot | undefined {
+    const availability = this.contextAvailability();
+    return availability.state === "ready" ? availability.value : undefined;
   }
 
   reasoningSnapshot(): ReasoningSnapshot {
@@ -623,12 +643,17 @@ export class CodexStore {
     );
     return {
       current,
-      levels: levels.includes(current)
-        ? levels
-        : normalizeReasoningLevels([...levels, current]),
+      levels,
       ...(thread?.id ? { threadId: thread.id } : {}),
       ...(thread?.model ? { model: thread.model } : {}),
     };
+  }
+
+  reasoningAvailability(): Availability<ReasoningSnapshot> {
+    const snapshot = this.reasoningSnapshot();
+    if (!snapshot.threadId) return unavailable("no-focus");
+    if (snapshot.levels.length === 0) return unavailable("unsupported-schema");
+    return ready(snapshot);
   }
 
   modelSnapshot(): ModelSnapshot {
@@ -649,6 +674,13 @@ export class CodexStore {
         ...(thread?.id ? { threadId: thread.id } : {}),
       };
     }
+  }
+
+  modelAvailability(): Availability<ModelSnapshot> {
+    const snapshot = this.modelSnapshot();
+    if (!snapshot.threadId) return unavailable("no-focus");
+    if (snapshot.options.length === 0) return unavailable("unsupported-schema");
+    return ready(snapshot);
   }
 
   #modelCatalog(): unknown {
@@ -703,6 +735,17 @@ export class CodexStore {
       this.#usagePromise = undefined;
     });
     return this.#usagePromise;
+  }
+
+  async usageAvailability(): Promise<Availability<UsageSnapshot>> {
+    try {
+      const snapshot = await this.usageSnapshot();
+      return snapshot
+        ? ready(snapshot, snapshot.observedAt)
+        : unavailable("not-exposed");
+    } catch (error) {
+      return unavailable(availabilityReasonFromError(error));
+    }
   }
 
   #open(): DatabaseSync {

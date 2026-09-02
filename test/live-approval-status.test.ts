@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { CodexStore, applyFocusedLiveInput } from "../src/lib/codex-store.js";
+import {
+  CodexStore,
+  LIVE_COMPOSER_CACHE_MS,
+  applyFocusedLiveInput,
+} from "../src/lib/codex-store.js";
 import type { AgentSnapshot } from "../src/types.js";
 
 function snapshot(id: string, status: AgentSnapshot["status"]): AgentSnapshot {
@@ -40,7 +44,11 @@ describe("focused native approval status", () => {
       ]);
       expect(reader).toHaveBeenCalledTimes(1);
 
-      now += 1_001;
+      now += LIVE_COMPOSER_CACHE_MS - 1;
+      await store.refreshLiveComposer();
+      expect(reader).toHaveBeenCalledTimes(1);
+
+      now += 2;
       await store.refreshLiveComposer();
       expect(reader).toHaveBeenCalledTimes(2);
     } finally {

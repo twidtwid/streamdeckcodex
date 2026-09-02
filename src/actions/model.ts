@@ -125,7 +125,11 @@ export class ModelAction extends SingletonAction<ModelSettings> {
       streamDeck.logger.info(
         `Applying model ${option.slug} to task ${snapshot.threadId} on dial press`,
       );
-      const live = await applyModel(option.slug, snapshot.threadId);
+      const live = await applyModel(
+        option.slug,
+        option.pickerLabel,
+        snapshot.threadId,
+      );
       if (!live.model?.toLowerCase().includes(option.label.toLowerCase())) {
         throw new Error(
           `Live Codex picker retained ${live.model ?? "no model"} instead of ${option.label}`,

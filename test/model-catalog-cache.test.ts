@@ -53,7 +53,14 @@ describe("model catalog cache", () => {
       expect(reads).toBe(2);
       writeFileSync(
         catalogPath,
-        JSON.stringify({ models: [{ slug: "gpt-5.6-terra" }] }),
+        JSON.stringify({
+          models: [
+            {
+              slug: "gpt-5.6-terra",
+              supported_reasoning_levels: [{ effort: "medium" }],
+            },
+          ],
+        }),
       );
       expect(store.modelSnapshot().options[0]?.slug).toBe("gpt-5.6-terra");
       expect(reads).toBe(3);

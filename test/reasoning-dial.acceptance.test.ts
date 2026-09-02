@@ -5,6 +5,7 @@ import {
   confirmReasoning,
   previewReasoning,
   reasoningFeedback,
+  reasoningPickerLabel,
   type ReasoningDialState,
 } from "../src/lib/reasoning.js";
 import { supportedReasoningLevels } from "../src/lib/codex-store.js";
@@ -59,6 +60,12 @@ describe("reasoning dial acceptance", () => {
     ).toBe(0);
   });
 
+  it("selects High without confusing it with Extra High", () => {
+    expect(
+      spawnSync(native, ["--picker-label-fixture", "overlapping-high"]).status,
+    ).toBe(0);
+  });
+
   it("offers Ultra only when the active model advertises it", () => {
     const cache = {
       models: [
@@ -104,5 +111,35 @@ describe("reasoning dial acceptance", () => {
       "low",
       "ultra",
     ]);
+  });
+
+  it("supports None and Minimal with exact native picker labels", () => {
+    expect(reasoningPickerLabel("none")).toBe("None");
+    expect(reasoningPickerLabel("minimal")).toBe("Minimal");
+  });
+
+  it.each(["reasoning-minimal", "reasoning-label-mismatch"])(
+    "validates structured native reasoning payload: %s",
+    (scenario) => {
+      expect(
+        spawnSync(native, ["--selection-payload-fixture", scenario]).status,
+      ).toBe(0);
+    },
+  );
+
+  it("does not union another model's efforts for an unknown model", () => {
+    expect(
+      supportedReasoningLevels(
+        {
+          models: [
+            {
+              slug: "gpt-5.6-sol",
+              supported_reasoning_levels: [{ effort: "ultra" }],
+            },
+          ],
+        },
+        "gpt-unknown",
+      ),
+    ).toEqual([]);
   });
 });

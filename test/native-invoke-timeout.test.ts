@@ -25,6 +25,22 @@ class StubbornChild extends EventEmitter {
 }
 
 describe("native control timeout lifecycle", () => {
+  it("rejects oversized native output before it can grow unbounded", async () => {
+    const child = new StubbornChild();
+    const spawnStubborn = (() => child) as unknown as typeof spawn;
+    const operation = __nativeControlTest.invokeWithSpawn(
+      "read",
+      5_000,
+      spawnStubborn,
+    );
+    child.stdout.emit("data", "x".repeat(256 * 1024 + 1));
+    await expect(operation).rejects.toMatchObject({
+      reasonCode: "UNAVAILABLE",
+    });
+    child.emit("exit", 1);
+    child.emit("close", 1);
+  });
+
   it("escalates a stubborn child to SIGKILL and rejects exactly once", async () => {
     const child = new StubbornChild();
     const spawnStubborn = (() => child) as unknown as typeof spawn;

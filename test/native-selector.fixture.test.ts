@@ -7,10 +7,15 @@ const native = resolve(
 );
 
 type FixtureAction =
+  | "--composer-draft-fixture"
+  | "--composer-witness-argument-fixture"
   | "--selector-fixture"
   | "--transaction-fixture"
   | "--mode-transition-fixture"
   | "--picker-selection-fixture"
+  | "--picker-label-fixture"
+  | "--picker-wait-fixture"
+  | "--ultra-confirmation-fixture"
   | "--workspace-shortcut-fixture";
 
 function run(action: FixtureAction, scenario: string) {
@@ -89,6 +94,30 @@ describe("native single-pass AX selectors", () => {
 });
 
 describe("native compiled action decisions", () => {
+  it.each(["missing", "empty-placeholder", "encoded-witness"])(
+    "distinguishes a fresh composer capture from witness reuse: %s",
+    (scenario) => {
+      expect(run("--composer-witness-argument-fixture", scenario).status).toBe(
+        0,
+      );
+    },
+  );
+
+  it.each([
+    "chromium-placeholder",
+    "chatgpt-placeholder",
+    "current-codex-placeholder",
+    "plan-placeholder",
+    "description-placeholder",
+    "real-draft",
+    "placeholder-with-draft",
+  ])(
+    "preserves drafts while recognizing Codex's empty placeholder: %s",
+    (scenario) => {
+      expect(run("--composer-draft-fixture", scenario).status).toBe(0);
+    },
+  );
+
   it.each([
     "plan-on",
     "plan-off",
@@ -105,6 +134,31 @@ describe("native compiled action decisions", () => {
       expect(run("--picker-selection-fixture", scenario).status).toBe(0);
     },
   );
+
+  it.each(["versioned-model", "annotated-ultra", "unrelated"])(
+    "matches current picker labels without accepting unrelated values: %s",
+    (scenario) => {
+      expect(run("--picker-label-fixture", scenario).status).toBe(0);
+    },
+  );
+
+  it.each([
+    "valid",
+    "spatial-siblings",
+    "missing-full-access",
+    "duplicate-continue",
+  ])("selects only the bounded Ultra Continue confirmation: %s", (scenario) => {
+    expect(run("--ultra-confirmation-fixture", scenario).status).toBe(0);
+  });
+
+  it.each([
+    "selection-delayed",
+    "selection-unchanged",
+    "fast-delayed",
+    "fast-unavailable",
+  ])("waits for bounded picker state without inventing it: %s", (scenario) => {
+    expect(run("--picker-wait-fixture", scenario).status).toBe(0);
+  });
 
   it.each(["review-panel", "browser", "files", "side-chat"])(
     "uses the typed native workspace shortcut registry: %s",

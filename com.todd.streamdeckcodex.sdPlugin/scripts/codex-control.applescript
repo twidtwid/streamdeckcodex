@@ -13,21 +13,15 @@ on run argv
 		return
 	end if
 
-	tell application "/Applications/Codex.app" to activate
+	-- The Codex desktop bundle is currently presented as ChatGPT on macOS and
+	-- is not guaranteed to live at /Applications/Codex.app. Its bundle ID is
+	-- the stable identity across both names and install locations.
+	tell application id "com.openai.codex" to activate
 	delay 0.2
 
 	tell application "System Events"
 		if controlMode is "shortcut" then
-			try
-				my sendShortcut(payload)
-			on error errorMessage number errorNumber
-				if payload is "dictation-down" then
-					key up "d"
-					key up shift
-					key up control
-				end if
-				error errorMessage number errorNumber
-			end try
+			my sendShortcut(payload)
 		else if controlMode is "slash" then
 			if payload does not start with "/" then error "Invalid slash command"
 			keystroke payload
@@ -49,9 +43,6 @@ on sendShortcut(payload)
 			key code 36
 		else if payload is "reject" or payload is "decline" then
 			key code 53
-		else if payload is "dictation-down" then
-			key down {control, shift}
-			key down "d"
 		else if payload is "keyboard-shortcuts" then
 			keystroke "/" using {command down, shift down}
 		else if payload is "back" then

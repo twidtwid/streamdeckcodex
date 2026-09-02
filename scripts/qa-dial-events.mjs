@@ -1,13 +1,19 @@
-import { spawn, spawnSync } from "node:child_process";
-import { once } from "node:events";
+import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, resolve } from "node:path";
-import { WebSocketServer } from "ws";
+import { resolve } from "node:path";
 import {
-  restoreLiveState,
+  createLiveStateRestorer,
+  requireConnectedQaTarget,
+  selectionPayload,
   snapshotLiveState,
 } from "./lib/live-state-journal.mjs";
 import { activeForegroundThreadId } from "./lib/foreground-thread.mjs";
+import {
+  createStreamDeckActionHarness,
+  delay,
+  waitFor,
+} from "./lib/streamdeck-action-harness.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const plugin = resolve(
@@ -22,9 +28,6 @@ const nativeControl = resolve(
   "bin",
   "codex-ui-control",
 );
-const delay = (milliseconds) =>
-  new Promise((resolvePromise) => setTimeout(resolvePromise, milliseconds));
-
 function native(action, value, threadId) {
   const values = [action];
   if (value !== undefined || threadId) values.push(value ?? "");
@@ -56,148 +59,158 @@ function event(action, context, name, payload = {}) {
   };
 }
 
-async function waitFor(check, timeout = 8_000) {
+async function readPicker(threadId, timeout = 8_000) {
   const deadline = Date.now() + timeout;
+  let lastError;
   while (Date.now() < deadline) {
-    const value = check();
-    if (value) return value;
-    await delay(50);
-  }
-  throw new Error("Timed out waiting for the plugin event result");
-}
-
-const activeThreadId = activeForegroundThreadId();
-const initialState = snapshotLiveState(native, activeThreadId);
-const initialPlan = initialState.plan;
-if (initialPlan) {
-  native("mode-toggle", "plan");
-}
-if (native("mode-read", "plan").active) {
-  throw new Error("Could not establish a non-Plan QA precondition");
-}
-native("model", "gpt-5.6-sol");
-native("reasoning", "medium");
-
-const server = new WebSocketServer({ host: "127.0.0.1", port: 0 });
-await once(server, "listening");
-const address = server.address();
-if (typeof address === "string" || !address) {
-  throw new Error("QA WebSocket server did not bind to a TCP port");
-}
-
-const info = JSON.stringify({
-  application: {
-    font: ".AppleSystemUIFont",
-    language: "en",
-    platform: "mac",
-    platformVersion: "26.5",
-    version: "7.5.0",
-  },
-  colors: {},
-  devicePixelRatio: 2,
-  devices: [
-    {
-      id: "qa-stream-deck-plus",
-      name: "QA Stream Deck +",
-      size: { columns: 4, rows: 2 },
-      type: 7,
-    },
-  ],
-  plugin: { uuid: "com.todd.streamdeckcodex", version: "0.1.0.0" },
-});
-
-let socket;
-const outbound = [];
-server.on("connection", (connected) => {
-  socket = connected;
-  connected.on("message", (data) => {
-    const message = JSON.parse(data.toString());
-    outbound.push(message);
-    if (message.event === "getGlobalSettings") {
-      connected.send(
-        JSON.stringify({
-          event: "didReceiveGlobalSettings",
-          payload: {
-            settings: { profileActivationVersion: "profile-v1" },
-          },
-        }),
-      );
+    try {
+      return native("read", undefined, threadId);
+    } catch (error) {
+      lastError = error;
+      await delay(200);
     }
-  });
-});
+  }
+  throw (
+    lastError ?? new Error("Timed out reading the live Model/Effort picker")
+  );
+}
 
-const child = spawn(
-  resolve(
-    homedir(),
-    "Library/Application Support/com.elgato.StreamDeck/NodeJS/24.13.1/node",
-  ),
-  [
-    plugin,
-    "-port",
-    String(address.port),
-    "-pluginUUID",
-    "qa-plugin-context",
-    "-registerEvent",
-    "registerPlugin",
-    "-info",
-    info,
-  ],
-  {
-    env: {
-      ...process.env,
-      NODE_ENV: "development",
-    },
-    cwd: resolve(dirname(plugin), ".."),
-    stdio: ["ignore", "pipe", "pipe"],
-  },
+const activeThreadId = requireConnectedQaTarget(
+  activeForegroundThreadId(),
+  process.env.STREAMDECK_QA_THREAD_ID,
 );
-
-const output = [];
-let childResult;
-child.stdout.setEncoding("utf8");
-child.stderr.setEncoding("utf8");
-child.stdout.on("data", (chunk) => output.push(chunk));
-child.stderr.on("data", (chunk) => output.push(chunk));
-child.once("exit", (code, signal) => {
-  childResult = { code, signal };
+spawnSync("/usr/bin/open", [`codex://threads/${activeThreadId}`]);
+await delay(3_000);
+const cache = JSON.parse(
+  readFileSync(resolve(homedir(), ".codex", "models_cache.json"), "utf8"),
+);
+const effortLabels = {
+  none: "None",
+  minimal: "Minimal",
+  low: "Light",
+  medium: "Medium",
+  high: "High",
+  xhigh: "Extra High",
+  ultra: "Ultra",
+};
+const capabilities = ["luna", "terra", "sol"].flatMap((family) => {
+  const model = cache.models?.find(
+    (candidate) =>
+      typeof candidate.slug === "string" &&
+      candidate.slug.toLowerCase().endsWith(`-${family}`),
+  );
+  if (!model) return [];
+  const reasoning = (model.supported_reasoning_levels ?? [])
+    .map((entry) => entry.effort)
+    .filter((effort) => effortLabels[effort]);
+  return reasoning.length
+    ? [
+        {
+          slug: model.slug,
+          family,
+          label: family[0].toUpperCase() + family.slice(1),
+          reasoning,
+        },
+      ]
+    : [];
 });
+if (capabilities.length < 2) {
+  throw new Error("Connected dial QA requires at least two supported models.");
+}
+const initialPicker = await readPicker(activeThreadId);
+const initialModelSelection = capabilities.find((option) =>
+  initialPicker.model?.toLowerCase().includes(option.family),
+);
+const initialReasoningSelection = Object.entries(effortLabels).find(
+  ([, label]) => label === initialPicker.effort,
+);
+if (!initialModelSelection || !initialReasoningSelection) {
+  throw new Error(
+    "Connected dial QA cannot prove restoration of the current picker state.",
+  );
+}
+const initialState = snapshotLiveState(native, activeThreadId, {
+  modes: ["plan"],
+  model: {
+    value: initialModelSelection.slug,
+    label: initialModelSelection.label,
+  },
+  reasoning: {
+    value: initialReasoningSelection[0],
+    label: initialReasoningSelection[1],
+  },
+});
+const composer = native("composer-read", undefined, activeThreadId);
+if (composer.draftEmpty !== true) {
+  throw new Error(
+    "Connected dial QA refused a nonempty or unverifiable draft.",
+  );
+}
+const initialPlan = initialState.plan;
+const baseModel = capabilities.at(-1);
+const modelTarget = capabilities.at(-2);
+if (!baseModel || !modelTarget) throw new Error("No reversible model pair.");
+const baseReasoningIndex = Math.min(1, baseModel.reasoning.length - 1);
+const baseReasoning = baseModel.reasoning[baseReasoningIndex];
+const reasoningBase = "medium";
+const reasoningTarget = "high";
+if (
+  !baseReasoning ||
+  !modelTarget.reasoning.includes(reasoningBase) ||
+  !modelTarget.reasoning.includes(reasoningTarget)
+) {
+  throw new Error(
+    "Connected dial QA requires a model that supports Medium and High.",
+  );
+}
+const restoreOnce = createLiveStateRestorer(native, initialState);
+const harness = await createStreamDeckActionHarness({
+  plugin,
+  pluginContext: "qa-plugin-context",
+  restore: restoreOnce,
+});
+const { outbound } = harness;
 
 try {
-  await waitFor(() => {
-    if (childResult) {
-      throw new Error(
-        `Plugin exited before connecting: ${JSON.stringify(childResult)} ${output.join("")}`,
-      );
-    }
-    return socket;
-  });
-  await waitFor(() =>
-    outbound.some((message) => message.event === "registerPlugin"),
+  if (initialPlan) {
+    native("mode-toggle", "plan", activeThreadId);
+  }
+  if (native("mode-read", "plan", activeThreadId).active) {
+    throw new Error("Could not establish a non-Plan QA precondition");
+  }
+  native(
+    "model",
+    selectionPayload(baseModel.slug, baseModel.label),
+    activeThreadId,
   );
-
+  native(
+    "reasoning",
+    selectionPayload(baseReasoning, effortLabels[baseReasoning]),
+    activeThreadId,
+  );
   const modelAction = "com.todd.streamdeckcodex.model";
   const modelContext = "qa-model-dial";
-  socket.send(JSON.stringify(event(modelAction, modelContext, "willAppear")));
+  harness.send(event(modelAction, modelContext, "willAppear"));
   await waitFor(() =>
     outbound.some(
       (message) =>
         message.event === "setFeedback" && message.context === modelContext,
     ),
   );
-  socket.send(
-    JSON.stringify(
-      event(modelAction, modelContext, "dialRotate", { ticks: -1 }),
-    ),
-  );
+  const modelBeforeRotate = (await readPicker(activeThreadId)).model;
+  harness.send(event(modelAction, modelContext, "dialRotate", { ticks: -1 }));
   await waitFor(() =>
     outbound.some(
       (message) =>
         message.event === "setSettings" &&
         message.context === modelContext &&
-        message.payload?.selectedModel === "gpt-5.6-terra",
+        message.payload?.selectedModel === modelTarget.slug,
     ),
   );
-  socket.send(JSON.stringify(event(modelAction, modelContext, "dialUp")));
+  if ((await readPicker(activeThreadId)).model !== modelBeforeRotate) {
+    throw new Error("Model rotation mutated Codex before dial press");
+  }
+  harness.send(event(modelAction, modelContext, "dialUp"));
   await waitFor(
     () =>
       outbound.findLast(
@@ -205,41 +218,48 @@ try {
           message.event === "setFeedback" &&
           message.context === modelContext &&
           message.payload?.title === "MODEL" &&
-          message.payload?.value === "TERRA",
+          message.payload?.value === modelTarget.label.toUpperCase(),
       ),
     12_000,
   );
-  if (native("read").model !== "5.6 Terra") {
-    throw new Error("Model dial did not visibly apply Terra");
+  if (
+    !(await readPicker(activeThreadId)).model
+      ?.toLowerCase()
+      .includes(modelTarget.family)
+  ) {
+    throw new Error(`Model dial did not visibly apply ${modelTarget.label}`);
   }
+  native(
+    "reasoning",
+    selectionPayload(reasoningBase, effortLabels[reasoningBase]),
+    activeThreadId,
+  );
 
   const reasoningAction = "com.todd.streamdeckcodex.reasoning";
   const reasoningContext = "qa-reasoning-dial";
-  socket.send(
-    JSON.stringify(event(reasoningAction, reasoningContext, "willAppear")),
-  );
+  harness.send(event(reasoningAction, reasoningContext, "willAppear"));
   await waitFor(() =>
     outbound.some(
       (message) =>
         message.event === "setFeedback" && message.context === reasoningContext,
     ),
   );
-  socket.send(
-    JSON.stringify(
-      event(reasoningAction, reasoningContext, "dialRotate", { ticks: -1 }),
-    ),
+  const reasoningBeforeRotate = (await readPicker(activeThreadId)).effort;
+  harness.send(
+    event(reasoningAction, reasoningContext, "dialRotate", { ticks: 1 }),
   );
   await waitFor(() =>
     outbound.some(
       (message) =>
         message.event === "setSettings" &&
         message.context === reasoningContext &&
-        message.payload?.selectedLevel === "low",
+        message.payload?.selectedLevel === reasoningTarget,
     ),
   );
-  socket.send(
-    JSON.stringify(event(reasoningAction, reasoningContext, "dialUp")),
-  );
+  if ((await readPicker(activeThreadId)).effort !== reasoningBeforeRotate) {
+    throw new Error("Reasoning rotation mutated Codex before dial press");
+  }
+  harness.send(event(reasoningAction, reasoningContext, "dialUp"));
   await waitFor(
     () =>
       outbound.findLast(
@@ -247,12 +267,17 @@ try {
           message.event === "setFeedback" &&
           message.context === reasoningContext &&
           message.payload?.title === "EFFORT" &&
-          message.payload?.value === "LIGHT",
+          message.payload?.value ===
+            effortLabels[reasoningTarget].toUpperCase(),
       ),
     12_000,
   );
-  if (native("read").effort !== "Light") {
-    throw new Error("Reasoning dial did not visibly apply Light");
+  if (
+    (await readPicker(activeThreadId)).effort !== effortLabels[reasoningTarget]
+  ) {
+    throw new Error(
+      `Reasoning dial did not visibly apply ${effortLabels[reasoningTarget]}`,
+    );
   }
 
   const modelActive = outbound.findLast(
@@ -260,28 +285,74 @@ try {
       message.event === "setFeedback" &&
       message.context === modelContext &&
       message.payload?.title === "MODEL" &&
-      message.payload?.value === "TERRA",
+      message.payload?.value === modelTarget.label.toUpperCase(),
   );
   const reasoningActive = outbound.findLast(
     (message) =>
       message.event === "setFeedback" &&
       message.context === reasoningContext &&
       message.payload?.title === "EFFORT" &&
-      message.payload?.value === "LIGHT",
+      message.payload?.value === effortLabels[reasoningTarget].toUpperCase(),
   );
   if (!modelActive || !reasoningActive) {
     throw new Error("The dials did not emit verified steady-state feedback");
   }
 
+  const pttContext = "qa-ptt-key";
+  const pttSettings = { commandId: "dictate" };
+  const pttEvent = (name) =>
+    event("com.todd.streamdeckcodex.command", pttContext, name, {
+      controller: "Keypad",
+      coordinates: { column: 0, row: 0 },
+      settings: pttSettings,
+    });
+  const pttGuardRunning = () =>
+    spawnSync("/usr/bin/pgrep", ["-f", "[p]tt-guard\\.mjs"]).status === 0;
+  harness.send(pttEvent("willAppear"));
+  await waitFor(() =>
+    outbound.some(
+      (message) =>
+        message.event === "setImage" && message.context === pttContext,
+    ),
+  );
+  harness.send(pttEvent("keyDown"));
+  await waitFor(pttGuardRunning);
+  if (
+    outbound.some(
+      (message) =>
+        message.event === "showAlert" && message.context === pttContext,
+    )
+  ) {
+    throw new Error("PTT key-down reported a failure");
+  }
+  harness.send(pttEvent("keyUp"));
+  const pttReleased = await waitFor(() =>
+    outbound.findLast(
+      (message) => message.event === "showOk" && message.context === pttContext,
+    ),
+  );
+  await waitFor(() => !pttGuardRunning());
+  await waitFor(
+    () => {
+      try {
+        return (
+          native("composer-read", undefined, activeThreadId).draftEmpty === true
+        );
+      } catch {
+        return undefined;
+      }
+    },
+    5_000,
+    "a clean composer after PTT release",
+  );
+
   const commandAction = "com.todd.streamdeckcodex.command";
   const planContext = "qa-plan-command";
   const planSettings = { commandIndex: 1 };
-  socket.send(
-    JSON.stringify(
-      event(commandAction, planContext, "willAppear", {
-        settings: planSettings,
-      }),
-    ),
+  harness.send(
+    event(commandAction, planContext, "willAppear", {
+      settings: planSettings,
+    }),
   );
   await waitFor(() =>
     outbound.some(
@@ -291,48 +362,63 @@ try {
         message.payload?.value === "Plan",
     ),
   );
-  socket.send(
-    JSON.stringify(
-      event(commandAction, planContext, "dialUp", {
-        settings: planSettings,
-      }),
-    ),
+  harness.send(
+    event(commandAction, planContext, "dialUp", {
+      settings: planSettings,
+    }),
   );
-  const planActive = await waitFor(
+  const planFeedback = await waitFor(
     () =>
       outbound.findLast(
         (message) =>
           message.event === "setFeedback" &&
           message.context === planContext &&
-          message.payload?.title === "ACTIVE" &&
+          message.payload?.title !== "ACTION" &&
           message.payload?.value === "Plan",
       ),
-    12_000,
+    15_000,
+    "verified Action-dial Plan feedback",
   );
-  if (!native("mode-read", "plan").active) {
+  if (planFeedback.payload?.title !== "ACTIVE") {
+    throw new Error(
+      `Action-dial Plan failed: ${JSON.stringify(planFeedback.payload)}`,
+    );
+  }
+  if (!native("mode-read", "plan", activeThreadId).active) {
     throw new Error("Plan control did not visibly activate Plan mode");
   }
 
+  const finalPicker = await readPicker(activeThreadId);
   process.stdout.write(
     `${JSON.stringify({
       ok: true,
-      model: native("read").model,
-      effort: native("read").effort,
-      plan: native("mode-read", "plan").active,
+      model: finalPicker.model,
+      effort: finalPicker.effort,
+      plan: native("mode-read", "plan", activeThreadId).active,
       modelFeedback: modelActive.payload,
       reasoningFeedback: reasoningActive.payload,
-      planFeedback: planActive.payload,
+      pttFeedback: pttReleased.event,
+      planFeedback: planFeedback.payload,
     })}\n`,
   );
 } catch (error) {
-  process.stderr.write(`${output.join("")}\n`);
+  process.stderr.write(
+    `${harness.output()}\n${JSON.stringify(
+      outbound.filter(
+        (message) =>
+          message.event === "showAlert" ||
+          [
+            "qa-model-dial",
+            "qa-reasoning-dial",
+            "qa-ptt-key",
+            "qa-plan-command",
+          ].includes(message.context),
+      ),
+    )}\n`,
+  );
   throw error;
 } finally {
-  child.kill("SIGTERM");
-  await Promise.race([once(child, "exit"), delay(2_000)]);
-  for (const client of server.clients) client.close();
-  server.close();
-  const failures = restoreLiveState(native, initialState);
+  const failures = await harness.close();
   if (failures.length) {
     process.stderr.write(`restore failures: ${failures.join("; ")}\n`);
     process.exitCode = 1;
