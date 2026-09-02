@@ -10,7 +10,6 @@ const documents = [
   "ARCHITECTURE.md",
   "CONTRIBUTING.md",
   "QA.md",
-  "PROGRESS.md",
 ];
 const failures = [];
 

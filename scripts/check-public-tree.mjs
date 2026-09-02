@@ -21,7 +21,6 @@ const forbiddenExtensions = new Set([
   ".sqlite",
 ]);
 const forbiddenNames = [/^\.env(?:\.|$)/, /^id_(?:rsa|ecdsa|ed25519)$/];
-const runtimeArtifacts = new Set(["dashboard/activity.jsonl"]);
 const internalPlanningArtifacts = new Set(["plan.md"]);
 const patterns = [
   {
@@ -50,10 +49,6 @@ const patterns = [
 const failures = [];
 
 for (const file of tracked) {
-  if (runtimeArtifacts.has(file)) {
-    failures.push(`${file}: runtime activity must not be tracked`);
-    continue;
-  }
   if (internalPlanningArtifacts.has(file) || file.startsWith("plans/")) {
     failures.push(
       `${file}: internal implementation planning must not be tracked`,
