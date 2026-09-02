@@ -36,7 +36,7 @@ export class UsageAction extends SingletonAction {
 
   private async draw(actionInstance: Action): Promise<void> {
     if (!actionInstance.isKey()) return;
-    const snapshot = await codexStore.usageSnapshot();
+    const snapshot = codexStore.usageSnapshotCached();
     await renderKey(
       actionInstance,
       svgDataUrl(

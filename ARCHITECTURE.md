@@ -40,6 +40,9 @@ expensive live-composer Accessibility observation is cached for 2.5 seconds.
 Its first read captures a witness across the bounded local activity sources;
 subsequent reads inspect only bytes appended since those saved cursors. A focus
 or file-continuity change invalidates the witness and forces one full recapture.
+A failed observation counts toward the same cadence as a successful one, so an
+unreachable Codex never raises the spawn rate. The 30-second account-usage
+fetch runs off the tick's critical path; keys render the last cached value.
 
 User actions do not rely on that background cache as proof of a mutation. Each
 chat-targeted action captures or verifies the exact visible task/window, refuses

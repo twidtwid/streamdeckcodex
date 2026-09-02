@@ -85,6 +85,12 @@ const harness = vi.hoisted(() => {
         weekly: { usedPercent: 20 },
         fiveHour: { usedPercent: 10 },
       })),
+      usageSnapshotCached: vi.fn(() => ({ usedPercent: 20, observedAt: 1 })),
+      usageAvailabilityCached: vi.fn(() => ({
+        state: "ready",
+        value: { usedPercent: 20, observedAt: 1 },
+        observedAt: 1,
+      })),
       modelSnapshot: vi.fn(() => ({ current: "", options: [] })),
       modelAvailability: vi.fn(() => ({
         state: "unavailable",
@@ -95,11 +101,6 @@ const harness = vi.hoisted(() => {
       reasoningAvailability: vi.fn(() => ({
         state: "unavailable",
         reason: "unsupported-schema",
-        observedAt: 1,
-      })),
-      usageAvailability: vi.fn(async () => ({
-        state: "ready",
-        value: { usedPercent: 20, observedAt: 1 },
         observedAt: 1,
       })),
     },
@@ -164,6 +165,7 @@ import { KeycapAction } from "../src/actions/keycap.js";
 import { UsageAction } from "../src/actions/usage.js";
 import { COMMANDS } from "../src/lib/commands.js";
 import { KEYCAP_WORKFLOWS } from "../src/lib/keycap-workflows.js";
+import { svgDataUrl, usageKeySvg } from "../src/lib/visuals.js";
 
 function actionFor(row: ProfileKeyContract) {
   switch (row.behavior) {
@@ -275,6 +277,34 @@ describe("executable 50-key profile contract", () => {
     await refresh();
     await refresh();
     expect(action.calls).toEqual([]);
+  });
+
+  it("completes a tick while the usage fetch is in flight", async () => {
+    const { refresh } = await import("../src/plugin.js");
+    harness.store.usageSnapshot.mockImplementationOnce(
+      () => new Promise(() => undefined),
+    );
+    harness.store.usageSnapshotCached.mockReturnValueOnce(undefined as never);
+    const agent = harness.registrations.find(
+      (handler) => handler instanceof AgentStatusAction,
+    ) as AgentStatusAction;
+    const usage = harness.registrations.find(
+      (handler) => handler instanceof UsageAction,
+    ) as UsageAction;
+    const agentKey = new FakeStreamDeckAction({ slot: 1 });
+    const usageKey = new FakeStreamDeckAction({});
+    (agent as unknown as { actions: unknown[] }).actions.push(agentKey);
+    (usage as unknown as { actions: unknown[] }).actions.push(usageKey);
+
+    await refresh();
+
+    expect(agentKey.calls.map(({ method }) => method)).toContain("setImage");
+    expect(
+      usageKey.calls.find(({ method }) => method === "setImage")?.value,
+    ).toBe(svgDataUrl(usageKeySvg(undefined, "weekly")));
+    expect(harness.store.refreshLiveComposer).toHaveBeenCalledTimes(1);
+    (agent as unknown as { actions: unknown[] }).actions.pop();
+    (usage as unknown as { actions: unknown[] }).actions.pop();
   });
 
   it("deduplicates unchanged live action transports and sends status changes", async () => {

@@ -311,6 +311,135 @@ describe("local Codex state integration", () => {
     }
   });
 
+  it("serves status and context from one read of the focused rollout", () => {
+    const root = mkdtempSync(join(tmpdir(), "streamdeck-rollout-tail-"));
+    const databasePath = join(root, "state.sqlite");
+    const rollout = join(root, "rollout.jsonl");
+    let now = Date.parse("2026-09-02T12:00:00Z");
+    const clock = vi.spyOn(Date, "now").mockImplementation(() => now);
+    const tokenEvent = (used: number) =>
+      JSON.stringify({
+        timestamp: new Date(now).toISOString(),
+        payload: {
+          type: "token_count",
+          info: {
+            last_token_usage: { total_tokens: used },
+            model_context_window: 1_000,
+          },
+        },
+      });
+    writeFileSync(rollout, tokenEvent(250));
+    const database = new DatabaseSync(databasePath);
+    database.exec(`
+      CREATE TABLE threads (
+        id TEXT PRIMARY KEY, rollout_path TEXT, cwd TEXT, title TEXT,
+        preview TEXT, recency_at_ms INTEGER, reasoning_effort TEXT,
+        model TEXT, archived INTEGER
+      );
+      CREATE TABLE thread_spawn_edges (child_thread_id TEXT, status TEXT);
+    `);
+    database
+      .prepare(
+        `INSERT INTO threads VALUES ('thread', ?, '/tmp', 'Thread', 'preview', ?, 'medium', 'gpt-5.6-sol', 0)`,
+      )
+      .run(rollout, now);
+    database.close();
+
+    let reads = 0;
+    const store = new CodexStore({
+      databasePath,
+      activeThreadId: () => "thread",
+      rolloutReader: (path) => {
+        reads += 1;
+        return readFileSync(path, "utf8");
+      },
+    });
+    try {
+      store.recentThreads();
+      store.focusedThread();
+      expect(store.contextAvailability()).toMatchObject({
+        state: "ready",
+        value: { remainingPercent: 75 },
+      });
+      expect(reads).toBe(1);
+
+      now += 1_001;
+      writeFileSync(rollout, `${tokenEvent(250)}\n${tokenEvent(500)}`);
+      store.invalidate();
+      expect(store.contextAvailability()).toMatchObject({
+        state: "ready",
+        value: { remainingPercent: 50 },
+      });
+      expect(reads).toBe(2);
+      store.focusedThread();
+      store.recentThreads();
+      expect(reads).toBe(2);
+    } finally {
+      clock.mockRestore();
+      store.close();
+    }
+  });
+
+  it("does not pin a transient empty read of a non-empty rollout", () => {
+    const root = mkdtempSync(join(tmpdir(), "streamdeck-rollout-transient-"));
+    const databasePath = join(root, "state.sqlite");
+    const rollout = join(root, "rollout.jsonl");
+    let now = Date.parse("2026-09-02T12:00:00Z");
+    const clock = vi.spyOn(Date, "now").mockImplementation(() => now);
+    writeFileSync(
+      rollout,
+      JSON.stringify({
+        timestamp: new Date(now).toISOString(),
+        payload: {
+          type: "token_count",
+          info: {
+            last_token_usage: { total_tokens: 250 },
+            model_context_window: 1_000,
+          },
+        },
+      }),
+    );
+    const database = new DatabaseSync(databasePath);
+    database.exec(`
+      CREATE TABLE threads (
+        id TEXT PRIMARY KEY, rollout_path TEXT, cwd TEXT, title TEXT,
+        preview TEXT, recency_at_ms INTEGER, reasoning_effort TEXT,
+        model TEXT, archived INTEGER
+      );
+      CREATE TABLE thread_spawn_edges (child_thread_id TEXT, status TEXT);
+    `);
+    database
+      .prepare(
+        `INSERT INTO threads VALUES ('thread', ?, '/tmp', 'Thread', 'preview', ?, 'medium', 'gpt-5.6-sol', 0)`,
+      )
+      .run(rollout, now);
+    database.close();
+
+    // An empty string is what readFileTail returns on a transient read error.
+    let failing = true;
+    const store = new CodexStore({
+      databasePath,
+      activeThreadId: () => "thread",
+      rolloutReader: (path) => (failing ? "" : readFileSync(path, "utf8")),
+    });
+    try {
+      expect(store.contextAvailability()).toMatchObject({
+        state: "unavailable",
+        reason: "not-exposed",
+      });
+      failing = false;
+      now += 1_001;
+      store.invalidate();
+      expect(store.contextAvailability()).toMatchObject({
+        state: "ready",
+        value: { remainingPercent: 75 },
+      });
+    } finally {
+      clock.mockRestore();
+      store.close();
+    }
+  });
+
   it("evicts rollout events that are neither recent nor focused", () => {
     vi.useFakeTimers();
     const root = mkdtempSync(join(tmpdir(), "streamdeck-rollout-eviction-"));

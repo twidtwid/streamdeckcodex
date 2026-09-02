@@ -1,10 +1,77 @@
-import { describe, expect, it } from "vitest";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { describe, expect, it, vi } from "vitest";
+import { CodexStore } from "../src/lib/codex-store.js";
 import {
   parseLatestUsage,
   toggleUsageView,
   usageFromRateLimitsResult,
 } from "../src/lib/usage.js";
+import type { UsageSnapshot } from "../src/types.js";
 import { usageKeySvg } from "../src/lib/visuals.js";
+
+describe("usage refresh off the tick", () => {
+  function storeWith(fetcher: () => Promise<UsageSnapshot>) {
+    return new CodexStore({
+      usageFetcher: fetcher,
+      databasePath: join(
+        mkdtempSync(join(tmpdir(), "usage-")),
+        "missing.sqlite",
+      ),
+    });
+  }
+
+  it("serves the last snapshot synchronously while a refresh is in flight", async () => {
+    let now = 100_000;
+    const clock = vi.spyOn(Date, "now").mockImplementation(() => now);
+    const pending: Array<(snapshot: UsageSnapshot) => void> = [];
+    const fetcher = vi.fn(
+      () => new Promise<UsageSnapshot>((resolve) => pending.push(resolve)),
+    );
+    const store = storeWith(fetcher);
+    try {
+      expect(store.usageSnapshotCached()).toBeUndefined();
+      expect(store.usageAvailabilityCached()).toMatchObject({
+        state: "unavailable",
+        reason: "not-exposed",
+      });
+
+      const first = store.usageSnapshot();
+      pending[0]!({ usedPercent: 20, observedAt: 1 });
+      await expect(first).resolves.toMatchObject({ usedPercent: 20 });
+      expect(store.usageSnapshotCached()).toMatchObject({ usedPercent: 20 });
+
+      now += 30_001;
+      const second = store.usageSnapshot();
+      const third = store.usageSnapshot();
+      expect(fetcher).toHaveBeenCalledTimes(2);
+      expect(store.usageSnapshotCached()).toMatchObject({ usedPercent: 20 });
+      pending[1]!({ usedPercent: 25, observedAt: 2 });
+      await Promise.all([second, third]);
+      expect(store.usageSnapshotCached()).toMatchObject({ usedPercent: 25 });
+    } finally {
+      clock.mockRestore();
+      store.close();
+    }
+  });
+
+  it("records a structured reason when the fetch and the rollout fallback both fail", async () => {
+    const store = storeWith(async () => {
+      throw new Error("Codex app server timed out during initialize");
+    });
+    try {
+      await expect(store.usageSnapshot()).resolves.toBeUndefined();
+      expect(store.usageSnapshotCached()).toBeUndefined();
+      expect(store.usageAvailabilityCached()).toMatchObject({
+        state: "unavailable",
+        reason: "timeout",
+      });
+    } finally {
+      store.close();
+    }
+  });
+});
 
 describe("live Codex usage", () => {
   it("toggles between weekly capacity and banked resets", () => {

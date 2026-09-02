@@ -3,6 +3,8 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
+import { CodexStore } from "../src/lib/codex-store.js";
 import {
   availabilityReasonFromError,
   ready,
@@ -16,6 +18,7 @@ import {
 import {
   HEALTH_COMPONENTS,
   HealthTransitionLogger,
+  collectHealth,
   type HealthSnapshot,
 } from "../src/lib/health.js";
 
@@ -66,6 +69,76 @@ describe("reason-coded health diagnostics", () => {
     });
     expect(["clean", "dirty"]).toContain(written.build.treeState);
     spawnSync("trash", [directory]);
+  });
+
+  it("summarizes only what the store has observed", async () => {
+    const root = mkdtempSync(join(tmpdir(), "streamdeck-health-"));
+    const databasePath = join(root, "state.sqlite");
+    const rollout = join(root, "focused.jsonl");
+    writeFileSync(rollout, "");
+    const database = new DatabaseSync(databasePath);
+    database.exec(`
+      CREATE TABLE threads (
+        id TEXT PRIMARY KEY, rollout_path TEXT, cwd TEXT, title TEXT,
+        preview TEXT, recency_at_ms INTEGER, reasoning_effort TEXT,
+        model TEXT, archived INTEGER
+      );
+      CREATE TABLE thread_spawn_edges (child_thread_id TEXT, status TEXT);
+    `);
+    database
+      .prepare(
+        `INSERT INTO threads VALUES ('focused', ?, '/tmp', 'Focused', 'Focused', ?, 'high', 'gpt-5.6-sol', 0)`,
+      )
+      .run(rollout, Date.now());
+    database.close();
+
+    const reader = vi.fn(async () => ({
+      pendingInput: false,
+      approvalMode: "ask" as const,
+      conversationId: "focused",
+      rendererWindowId: "renderer-focused",
+    }));
+    const fetcher = vi.fn(async () => ({ usedPercent: 30, observedAt: 5 }));
+    const store = new CodexStore({
+      databasePath,
+      activeThreadId: () => "focused",
+      liveComposerReader: reader,
+      usageFetcher: fetcher,
+    });
+    try {
+      const cached = collectHealth(store);
+      expect(reader).not.toHaveBeenCalled();
+      expect(fetcher).not.toHaveBeenCalled();
+      expect(cached.components.focus).toMatchObject({
+        state: "unavailable",
+        reason: "not-exposed",
+      });
+      expect(cached.components.usage).toMatchObject({
+        state: "unavailable",
+        reason: "not-exposed",
+      });
+
+      await store.refreshLiveComposer();
+      await store.usageSnapshot();
+      const live = collectHealth(store);
+      expect(reader).toHaveBeenCalledTimes(1);
+      expect(fetcher).toHaveBeenCalledTimes(1);
+      expect(live.components.focus).toMatchObject({
+        state: "ready",
+        value: "focused",
+      });
+      expect(live.components.permissions).toMatchObject({
+        state: "ready",
+        value: "ask",
+      });
+      expect(live.components.usage).toMatchObject({
+        state: "ready",
+        value: "70% left",
+      });
+    } finally {
+      store.close();
+      spawnSync("trash", [root]);
+    }
   });
 
   it("distinguishes missing, malformed, stale, and ready context", () => {

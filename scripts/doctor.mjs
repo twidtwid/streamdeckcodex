@@ -71,7 +71,11 @@ const relevantStatus = git(
 );
 const store = new CodexStore();
 try {
-  const health = await collectHealth(store);
+  // The doctor is the one caller that takes a full live snapshot: observe the
+  // composer and the account usage first, then summarize.
+  await store.refreshLiveComposer().catch(() => undefined);
+  await store.usageSnapshot();
+  const health = collectHealth(store);
   const report = {
     schemaVersion: 1,
     build: {
