@@ -358,11 +358,23 @@ export async function toggleLiveMode(
   mode: CodexMode,
   threadId: string,
 ): Promise<LiveModeState> {
+  return toggleLiveModeUsing(mode, threadId, invoke);
+}
+
+async function toggleLiveModeUsing(
+  mode: CodexMode,
+  threadId: string,
+  invokeControl: NativeInvoker,
+): Promise<LiveModeState> {
   return verifiedModeResult(
     mode,
-    await invoke("mode-toggle", mode, undefined, threadId),
+    await invokeControl("mode-toggle", mode, 12_000, threadId),
   );
 }
+
+export const __liveModeTest = {
+  toggleWithInvoker: toggleLiveModeUsing,
+};
 
 export async function cycleLiveApprovalMode(
   threadId: string,

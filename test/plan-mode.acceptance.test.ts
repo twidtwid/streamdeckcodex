@@ -1,8 +1,11 @@
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { COMMANDS } from "../src/lib/commands.js";
-import { pickerFailureLabel } from "../src/lib/codex-ui-control.js";
+import {
+  __liveModeTest,
+  pickerFailureLabel,
+} from "../src/lib/codex-ui-control.js";
 import { commandKeySvg } from "../src/lib/visuals.js";
 
 const native = resolve(
@@ -23,6 +26,26 @@ describe("active-chat mode acceptance", () => {
       mode: "mode-toggle",
       value: "fast",
     });
+  });
+
+  it("gives the verified mode transaction its full bounded native budget", async () => {
+    const invoke = vi.fn().mockResolvedValue({
+      ok: true,
+      action: "mode-toggle",
+      mode: "fast",
+      active: true,
+      message: "fixture",
+    });
+
+    await expect(
+      __liveModeTest.toggleWithInvoker("fast", "fixture-task", invoke as never),
+    ).resolves.toEqual({ mode: "fast", active: true });
+    expect(invoke).toHaveBeenCalledWith(
+      "mode-toggle",
+      "fast",
+      12_000,
+      "fixture-task",
+    );
   });
 
   it.each(["plan-on", "plan-off", "fast-changed"])(

@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 import {
   createLiveStateRestorer,
   requireConnectedQaTarget,
@@ -76,6 +76,7 @@ const harness = await createStreamDeckActionHarness({
     CODEX_UI_CONTROL: proxy,
     QA_NATIVE_REAL: nativeControl,
     QA_NATIVE_LOG: nativeLog,
+    PATH: `${dirname(process.execPath)}:${process.env.PATH ?? ""}`,
   },
   restore: restoreOnce,
 });

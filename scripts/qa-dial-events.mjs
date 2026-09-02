@@ -332,6 +332,19 @@ try {
     ),
   );
   await waitFor(() => !pttGuardRunning());
+  await waitFor(
+    () => {
+      try {
+        return (
+          native("composer-read", undefined, activeThreadId).draftEmpty === true
+        );
+      } catch {
+        return undefined;
+      }
+    },
+    5_000,
+    "a clean composer after PTT release",
+  );
 
   const commandAction = "com.todd.streamdeckcodex.command";
   const planContext = "qa-plan-command";
@@ -354,17 +367,23 @@ try {
       settings: planSettings,
     }),
   );
-  const planActive = await waitFor(
+  const planFeedback = await waitFor(
     () =>
       outbound.findLast(
         (message) =>
           message.event === "setFeedback" &&
           message.context === planContext &&
-          message.payload?.title === "ACTIVE" &&
+          message.payload?.title !== "ACTION" &&
           message.payload?.value === "Plan",
       ),
-    12_000,
+    15_000,
+    "verified Action-dial Plan feedback",
   );
+  if (planFeedback.payload?.title !== "ACTIVE") {
+    throw new Error(
+      `Action-dial Plan failed: ${JSON.stringify(planFeedback.payload)}`,
+    );
+  }
   if (!native("mode-read", "plan", activeThreadId).active) {
     throw new Error("Plan control did not visibly activate Plan mode");
   }
@@ -379,11 +398,24 @@ try {
       modelFeedback: modelActive.payload,
       reasoningFeedback: reasoningActive.payload,
       pttFeedback: pttReleased.event,
-      planFeedback: planActive.payload,
+      planFeedback: planFeedback.payload,
     })}\n`,
   );
 } catch (error) {
-  process.stderr.write(`${harness.output()}\n`);
+  process.stderr.write(
+    `${harness.output()}\n${JSON.stringify(
+      outbound.filter(
+        (message) =>
+          message.event === "showAlert" ||
+          [
+            "qa-model-dial",
+            "qa-reasoning-dial",
+            "qa-ptt-key",
+            "qa-plan-command",
+          ].includes(message.context),
+      ),
+    )}\n`,
+  );
   throw error;
 } finally {
   const failures = await harness.close();

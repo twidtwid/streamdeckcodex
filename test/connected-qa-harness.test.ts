@@ -14,4 +14,11 @@ describe("shared connected-action harness", () => {
       expect(source).not.toContain("child.stdout.on");
     }
   });
+
+  it("exposes the embedded Node runtime to the native-call proxy", () => {
+    const source = readFileSync("scripts/qa-mode-events.mjs", "utf8");
+
+    expect(source).toContain("dirname(process.execPath)");
+    expect(source).toContain('process.env.PATH ?? ""');
+  });
 });
