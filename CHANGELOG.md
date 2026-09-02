@@ -2,7 +2,33 @@
 
 All notable changes to this project are documented here.
 
-## Unreleased
+## 0.2.2 — 2026-09-02
+
+Updated for the new Codex model navigation: Codex 26.818 replaced the
+Model/Effort menus with a **Select model** submenu and a five-segment
+**Power** control, and the model and reasoning dials, Ultra included, follow
+it again. Also a simplification pass: smaller public tree, behavioral tests,
+and no native spawns while Codex is unreachable.
+
+### Fixed
+
+- Model and reasoning dials work again with the current Codex picker: the
+  live state is read from the picker title, models are chosen from **Select
+  model**, and effort is stepped through the five-segment **Power** control
+  one segment at a time with the readout verified after every click, so
+  ladders that skip rungs (Sol ends at Ultra) still reach every level the
+  catalog offers. Picker transactions get the same 12-second budget as the
+  verified mode toggle.
+- Permissions cycle only through the modes Codex offers, so Full Access cycles
+  back to Ask when no Custom mode exists, and the one-time Full Access
+  confirmation is optional.
+- `qa:store` could not start on any Node version; it now runs through the
+  same bundler as the doctor.
+- The build-pipeline test skipped the keypad-profile generator check and
+  overwrote the shipped bundle with a fixture commit.
+- Manifest and property-inspector copy: the Reasoning dial previews on
+  rotate, the Usage and Context action-list icons were swapped, and the
+  navigator no longer claims touch-strip gestures.
 
 ### Changed
 
@@ -24,26 +50,6 @@ All notable changes to this project are documented here.
   diagnostic, a duplicate QA harness and log parser, the internal progress
   dashboard, `PROGRESS.md`, the `marketplace/submission` copy, and the
   one-off app-icon extractor with its two dependencies.
-
-### Fixed
-
-- Model and reasoning dials work again with the current Codex picker: the
-  live state is read from the picker title, models are chosen from **Select
-  model**, and effort is stepped through the five-segment **Power** control
-  one segment at a time with the readout verified after every click, so
-  ladders that skip rungs (Sol ends at Ultra) still reach every level the
-  catalog offers. Picker transactions get the same 12-second budget as the
-  verified mode toggle.
-- Permissions cycle only through the modes Codex offers, so Full Access cycles
-  back to Ask when no Custom mode exists, and the one-time Full Access
-  confirmation is optional.
-- `qa:store` could not start on any Node version; it now runs through the
-  same bundler as the doctor.
-- The build-pipeline test skipped the keypad-profile generator check and
-  overwrote the shipped bundle with a fixture commit.
-- Manifest and property-inspector copy: the Reasoning dial previews on
-  rotate, the Usage and Context action-list icons were swapped, and the
-  navigator no longer claims touch-strip gestures.
 
 ## 0.2.1 — 2026-09-02
 

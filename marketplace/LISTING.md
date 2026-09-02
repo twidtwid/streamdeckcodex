@@ -41,6 +41,16 @@ or endorsed by OpenAI, Elgato, or Corsair.
 - **Setup guide:** https://github.com/twidtwid/streamdeckcodex#install-from-github
 - **Privacy:** https://github.com/twidtwid/streamdeckcodex#privacy-and-security
 
+## Release notes — 0.2.2
+
+- Updated for the new Codex model navigation: model and reasoning dials drive
+  the Select model submenu and the five-segment Power control, Ultra included
+- Permissions cycle only through the modes Codex offers, so Full Access
+  returns to Ask
+- No native helper spawns while Codex is unreachable; usage and health work
+  off the refresh tick
+- Smaller public tree with behavioral tests and corrected docs
+
 ## Release notes — 0.2.1
 
 - Repairs the bundled native helper's executable permission on fresh installs
