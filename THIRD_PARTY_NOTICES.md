@@ -2,9 +2,10 @@
 
 ## Lucide icons
 
-All pictograms are generated from `lucide-static` v1.31.0, under the ISC
-License. Copyright © Lucide Contributors 2022; portions © Cole Bemis 2013–2022
-under the MIT License.
+All pictograms are generated from `lucide-static` v1.38.0, under the ISC
+License. Copyright © 2026 Lucide Icons and Contributors; icons derived from
+Feather are © 2013–present Cole Bemis under the MIT License. The bundled
+`THIRD_PARTY_LICENSES.txt` carries the full text.
 
 ## Barlow
 

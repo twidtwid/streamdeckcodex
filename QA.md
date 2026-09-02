@@ -3,6 +3,8 @@
 This is the release gate for the connected Stream Deck Plus profile. A source
 pass is necessary but not sufficient: release also requires exact installed
 profile parity and evidence from all seven pages in the live Stream Deck editor.
+Page numbers below are the Stream Deck + layout; the button-only profiles order
+their pages differently and Mini splits the same sections across twelve pages.
 
 ## Automated gate
 
@@ -32,8 +34,7 @@ The design evaluator rejects:
 
 | Surface          | Required behavior                                                                                                                                                                                                                                                                                                                                          |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Page 1 agents    | Six ordered live sessions use the same compact labels and status palette as Dial 1. The focused session shows `NOW`; an empty slot shows `New chat / EMPTY SLOT` and opens a new chat.                                                                                                                                                                     |
-| Page 1 sessions  | Six ordered live sessions, New Chat, and Plan Mode use the exact 50-key contract.                                                                                                                                                                                                                                                                          |
+| Page 1 sessions  | Six ordered live sessions, New Chat, and Plan Mode use the exact 50-key contract. Sessions use the same compact labels and status palette as Dial 1; the focused session shows `NOW`, and an empty slot shows `New chat / EMPTY SLOT` and opens a new chat.                                                                                                |
 | Page 2 controls  | FAST, Permissions, PTT, Quota, YEET, New Project, Compact, and Context appear once and remain legible at hardware size.                                                                                                                                                                                                                                    |
 | Permissions      | Reads the focused Codex window's visible mode. Press performs one native read-cycle-verify transaction; `APPROVE → YOLO` must confirm and dismiss Codex's interactive Full Access dialog before the key redraws `YOLO`.                                                                                                                                    |
 | Usage            | Defaults to weekly percentage left and compact reset time; press toggles to available resets without consuming one.                                                                                                                                                                                                                                        |
@@ -105,8 +106,18 @@ uses semantic AXPress for the final selection, and still rejects arbitrary
 draft text.
 
 The complete non-connected release gate is `npm run release:verify`. It does
-not claim physical-device success. Run `npm run release:verify:connected` only
-with explicit connected QA intent and the required disposable fixture.
+not claim physical-device success. `npm run release:verify:connected` runs
+`qa:dials`, `qa:modes`, and then `qa:release:connected`, which chains `check`,
+the keys preflight, the connected keys gate, and the release design evaluator
+against the installed profile and live page screenshots. Run it only with
+explicit connected QA intent and the required disposable fixture:
+
+```sh
+npm run qa:release:connected -- \
+  --fixture "/path/to/disposable-fixture" \
+  --installed "/path/to/Active.sdProfile" \
+  --live-pages ".cache/live-profile-pages"
+```
 
 Record connected evidence outside the repository while testing. A release note
 may summarize the verified device model, software versions, postconditions, and

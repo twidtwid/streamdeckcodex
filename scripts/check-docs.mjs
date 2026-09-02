@@ -5,7 +5,18 @@ const root = resolve(import.meta.dirname, "..");
 const packageJson = JSON.parse(
   readFileSync(resolve(root, "package.json"), "utf8"),
 );
-const documents = ["README.md", "ARCHITECTURE.md", "CONTRIBUTING.md", "QA.md"];
+const documents = [
+  "README.md",
+  "ARCHITECTURE.md",
+  "CONTRIBUTING.md",
+  "QA.md",
+  "MARKETPLACE.md",
+  "CHANGELOG.md",
+  "SECURITY.md",
+  "THIRD_PARTY_NOTICES.md",
+  "marketplace/README.md",
+  "marketplace/LISTING.md",
+];
 const failures = [];
 
 for (const document of documents) {

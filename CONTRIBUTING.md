@@ -15,7 +15,9 @@ Thanks for helping improve Stream Deck Codex Companion.
 Requirements:
 
 - macOS 13 or newer
-- Node.js 24
+- Node.js 24 (the plugin runs on Stream Deck's embedded Node 24)
+- Xcode command-line tools, for `swiftc`
+- librsvg and ImageMagick (`brew install librsvg imagemagick`), for visual QA
 - Stream Deck 7.1 or newer for connected-device testing
 
 Install dependencies and run the automated gate:
@@ -25,24 +27,30 @@ npm ci
 npm run check
 ```
 
+Useful loops:
+
+```sh
+npm run test:fast              # unit tests only, no native helper needed
+npm test                       # builds the native helper, then every test
+npx vitest run test/<name>.test.ts
+```
+
+The compiled-native fixture tests (`test/native-*.test.ts` and the acceptance
+files) call `bin/codex-ui-control` with `--*-fixture` flags; they need the
+helper built by `npm run native:build`, which `npm test` runs for you.
+
+Keys live in one place: `profile-src/profile-contract.json`. Adding, moving,
+or relabeling a key means editing the contract and running
+`npm run profile:generate` so every device profile is regenerated; `check`
+fails if the generated sources are stale.
+
 Read [ARCHITECTURE.md](ARCHITECTURE.md) before changing chat targeting, native
 Accessibility control, app-server transport, refresh scheduling, or process
 cleanup. Those boundaries carry the project's fail-closed guarantees.
 
 Connected foreground QA is never a CI requirement. It requires an explicitly
 marked disposable fixture, journals every mutation, and must restore the
-original task state. The gate deliberately stops rather than claims success
-until those facts can be independently verified (including reversible workflow,
-New Chat, Send, Compact, and New Project paths). Read [QA.md](QA.md) before
-running it:
-
-```sh
-npm run qa:dials
-npm run qa:modes
-npm run qa:design
-npm run qa:keys:preflight -- --fixture "/path/to/disposable-fixture"
-npm run qa:keys:connected -- --fixture "/path/to/disposable-fixture"
-```
+original task state. Read [QA.md](QA.md) before running it.
 
 ## Pull requests
 

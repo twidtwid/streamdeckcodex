@@ -11,7 +11,7 @@ It is release evidence, not a substitute for Maker Console review.
 - [x] Node.js SDK `@elgato/streamdeck` 2.x and Node.js 24 runtime.
 - [x] macOS 13 minimum is declared.
 - [x] Plugin and category names are aligned.
-- [x] Ten actions—within Elgato's recommended 2–30 range.
+- [x] Eleven actions—within Elgato's recommended 2–30 range.
 - [x] Descriptive action names and tooltips.
 - [x] Profile-only generic keycap action is hidden from the action list.
 - [x] Failed actions use `showAlert`; successful actions use state updates or
