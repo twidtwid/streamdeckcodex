@@ -1,5 +1,11 @@
 import { spawnSync } from "node:child_process";
-import { cpSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -61,6 +67,8 @@ describe("non-repeating check pipeline", () => {
   });
 
   it("embeds reproducible, privacy-safe build identity", () => {
+    const shipped = "com.todd.streamdeckcodex.sdPlugin/bin/plugin.js";
+    const shippedBefore = existsSync(shipped) ? readFileSync(shipped) : null;
     const outfile = join(temporaryRoot("streamdeck-bundle-"), "plugin.js");
     const result = spawnSync(process.execPath, ["scripts/build-bundle.mjs"], {
       encoding: "utf8",
@@ -75,10 +83,10 @@ describe("non-repeating check pipeline", () => {
     expect(bundle).toContain("fixture-commit");
     expect(bundle).toContain('treeState: "dirty"');
     expect(bundle).not.toContain(process.env.HOME ?? "/Users/example");
-    // The shipped bundle keeps the real commit.
-    expect(
-      readFileSync("com.todd.streamdeckcodex.sdPlugin/bin/plugin.js", "utf8"),
-    ).not.toContain("fixture-commit");
+    // The fixture build never touches the shipped bundle, whether or not one
+    // has been built yet in this checkout.
+    const shippedAfter = existsSync(shipped) ? readFileSync(shipped) : null;
+    expect(shippedAfter).toEqual(shippedBefore);
   });
 
   it("rejects stale temporary outputs without writing them in check mode", () => {
