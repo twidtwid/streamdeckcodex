@@ -62,15 +62,20 @@ describe("local Codex state integration", () => {
     database.close();
 
     let pendingApproval = true;
+    let readerFailure: Error | undefined;
+    const reader = vi.fn(async () => {
+      if (readerFailure) throw readerFailure;
+      return {
+        pendingInput: pendingApproval,
+        inputKind: "approval" as const,
+        conversationId: "focused",
+        rendererWindowId: "renderer-focused",
+      };
+    });
     const store = new CodexStore({
       databasePath,
       activeThreadId: () => "focused",
-      liveComposerReader: async () => ({
-        pendingInput: pendingApproval,
-        inputKind: "approval",
-        conversationId: "focused",
-        rendererWindowId: "renderer-focused",
-      }),
+      liveComposerReader: reader,
     });
     try {
       await store.refreshLiveComposer(true);
@@ -100,6 +105,24 @@ describe("local Codex state integration", () => {
       pendingApproval = false;
       await store.refreshLiveComposer(true);
       expect(store.focusedThread()?.status).not.toBe("needs-input");
+
+      // A failed observation exposes its reason and stays suppressed for the
+      // rest of the cadence instead of respawning the helper.
+      readerFailure = Object.assign(new Error("changed"), {
+        reasonCode: "TARGET_MISMATCH",
+      });
+      await expect(store.refreshLiveComposer(true)).rejects.toThrow("changed");
+      const readsAfterFailure = reader.mock.calls.length;
+      expect(store.permissionAvailability()).toMatchObject({
+        state: "unavailable",
+        reason: "target-mismatch",
+      });
+      await store.refreshLiveComposer();
+      expect(reader).toHaveBeenCalledTimes(readsAfterFailure);
+      expect(store.permissionAvailability()).toMatchObject({
+        state: "unavailable",
+        reason: "target-mismatch",
+      });
     } finally {
       store.close();
     }

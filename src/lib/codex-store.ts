@@ -42,7 +42,14 @@ import {
   type LiveComposerState,
 } from "./codex-ui-control.js";
 
+/**
+ * One native composer observation per window, whether it succeeded or
+ * failed. A failed read that was not rate-limited used to spawn the helper on
+ * every 1.25 s tick for as long as Codex stayed in the background.
+ */
 export const LIVE_COMPOSER_CACHE_MS = 2_500;
+/** Cheap SQLite and desktop-log projections are reused within one tick. */
+const STORE_CACHE_MS = 700;
 
 export {
   activeDesktopThreadId,
@@ -219,7 +226,8 @@ export class CodexStore {
     | undefined;
   #liveComposerPromise: Promise<void> | undefined;
   #liveComposerFollowup = false;
-  #liveComposerReadAt = 0;
+  /** The last completed observation, successful or not, and its thread. */
+  #lastComposerRead: { at: number; threadId: string | undefined } | undefined;
   #liveComposerGeneration = 0;
   #liveComposerMutating = false;
   #liveComposerUnavailable = false;
@@ -340,7 +348,7 @@ export class CodexStore {
     maxAgeMs = 14 * 24 * 60 * 60 * 1000,
   ): AgentSnapshot[] {
     const now = Date.now();
-    if (this.#cache && now - this.#cache.at < 700) {
+    if (this.#cache && now - this.#cache.at < STORE_CACHE_MS) {
       return this.#cache.snapshots.slice(0, limit);
     }
 
@@ -372,9 +380,7 @@ export class CodexStore {
     const snapshots = applyFocusedLiveInput(
       persistedSnapshots,
       this.#focusedThreadId(now),
-      this.#liveComposerCache && now - this.#liveComposerCache.at < 2_500
-        ? this.#liveComposerCache.state
-        : undefined,
+      this.#freshLiveComposer(now),
     );
     this.#cache = { at: now, snapshots };
     return snapshots.slice(0, Math.min(limit, 12));
@@ -391,7 +397,7 @@ export class CodexStore {
     if (
       this.#focusedProjectionCache &&
       this.#focusedProjectionCache.threadId === activeId &&
-      now - this.#focusedProjectionCache.at < 700
+      now - this.#focusedProjectionCache.at < STORE_CACHE_MS
     ) {
       return this.#focusedProjectionCache.snapshot;
     }
@@ -407,12 +413,12 @@ export class CodexStore {
       )
       .get(activeId) as unknown as ThreadRow | undefined;
     const persisted = row ? this.#projectThreadRow(row, now) : undefined;
-    const liveInput =
-      this.#liveComposerCache && now - this.#liveComposerCache.at < 2_500
-        ? this.#liveComposerCache.state
-        : undefined;
     const snapshot = persisted
-      ? applyFocusedLiveInput([persisted], activeId, liveInput)[0]
+      ? applyFocusedLiveInput(
+          [persisted],
+          activeId,
+          this.#freshLiveComposer(now),
+        )[0]
       : undefined;
     this.#focusedProjectionCache = {
       at: now,
@@ -428,6 +434,13 @@ export class CodexStore {
     return this.#liveComposerUnavailable
       ? undefined
       : this.#liveComposerCache?.state;
+  }
+
+  #freshLiveComposer(now: number): LiveComposerState | undefined {
+    return this.#liveComposerCache &&
+      now - this.#liveComposerCache.at < LIVE_COMPOSER_CACHE_MS
+      ? this.#liveComposerCache.state
+      : undefined;
   }
 
   liveComposerAvailability(): Availability<LiveComposerState> {
@@ -453,17 +466,21 @@ export class CodexStore {
       if (force) this.#liveComposerFollowup = true;
       return this.#liveComposerPromise;
     }
-    const threadId = this.#resolveFocusedThreadId();
+    // The cheap projection decides whether an observation is due; a real
+    // read below still resolves the focused thread fresh.
+    const now = Date.now();
+    const threadId = this.#focusedThreadId(now);
     if (!threadId) {
       this.#liveComposerUnavailable = true;
       this.#liveComposerUnavailableReason = "no-focus";
       return;
     }
+    const last = this.#lastComposerRead;
     if (
       !force &&
-      this.#liveComposerReadAt > 0 &&
-      Date.now() - this.#liveComposerReadAt < LIVE_COMPOSER_CACHE_MS &&
-      this.#liveComposerCache?.state.conversationId === threadId
+      last &&
+      now - last.at < LIVE_COMPOSER_CACHE_MS &&
+      last.threadId === threadId
     )
       return;
     const readOnce = async (): Promise<void> => {
@@ -472,7 +489,7 @@ export class CodexStore {
       if (!requestedThreadId) {
         this.#liveComposerUnavailable = true;
         this.#liveComposerUnavailableReason = "no-focus";
-        this.#liveComposerReadAt = Date.now();
+        this.#lastComposerRead = { at: Date.now(), threadId: undefined };
         return;
       }
       let state: LiveComposerState | undefined;
@@ -483,8 +500,18 @@ export class CodexStore {
         this.#liveComposerUnavailableReason =
           availabilityReasonFromError(error);
         throw error;
+      } finally {
+        // A failed observation counts toward the cadence too; without this
+        // the helper is respawned every tick while Codex is unreachable. An
+        // observation a user press superseded is discarded and must not
+        // re-arm the cadence that press just cleared.
+        if (generation === this.#liveComposerGeneration) {
+          this.#lastComposerRead = {
+            at: Date.now(),
+            threadId: requestedThreadId,
+          };
+        }
       }
-      this.#liveComposerReadAt = Date.now();
       if (
         generation === this.#liveComposerGeneration &&
         !this.#liveComposerMutating
@@ -554,6 +581,9 @@ export class CodexStore {
       return cycle.approvalMode;
     } catch (error) {
       this.#liveComposerCache = undefined;
+      // A failed user press must not be rate-limited: the next tick
+      // re-observes immediately.
+      this.#lastComposerRead = undefined;
       this.#liveComposerUnavailable = true;
       this.#liveComposerUnavailableReason = availabilityReasonFromError(error);
       this.#cache = undefined;
@@ -567,7 +597,7 @@ export class CodexStore {
   #setLiveComposer(state: LiveComposerState): void {
     const now = Date.now();
     this.#liveComposerCache = { at: now, state };
-    this.#liveComposerReadAt = now;
+    this.#lastComposerRead = { at: now, threadId: state.conversationId };
     this.#liveComposerUnavailable = false;
     this.#liveComposerUnavailableReason = "not-exposed";
     this.#cache = undefined;
@@ -581,7 +611,10 @@ export class CodexStore {
   }
 
   #focusedThreadId(now: number): string | undefined {
-    if (!this.#activeDesktopCache || now - this.#activeDesktopCache.at >= 700) {
+    if (
+      !this.#activeDesktopCache ||
+      now - this.#activeDesktopCache.at >= STORE_CACHE_MS
+    ) {
       this.#activeDesktopCache = {
         at: now,
         threadId: this.#activeThreadId(),

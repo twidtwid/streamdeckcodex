@@ -56,6 +56,175 @@ describe("focused native approval status", () => {
     }
   });
 
+  it("rate-limits failed native reads on the same observation cadence", async () => {
+    let now = 10_000;
+    const clock = vi.spyOn(Date, "now").mockImplementation(() => now);
+    const reader = vi.fn(async () => {
+      throw Object.assign(new Error("changed"), {
+        reasonCode: "TARGET_MISMATCH",
+      });
+    });
+    const store = new CodexStore({
+      activeThreadId: () => "focused",
+      liveComposerReader: reader,
+    });
+    try {
+      await expect(store.refreshLiveComposer()).rejects.toThrow("changed");
+      await store.refreshLiveComposer();
+      now += LIVE_COMPOSER_CACHE_MS - 1;
+      await store.refreshLiveComposer();
+      expect(reader).toHaveBeenCalledTimes(1);
+      expect(store.liveComposerState()).toBeUndefined();
+
+      now += 2;
+      await expect(store.refreshLiveComposer()).rejects.toThrow("changed");
+      expect(reader).toHaveBeenCalledTimes(2);
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
+  it("a forced refresh bypasses the failure backoff", async () => {
+    let now = 10_000;
+    const clock = vi.spyOn(Date, "now").mockImplementation(() => now);
+    const reader = vi.fn(async () => {
+      throw Object.assign(new Error("gone"), { reasonCode: "NO_FOCUS" });
+    });
+    const store = new CodexStore({
+      activeThreadId: () => "focused",
+      liveComposerReader: reader,
+    });
+    try {
+      await expect(store.refreshLiveComposer()).rejects.toThrow("gone");
+      now += 1;
+      await expect(store.refreshLiveComposer(true)).rejects.toThrow("gone");
+      expect(reader).toHaveBeenCalledTimes(2);
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
+  it("a focus change bypasses the failure backoff", async () => {
+    let now = 10_000;
+    let focused = "a";
+    const clock = vi.spyOn(Date, "now").mockImplementation(() => now);
+    const reader = vi.fn(async (threadId: string) => {
+      throw Object.assign(new Error(`no ${threadId}`), {
+        reasonCode: "TARGET_MISMATCH",
+      });
+    });
+    const store = new CodexStore({
+      activeThreadId: () => focused,
+      liveComposerReader: reader,
+    });
+    try {
+      await expect(store.refreshLiveComposer()).rejects.toThrow("no a");
+      focused = "b";
+      // Past the 700 ms focus cache but well inside the 2.5 s window, so only
+      // the thread change can let the read through.
+      now += 701;
+      await expect(store.refreshLiveComposer()).rejects.toThrow("no b");
+      expect(reader).toHaveBeenLastCalledWith("b");
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
+  it("a failed permission cycle invalidates the read cadence", async () => {
+    let now = 10_000;
+    const clock = vi.spyOn(Date, "now").mockImplementation(() => now);
+    const reader = vi.fn(async () => ({
+      pendingInput: false,
+      approvalMode: "ask" as const,
+      conversationId: "focused",
+      rendererWindowId: "renderer-focused",
+    }));
+    const store = new CodexStore({
+      activeThreadId: () => "focused",
+      liveComposerReader: reader,
+      approvalCycler: async () => {
+        throw new Error("Codex is busy");
+      },
+    });
+    try {
+      await store.refreshLiveComposer();
+      expect(reader).toHaveBeenCalledTimes(1);
+      await expect(store.cycleLiveComposerApprovalMode()).rejects.toThrow(
+        "busy",
+      );
+      now += 1;
+      await store.refreshLiveComposer();
+      expect(reader).toHaveBeenCalledTimes(2);
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
+  it("an observation superseded by a failed press does not re-arm the cadence", async () => {
+    let now = 10_000;
+    const clock = vi.spyOn(Date, "now").mockImplementation(() => now);
+    const state = {
+      pendingInput: false,
+      approvalMode: "ask" as const,
+      conversationId: "focused",
+      rendererWindowId: "renderer-focused",
+    };
+    let releaseRead!: () => void;
+    // Only the first observation stays in flight; later ones resolve at once.
+    const reader = vi.fn(async () => {
+      if (reader.mock.calls.length > 1) return state;
+      await new Promise<void>((resolve) => (releaseRead = resolve));
+      return state;
+    });
+    const store = new CodexStore({
+      activeThreadId: () => "focused",
+      liveComposerReader: reader,
+      approvalCycler: async () => {
+        throw new Error("Codex is busy");
+      },
+    });
+    try {
+      const inFlight = store.refreshLiveComposer();
+      await expect(store.cycleLiveComposerApprovalMode()).rejects.toThrow(
+        "busy",
+      );
+      now += 300;
+      releaseRead();
+      await inFlight;
+      expect(reader).toHaveBeenCalledTimes(1);
+
+      now += 1_250;
+      await store.refreshLiveComposer();
+      expect(reader).toHaveBeenCalledTimes(2);
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
+  it("a cache-hit refresh does not rescan the desktop log", async () => {
+    let now = 10_000;
+    const clock = vi.spyOn(Date, "now").mockImplementation(() => now);
+    const activeThreadId = vi.fn(() => "focused");
+    const store = new CodexStore({
+      activeThreadId,
+      liveComposerReader: async () => ({
+        pendingInput: false,
+        approvalMode: "ask" as const,
+        conversationId: "focused",
+        rendererWindowId: "renderer-focused",
+      }),
+    });
+    try {
+      await store.refreshLiveComposer();
+      const scans = activeThreadId.mock.calls.length;
+      now += 500;
+      await store.refreshLiveComposer();
+      expect(activeThreadId).toHaveBeenCalledTimes(scans);
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
   it("serializes forced requests made during an active read", async () => {
     let release!: () => void;
     let calls = 0;
