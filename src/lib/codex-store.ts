@@ -231,9 +231,8 @@ export class CodexStore {
     | undefined;
   #liveComposerPromise: Promise<void> | undefined;
   #liveComposerFollowup = false;
-  #liveComposerReadAt = 0;
-  /** Thread the last completed observation targeted, successful or not. */
-  #liveComposerReadThreadId: string | undefined;
+  /** The last completed observation, successful or not, and its thread. */
+  #lastComposerRead: { at: number; threadId: string | undefined } | undefined;
   #liveComposerGeneration = 0;
   #liveComposerMutating = false;
   #liveComposerUnavailable = false;
@@ -495,11 +494,12 @@ export class CodexStore {
       this.#liveComposerUnavailableReason = "no-focus";
       return;
     }
+    const last = this.#lastComposerRead;
     if (
       !force &&
-      this.#liveComposerReadAt > 0 &&
-      now - this.#liveComposerReadAt < LIVE_COMPOSER_CACHE_MS &&
-      this.#liveComposerReadThreadId === threadId
+      last &&
+      now - last.at < LIVE_COMPOSER_CACHE_MS &&
+      last.threadId === threadId
     )
       return;
     const readOnce = async (): Promise<void> => {
@@ -508,8 +508,7 @@ export class CodexStore {
       if (!requestedThreadId) {
         this.#liveComposerUnavailable = true;
         this.#liveComposerUnavailableReason = "no-focus";
-        this.#liveComposerReadAt = Date.now();
-        this.#liveComposerReadThreadId = undefined;
+        this.#lastComposerRead = { at: Date.now(), threadId: undefined };
         return;
       }
       let state: LiveComposerState | undefined;
@@ -522,9 +521,15 @@ export class CodexStore {
         throw error;
       } finally {
         // A failed observation counts toward the cadence too; without this
-        // the helper is respawned every tick while Codex is unreachable.
-        this.#liveComposerReadAt = Date.now();
-        this.#liveComposerReadThreadId = requestedThreadId;
+        // the helper is respawned every tick while Codex is unreachable. An
+        // observation a user press superseded is discarded and must not
+        // re-arm the cadence that press just cleared.
+        if (generation === this.#liveComposerGeneration) {
+          this.#lastComposerRead = {
+            at: Date.now(),
+            threadId: requestedThreadId,
+          };
+        }
       }
       if (
         generation === this.#liveComposerGeneration &&
@@ -597,7 +602,7 @@ export class CodexStore {
       this.#liveComposerCache = undefined;
       // A failed user press must not be rate-limited: the next tick
       // re-observes immediately.
-      this.#liveComposerReadAt = 0;
+      this.#lastComposerRead = undefined;
       this.#liveComposerUnavailable = true;
       this.#liveComposerUnavailableReason = availabilityReasonFromError(error);
       this.#cache = undefined;
@@ -611,8 +616,7 @@ export class CodexStore {
   #setLiveComposer(state: LiveComposerState): void {
     const now = Date.now();
     this.#liveComposerCache = { at: now, state };
-    this.#liveComposerReadAt = now;
-    this.#liveComposerReadThreadId = state.conversationId;
+    this.#lastComposerRead = { at: now, threadId: state.conversationId };
     this.#liveComposerUnavailable = false;
     this.#liveComposerUnavailableReason = "not-exposed";
     this.#cache = undefined;
