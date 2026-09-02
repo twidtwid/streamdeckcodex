@@ -1460,16 +1460,27 @@ func runFixtureAction(_ action: String, arguments: [String]) {
                 == PowerReadout(model: "5.6 Sol", level: "xhigh", position: 4)
                 && parsePowerReadout("Use Left and Right arrow keys to adjust power") == nil
         case "step":
-            // Ranks ascend one per segment within a model; the ladder start
-            // differs per chat, so the step is relative to the readout.
+            // Each step is one segment toward the target; the ladder skips
+            // rungs per model (explicit Sol: Extra High at 4, Ultra at 5),
+            // so the walk re-reads rather than jumping by rank delta.
             let onDefault = PowerReadout(model: "5.6 Sol", level: "medium", position: 3)
             let onExplicit = PowerReadout(model: "5.6 Sol", level: "medium", position: 2)
+            let atExtraHigh = PowerReadout(model: "5.6 Sol", level: "xhigh", position: 4)
+            let atTop = PowerReadout(model: "5.6 Sol", level: "ultra", position: 5)
+            let atBottom = PowerReadout(model: "5.6 Terra", level: "low", position: 1)
             valid = nextPowerSegment(from: onDefault, to: "high") == 4
                 && nextPowerSegment(from: onDefault, to: "low") == 2
-                && nextPowerSegment(from: onExplicit, to: "xhigh") == 4
+                && nextPowerSegment(from: onExplicit, to: "xhigh") == 3
                 && nextPowerSegment(from: onExplicit, to: "low") == 1
-                && nextPowerSegment(from: onExplicit, to: "ultra") == nil
+                && nextPowerSegment(from: atExtraHigh, to: "ultra") == 5
+                && nextPowerSegment(from: atTop, to: "ultra") == nil
+                && nextPowerSegment(from: atTop, to: "low") == 4
+                && nextPowerSegment(from: atBottom, to: "low") == nil
+                && nextPowerSegment(from: atBottom, to: "medium") == 2
                 && nextPowerSegment(from: onDefault, to: "minimal") == nil
+        case "readout-ultra":
+            valid = parsePowerReadout("5.6 Sol Ultra, 5 of 5.")
+                == PowerReadout(model: "5.6 Sol", level: "ultra", position: 5)
         default:
             valid = false
         }

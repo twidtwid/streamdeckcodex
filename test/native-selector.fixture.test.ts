@@ -200,6 +200,7 @@ describe("native picker ladder and approval cycle", () => {
       "title-light",
       "title-unreadable",
       "readout",
+      "readout-ultra",
       "step",
     ]) {
       expect(run("--power-fixture", scenario).status, scenario).toBe(0);

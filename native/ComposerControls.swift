@@ -56,9 +56,10 @@ func menuItem(
     return matches.count == 1 ? matches[0] : nil
 }
 
-/// Effort ranks for stepping the five-segment Power control. Its ladder
-/// depends on the chat (a Default-model chat puts a lighter model at segment
-/// 1), so positions are discovered from the readout, never assumed.
+/// Effort ranks order the five-segment Power control. The ladder depends on
+/// the chat and the model: a Default-model chat puts a lighter model at
+/// segment 1, an explicit Sol chat ends at Ultra with no Max rung between.
+/// Ranks only give the direction; each step is one segment, re-read.
 let powerRanks = ["low": 0, "medium": 1, "high": 2, "xhigh": 3, "max": 4, "ultra": 5]
 let powerReadoutLevels: [(name: String, level: String)] = [
     ("extra high", "xhigh"), ("extended", "high"), ("standard", "medium"),
@@ -95,11 +96,13 @@ func parsePowerReadout(_ readout: String) -> PowerReadout? {
     return nil
 }
 
-/// The segment to click next: ranks ascend by one per segment within a model.
+/// The segment to click next: one step toward the target's rank, or nil when
+/// the readout already matches, the rank is unknown, or the ladder ends.
 func nextPowerSegment(from current: PowerReadout, to targetLevel: String) -> Int? {
-    guard let here = powerRanks[current.level], let there = powerRanks[targetLevel.lowercased()]
+    guard let here = powerRanks[current.level], let there = powerRanks[targetLevel.lowercased()],
+          here != there
     else { return nil }
-    let next = current.position + (there - here)
+    let next = current.position + (there > here ? 1 : -1)
     return (1...5).contains(next) ? next : nil
 }
 
@@ -1018,7 +1021,8 @@ func selectPower(
     }
     var state = try readout()
     var previous = state.position
-    for _ in 0..<4 {
+    // Five segments: at most four clicks, then one final check.
+    for _ in 0..<5 {
         if state.level == level, normalized(state.model) == normalized(current.model) { return }
         guard normalized(state.model) == normalized(current.model) else {
             // A segment switched the model. Step back and fail closed.
