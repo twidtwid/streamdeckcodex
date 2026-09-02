@@ -44,15 +44,19 @@ describe("native control timeout lifecycle", () => {
       executable,
       [
         "#!/usr/bin/env node",
-        'process.stdout.write(JSON.stringify({ ok: true, action: "read", message: "ok" }));',
+        'process.stdout.write(JSON.stringify({ ok: true, action: "target-check", message: "ok" }));',
         "",
       ].join("\n"),
     );
     chmodSync(executable, 0o644);
 
     await expect(
-      __nativeControlTest.invokeWithExecutable("read", executable, 1_000),
-    ).resolves.toMatchObject({ ok: true, action: "read" });
+      __nativeControlTest.invokeWithExecutable(
+        "target-check",
+        executable,
+        1_000,
+      ),
+    ).resolves.toMatchObject({ ok: true, action: "target-check" });
     expect(statSync(executable).mode & 0o111).not.toBe(0);
   });
 
@@ -60,7 +64,7 @@ describe("native control timeout lifecycle", () => {
     const child = new StubbornChild();
     const spawnStubborn = (() => child) as unknown as typeof spawn;
     const operation = __nativeControlTest.invokeWithSpawn(
-      "read",
+      "target-check",
       5_000,
       spawnStubborn,
     );
@@ -77,7 +81,7 @@ describe("native control timeout lifecycle", () => {
     const spawnStubborn = (() => child) as unknown as typeof spawn;
     let rejections = 0;
     const operation = __nativeControlTest
-      .invokeWithSpawn("read", 10, spawnStubborn)
+      .invokeWithSpawn("target-check", 10, spawnStubborn)
       .catch((error: unknown) => {
         rejections += 1;
         throw error;

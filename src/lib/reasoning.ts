@@ -1,10 +1,4 @@
-export const DEFAULT_REASONING_LEVELS = [
-  "minimal",
-  "low",
-  "medium",
-  "high",
-  "xhigh",
-] as const;
+import type { DialFeedback } from "./visuals.js";
 
 export interface ReasoningDialState {
   selected: string;
@@ -94,11 +88,7 @@ export function confirmReasoning(state: ReasoningDialState): {
 export function reasoningFeedback(
   state: ReasoningDialState,
   levels: readonly string[],
-): {
-  title: string;
-  value: string;
-  indicator: { value: number; bar_fill_c: string };
-} {
+): DialFeedback {
   const normalized = normalizeReasoningLevels(levels);
   if (normalized.length === 0) {
     return {
@@ -117,17 +107,5 @@ export function reasoningFeedback(
         normalized.length <= 1 ? 100 : (index / (normalized.length - 1)) * 100,
       bar_fill_c: pending ? "#F4B740" : "#35C759",
     },
-  };
-}
-
-export function reasoningFailureFeedback(value: string): {
-  title: string;
-  value: string;
-  indicator: { value: number; bar_fill_c: string };
-} {
-  return {
-    title: "FAILED",
-    value,
-    indicator: { value: 0, bar_fill_c: "#FF453A" },
   };
 }

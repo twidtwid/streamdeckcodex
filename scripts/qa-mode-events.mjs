@@ -7,7 +7,7 @@ import {
   requireConnectedQaTarget,
   snapshotLiveState,
 } from "./lib/live-state-journal.mjs";
-import { activeForegroundThreadId } from "./lib/foreground-thread.mjs";
+import { activeDesktopThreadId } from "../src/lib/desktop-active.ts";
 import {
   createStreamDeckActionHarness,
   waitFor,
@@ -51,7 +51,7 @@ async function waitForMode(mode, expected) {
 }
 
 const activeThreadId = requireConnectedQaTarget(
-  activeForegroundThreadId(),
+  activeDesktopThreadId(),
   process.env.STREAMDECK_QA_THREAD_ID,
 );
 const initialState = snapshotLiveState(native, activeThreadId);

@@ -28,7 +28,7 @@ const keypadGeneration = spawnSync(
 );
 if (keypadGeneration.status !== 0)
   throw new Error(
-    "Keypad profile sources are stale; run npm run keypad-profiles:generate.",
+    "Keypad profile sources are stale; run npm run profile:generate.",
   );
 const keypadProfiles = JSON.parse(
   await readFile(join(root, "profile-src", "keypad-profiles.json"), "utf8"),

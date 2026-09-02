@@ -98,7 +98,6 @@ export function reduceRolloutEvents(
   let lastEventAt = 0;
   let completedAt: number | undefined;
   let detail: string | undefined;
-  let taskActive = false;
 
   for (const event of events) {
     const payload = event.payload ?? {};
@@ -108,21 +107,18 @@ export function reduceRolloutEvents(
 
     if (event.type === "event_msg" && subtype === "user_message") {
       status = "idle";
-      taskActive = false;
       completedAt = undefined;
       detail = undefined;
       continue;
     }
     if (event.type === "event_msg" && subtype === "task_started") {
       status = "thinking";
-      taskActive = true;
       completedAt = undefined;
       detail = "Thinking";
       continue;
     }
     if (isNeedsInput(event)) {
       status = "needs-input";
-      taskActive = true;
       detail = "Needs your input";
       continue;
     }
@@ -131,25 +127,21 @@ export function reduceRolloutEvents(
       (event.type === "event_msg" && ABORT_EVENT_TYPES.has(subtype))
     ) {
       status = "error";
-      taskActive = false;
       detail = "Error";
       continue;
     }
     if (event.type === "event_msg" && COMPLETE_EVENT_TYPES.has(subtype)) {
       completedAt = time || lastEventAt;
       status = completedAt > (options.acknowledgedAt ?? 0) ? "unread" : "idle";
-      taskActive = false;
       detail = status === "unread" ? "Completed" : undefined;
       continue;
     }
     if (isToolActivity(event)) {
-      taskActive = true;
       status = "running";
       detail = text(payload.name) || "Running";
       continue;
     }
     if (isReasoning(event)) {
-      taskActive = true;
       status = "thinking";
       detail = "Thinking";
     }

@@ -721,7 +721,7 @@ async function loadRegistries() {
     bundle: true,
     format: "esm",
     platform: "node",
-    target: "node22",
+    target: "node24",
     outfile: bundlePath,
   });
   return import(`${pathToFileURL(bundlePath).href}?v=${Date.now()}`);

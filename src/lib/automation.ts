@@ -36,60 +36,17 @@ let pttGuard: ChildProcess | undefined;
 let pttOperation: Promise<void> = Promise.resolve();
 const inputReleaseGuard = new InputReleaseGuard();
 
-function run(
-  executable: string,
-  args: readonly string[],
-  timeoutMs = 5_000,
-): Promise<void> {
-  return new Promise((resolvePromise, reject) => {
-    const child = spawn(executable, [...args], {
-      stdio: "ignore",
-      windowsHide: true,
-    });
-    let settled = false;
-    const finish = (error?: Error): void => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timeout);
-      if (error) reject(error);
-      else resolvePromise();
-    };
-    const timeout = setTimeout(() => {
-      child.kill("SIGKILL");
-      finish(new Error(`${executable} timed out after ${timeoutMs} ms`));
-    }, timeoutMs);
-    child.once("error", (error) => finish(error));
-    child.once("exit", (code) => {
-      if (code === 0) finish();
-      else
-        finish(
-          new Error(`${executable} exited with code ${code ?? "unknown"}`),
-        );
-    });
-  });
-}
-
-export async function openCodexUrl(url: string): Promise<void> {
-  if (!url.startsWith("codex://")) throw new Error("Refusing non-Codex URL");
-  await run("/usr/bin/open", [url]);
-}
-
-export async function runControl(
-  mode: string,
-  ...values: readonly string[]
-): Promise<void> {
-  await run("/usr/bin/osascript", [controlScript, mode, ...values]);
-}
-
 export async function executeCommand(
   command: CommandDefinition,
   threadId?: string,
 ): Promise<LiveModeState | undefined> {
   if (command.mode === "deep-link") {
-    if (command.id === "new-chat") await openNewChat();
-    else if (command.id === "skills") await openSkills();
+    // The value names the verified native route, so the catalog entry and
+    // the dispatch cannot drift apart.
+    if (command.value === "new-chat") await openNewChat();
+    else if (command.value === "skills") await openSkills();
     else
-      throw new Error(`Unsupported verified deep-link command: ${command.id}`);
+      throw new Error(`Unsupported verified deep-link route: ${command.value}`);
     return undefined;
   }
   if (!threadId) {
@@ -301,18 +258,10 @@ export async function applyReasoning(
   return applyLiveReasoning(level, pickerLabel, threadId);
 }
 
-export async function openReasoningMenu(): Promise<void> {
-  await runControl("reasoning-menu");
-}
-
 export async function applyModel(
   slug: string,
   pickerLabel: string,
   threadId: string,
 ): Promise<LivePickerState> {
   return applyLiveModel(slug, pickerLabel, threadId);
-}
-
-export async function openModelMenu(): Promise<void> {
-  await runControl("model-menu");
 }

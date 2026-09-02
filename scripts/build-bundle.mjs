@@ -1,42 +1,10 @@
-import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { build } from "esbuild";
+import { buildInfo as sharedBuildInfo } from "./lib/bundle-entry.mjs";
 
 const root = resolve(import.meta.dirname, "..");
-const manifest = JSON.parse(
-  readFileSync(
-    resolve(root, "com.todd.streamdeckcodex.sdPlugin", "manifest.json"),
-    "utf8",
-  ),
-);
 
-function git(...args) {
-  return execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
-}
-
-const commit =
-  process.env.STREAMDECK_BUILD_COMMIT || git("rev-parse", "--verify", "HEAD");
-const relevantStatus = git(
-  "status",
-  "--porcelain",
-  "--untracked-files=all",
-  "--",
-  "src",
-  "native",
-  "scripts",
-  "profile-src",
-  "com.todd.streamdeckcodex.sdPlugin/manifest.json",
-  "package.json",
-  "package-lock.json",
-  "tsconfig.json",
-);
-const buildInfo = Object.freeze({
-  schemaVersion: 1,
-  pluginVersion: String(manifest.Version),
-  commit,
-  treeState: relevantStatus ? "dirty" : "clean",
-});
+const buildInfo = sharedBuildInfo(root);
 
 await build({
   entryPoints: [resolve(root, "src", "plugin.ts")],

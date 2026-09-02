@@ -7,7 +7,7 @@ import {
   statSync,
 } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, isAbsolute, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import type {
   AgentSnapshot,

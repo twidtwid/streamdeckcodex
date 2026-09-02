@@ -1,5 +1,6 @@
 import type { ModelOption } from "../types.js";
 import { normalizeReasoningLevels } from "./reasoning.js";
+import type { DialFeedback } from "./visuals.js";
 
 const MODEL_FAMILIES = ["luna", "terra", "sol"] as const;
 const MODEL_SLUG = /^gpt-[a-z0-9.-]+-(luna|terra|sol)$/i;
@@ -114,11 +115,7 @@ export function confirmModel(
 export function modelFeedback(
   state: ModelDialState,
   options: readonly ModelOption[],
-): {
-  title: string;
-  value: string;
-  indicator: { value: number; bar_fill_c: string };
-} {
+): DialFeedback {
   const index = Math.max(
     0,
     options.findIndex((option) => option.slug === state.selected),
@@ -132,17 +129,5 @@ export function modelFeedback(
       value: options.length <= 1 ? 100 : (index / (options.length - 1)) * 100,
       bar_fill_c: pending ? "#F4B740" : "#35C759",
     },
-  };
-}
-
-export function modelFailureFeedback(value: string): {
-  title: string;
-  value: string;
-  indicator: { value: number; bar_fill_c: string };
-} {
-  return {
-    title: "FAILED",
-    value,
-    indicator: { value: 0, bar_fill_c: "#FF453A" },
   };
 }

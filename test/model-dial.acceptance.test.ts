@@ -1,10 +1,10 @@
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { dialFailureFeedback } from "../src/lib/visuals.js";
 import { pickerFailureLabel } from "../src/lib/codex-ui-control.js";
 import {
   confirmModel,
-  modelFailureFeedback,
   modelFeedback,
   previewModel,
   supportedModelOptions,
@@ -128,7 +128,7 @@ describe("model dial acceptance", () => {
 
   it("shows an explicit failed state when live application cannot be proved", () => {
     expect(
-      modelFailureFeedback(pickerFailureLabel(new Error("did not confirm"))),
+      dialFailureFeedback(pickerFailureLabel(new Error("did not confirm"))),
     ).toMatchObject({
       title: "FAILED",
       value: "VERIFY FAIL",

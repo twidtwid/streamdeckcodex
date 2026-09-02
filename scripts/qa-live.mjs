@@ -1,13 +1,18 @@
 import { readFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { updateThreadSettings } from "../src/lib/app-server.ts";
+import {
+  resolveCodexHome,
+  resolveStateDatabase,
+} from "../src/lib/codex-store.ts";
 import { activeDesktopThreadId } from "../src/lib/desktop-active.ts";
-import { parseLatestContext } from "../src/lib/context.ts";
+import { contextAvailabilityFromLines } from "../src/lib/context.ts";
+import { supportedModelOptions } from "../src/lib/model.ts";
 import { fetchAccountUsage } from "../src/lib/usage.ts";
 
-const databasePath = join(homedir(), ".codex", "state_5.sqlite");
+const codexHome = resolveCodexHome();
+const databasePath = resolveStateDatabase(codexHome);
 const database = new DatabaseSync(databasePath, {
   readOnly: true,
   timeout: 1_000,
@@ -43,7 +48,7 @@ const readSettings = () => {
 };
 
 const cache = JSON.parse(
-  readFileSync(join(homedir(), ".codex", "models_cache.json"), "utf8"),
+  readFileSync(join(codexHome, "models_cache.json"), "utf8"),
 );
 const models = cache.models ?? [];
 const activeModel = models.find((model) => model.slug === current.model);
@@ -56,10 +61,12 @@ if (!reasoningLevels.includes(current.reasoning_effort)) {
   );
 }
 
-const alternateModel = models.find(
-  (model) =>
-    model.slug !== current.model &&
-    ["gpt-5.6-luna", "gpt-5.6-terra", "gpt-5.6-sol"].includes(model.slug),
+// The plugin's own catalog filter decides which models exist; pick any other
+// offered model that supports the current effort as the round-trip target.
+const alternateModel = supportedModelOptions(cache).find(
+  (option) =>
+    option.slug !== current.model &&
+    option.supportedReasoning.includes(current.reasoning_effort),
 );
 const alternateEffort = reasoningLevels.find(
   (effort) => effort !== current.reasoning_effort,
@@ -119,17 +126,18 @@ try {
     expected: "number",
     observed: typeof usage.usedPercent,
   });
-  const context = parseLatestContext(
+  const context = contextAvailabilityFromLines(
     readFileSync(current.rollout_path, "utf8"),
     current.id,
   );
   results.push({
     control: "Focused live context",
     expected: activeThreadId,
-    observed: context?.threadId ?? "--",
-    detail: context
-      ? `${context.usedTokens}/${context.maxTokens} (${context.remainingPercent}% left)`
-      : "--",
+    observed: context.state === "ready" ? context.value.threadId : "--",
+    detail:
+      context.state === "ready"
+        ? `${context.value.usedTokens}/${context.value.maxTokens} (${context.value.remainingPercent}% left)`
+        : context.reason,
   });
 } finally {
   const restored = readSettings();

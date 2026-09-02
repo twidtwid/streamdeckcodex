@@ -12,12 +12,12 @@ import { pickerFailureLabel } from "../lib/codex-ui-control.js";
 import {
   confirmReasoning,
   previewReasoning,
-  reasoningFailureFeedback,
   reasoningFeedback,
   reasoningPickerLabel,
   type ReasoningDialState,
 } from "../lib/reasoning.js";
 import { renderFeedback } from "../lib/render-cache.js";
+import { dialFailureFeedback } from "../lib/visuals.js";
 
 type ReasoningSettings = {
   selectedLevel?: string;
@@ -173,7 +173,7 @@ export class ReasoningAction extends SingletonAction<ReasoningSettings> {
       if (actionInstance.isDial()) {
         await renderFeedback(
           actionInstance,
-          reasoningFailureFeedback(pickerFailureLabel(error)),
+          dialFailureFeedback(pickerFailureLabel(error)),
         );
       }
       await actionInstance.showAlert();

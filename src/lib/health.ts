@@ -1,12 +1,7 @@
 import type { CodexStore } from "./codex-store.js";
 import { BUILD_INFO, type BuildInfo } from "./build-info.js";
 import { inputReleaseSnapshot } from "./automation.js";
-import {
-  ready,
-  unavailable,
-  type Availability,
-  type AvailabilityReason,
-} from "./availability.js";
+import { ready, unavailable, type Availability } from "./availability.js";
 
 export const HEALTH_COMPONENTS = [
   "focus",
@@ -94,16 +89,4 @@ export class HealthTransitionLogger {
       log(`Health ${component} changed to ${state}`);
     }
   }
-}
-
-export function firstHealthFailure(
-  snapshot: HealthSnapshot,
-): { component: HealthComponent; reason: AvailabilityReason } | undefined {
-  for (const component of HEALTH_COMPONENTS) {
-    const availability = snapshot.components[component];
-    if (availability.state === "unavailable") {
-      return { component, reason: availability.reason };
-    }
-  }
-  return undefined;
 }
