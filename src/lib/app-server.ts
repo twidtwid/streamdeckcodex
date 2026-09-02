@@ -1,4 +1,5 @@
 import { existsSync } from "node:fs";
+import { BUILD_INFO } from "./build-info.js";
 import {
   AppServerRpcClient,
   type AppServerRpcOptions,
@@ -38,7 +39,7 @@ async function initializedClient(
     await client.call("initialize", {
       clientInfo: {
         name: "streamdeck-codex-companion",
-        version: "0.1.0",
+        version: BUILD_INFO.pluginVersion,
       },
       capabilities: { experimentalApi: true },
     });
@@ -84,7 +85,3 @@ export async function updateThreadSettings(
     await client.close();
   }
 }
-
-export const __appServerTest = {
-  initializedClient,
-};

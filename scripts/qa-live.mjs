@@ -1,13 +1,17 @@
 import { readFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { updateThreadSettings } from "../src/lib/app-server.ts";
+import {
+  resolveCodexHome,
+  resolveStateDatabase,
+} from "../src/lib/codex-store.ts";
 import { activeDesktopThreadId } from "../src/lib/desktop-active.ts";
 import { parseLatestContext } from "../src/lib/context.ts";
 import { fetchAccountUsage } from "../src/lib/usage.ts";
 
-const databasePath = join(homedir(), ".codex", "state_5.sqlite");
+const codexHome = resolveCodexHome();
+const databasePath = resolveStateDatabase(codexHome);
 const database = new DatabaseSync(databasePath, {
   readOnly: true,
   timeout: 1_000,
@@ -43,7 +47,7 @@ const readSettings = () => {
 };
 
 const cache = JSON.parse(
-  readFileSync(join(homedir(), ".codex", "models_cache.json"), "utf8"),
+  readFileSync(join(codexHome, "models_cache.json"), "utf8"),
 );
 const models = cache.models ?? [];
 const activeModel = models.find((model) => model.slug === current.model);
@@ -56,10 +60,16 @@ if (!reasoningLevels.includes(current.reasoning_effort)) {
   );
 }
 
+// Any other catalog model with the same reasoning coverage is a safe
+// round-trip target; the catalog, not a hard-coded slug list, decides.
 const alternateModel = models.find(
   (model) =>
+    typeof model.slug === "string" &&
     model.slug !== current.model &&
-    ["gpt-5.6-luna", "gpt-5.6-terra", "gpt-5.6-sol"].includes(model.slug),
+    /-(luna|terra|sol)$/i.test(model.slug) &&
+    (model.supported_reasoning_levels ?? []).some(
+      (item) => item.effort === current.reasoning_effort,
+    ),
 );
 const alternateEffort = reasoningLevels.find(
   (effort) => effort !== current.reasoning_effort,

@@ -11,12 +11,12 @@ import { codexStore } from "../lib/codex-store.js";
 import { pickerFailureLabel } from "../lib/codex-ui-control.js";
 import {
   confirmModel,
-  modelFailureFeedback,
   modelFeedback,
   previewModel,
   type ModelDialState,
 } from "../lib/model.js";
 import { renderFeedback } from "../lib/render-cache.js";
+import { dialFailureFeedback } from "../lib/visuals.js";
 
 type ModelSettings = {
   selectedModel?: string;
@@ -155,7 +155,7 @@ export class ModelAction extends SingletonAction<ModelSettings> {
       if (actionInstance.isDial()) {
         await renderFeedback(
           actionInstance,
-          modelFailureFeedback(pickerFailureLabel(error)),
+          dialFailureFeedback(pickerFailureLabel(error)),
         );
       }
       await actionInstance.showAlert();

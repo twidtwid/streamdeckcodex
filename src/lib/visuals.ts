@@ -47,20 +47,6 @@ const STATUS_ICON: Record<AgentStatus, string> = {
   error: "status-error",
 };
 
-export function marqueeText(
-  text: string,
-  width: number,
-  now = Date.now(),
-  stepMs = 500,
-): string {
-  const normalized = text.replace(/\s+/g, " ").trim();
-  if (normalized.length <= width) return normalized;
-  const track = `${normalized}   `;
-  const offset = Math.floor(now / stepMs) % track.length;
-  const repeated = `${track}${track}`;
-  return repeated.slice(offset, offset + width);
-}
-
 function escapeXml(value: string): string {
   return value.replace(
     /[<>&'"]/g,
@@ -423,6 +409,21 @@ export function healthKeySvg(
     <text x="72" y="103" text-anchor="middle" fill="#FFFFFF" font-family="-apple-system,system-ui,sans-serif" font-size="15" font-weight="800">${escapeXml(display.toUpperCase())}</text>
     <text x="72" y="124" text-anchor="middle" fill="#8D97A5" font-family="-apple-system,system-ui,sans-serif" font-size="11" font-weight="700">${escapeXml(component.toUpperCase())}</text>
   </svg>`;
+}
+
+/** Touch-strip payload for the shared `$B1` and command dial layouts. */
+export interface DialFeedback {
+  title: string;
+  value: string;
+  indicator: { value: number; bar_fill_c: string };
+}
+
+export function dialFailureFeedback(value: string): DialFeedback {
+  return {
+    title: "FAILED",
+    value,
+    indicator: { value: 0, bar_fill_c: "#FF453A" },
+  };
 }
 
 export function statusIndicator(status: AgentStatus): {

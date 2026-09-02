@@ -22,7 +22,11 @@ import {
   DIAL_COMMANDS,
   type CommandDefinition,
 } from "../lib/commands.js";
-import { commandKeySvg, svgDataUrl } from "../lib/visuals.js";
+import {
+  commandKeySvg,
+  dialFailureFeedback,
+  svgDataUrl,
+} from "../lib/visuals.js";
 import { codexStore } from "../lib/codex-store.js";
 import { pickerFailureLabel } from "../lib/codex-ui-control.js";
 import { renderFeedback, renderKey } from "../lib/render-cache.js";
@@ -146,11 +150,7 @@ export class CommandAction extends SingletonAction<CommandSettings> {
             this.modeStateKey(actionInstance.id, command.id),
             result.active,
           );
-          if (actionInstance.isDial()) {
-            await this.draw(actionInstance, command);
-          } else if (actionInstance.isKey()) {
-            await this.draw(actionInstance, command);
-          }
+          await this.draw(actionInstance, command);
         }
       }
       if (actionInstance.isKey() && command.id !== "dictate") {
@@ -160,9 +160,8 @@ export class CommandAction extends SingletonAction<CommandSettings> {
       streamDeck.logger.error(`Command ${command.id} failed`, error);
       if (actionInstance.isDial() && command.mode === "mode-toggle") {
         await renderFeedback(actionInstance, {
+          ...dialFailureFeedback(command.value.toUpperCase()),
           title: pickerFailureLabel(error),
-          value: command.value.toUpperCase(),
-          indicator: { value: 0, bar_fill_c: "#FF453A" },
         });
       }
       await actionInstance.showAlert();
@@ -173,53 +172,39 @@ export class CommandAction extends SingletonAction<CommandSettings> {
     actionInstance: Action<CommandSettings>,
     command: CommandDefinition,
   ): Promise<void> {
+    // A verified mode toggle remembers its last observed state per action;
+    // every other command has no state to show.
+    const modeState =
+      command.mode === "mode-toggle"
+        ? this.#modeState.get(this.modeStateKey(actionInstance.id, command.id))
+        : undefined;
+    const modeLabel =
+      modeState === undefined ? undefined : modeState ? "ACTIVE" : "OFF";
     if (actionInstance.isDial()) {
       const index = Math.max(0, DIAL_COMMANDS.indexOf(command));
-      const modeState = this.#modeState.get(
-        this.modeStateKey(actionInstance.id, command.id),
-      );
       await renderFeedback(actionInstance, {
-        title:
-          command.mode === "mode-toggle" && modeState !== undefined
-            ? modeState
-              ? "ACTIVE"
-              : "OFF"
-            : "ACTION",
+        title: modeLabel ?? "ACTION",
         value: command.dialLabel ?? command.label,
         indicator: {
           value:
-            command.mode === "mode-toggle" && modeState !== undefined
-              ? modeState
+            modeState === undefined
+              ? ((index + 1) / DIAL_COMMANDS.length) * 100
+              : modeState
                 ? 100
-                : 0
-              : ((index + 1) / DIAL_COMMANDS.length) * 100,
+                : 0,
           bar_fill_c:
-            command.mode === "mode-toggle" && modeState !== undefined
-              ? modeState
+            modeState === undefined
+              ? "#2F81F7"
+              : modeState
                 ? "#35C759"
-                : "#8B949E"
-              : "#2F81F7",
+                : "#8B949E",
         },
       });
     } else if (actionInstance.isKey()) {
       await renderKey(
         actionInstance,
         svgDataUrl(
-          commandKeySvg(
-            command.label,
-            command.accent,
-            command.icon,
-            command.mode === "mode-toggle" &&
-              this.#modeState.has(
-                this.modeStateKey(actionInstance.id, command.id),
-              )
-              ? this.#modeState.get(
-                  this.modeStateKey(actionInstance.id, command.id),
-                )
-                ? "ACTIVE"
-                : "OFF"
-              : undefined,
-          ),
+          commandKeySvg(command.label, command.accent, command.icon, modeLabel),
         ),
       );
     }

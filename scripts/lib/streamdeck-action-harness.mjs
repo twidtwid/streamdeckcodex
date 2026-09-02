@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { once } from "node:events";
+import { readdirSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, resolve } from "node:path";
 import { WebSocketServer } from "ws";
@@ -21,6 +22,43 @@ export async function waitFor(
   throw new Error(`Timed out waiting for ${message}`);
 }
 
+function pluginVersion() {
+  const manifest = JSON.parse(
+    readFileSync(
+      resolve(
+        import.meta.dirname,
+        "..",
+        "..",
+        "com.todd.streamdeckcodex.sdPlugin",
+        "manifest.json",
+      ),
+      "utf8",
+    ),
+  );
+  return String(manifest.Version);
+}
+
+/**
+ * Stream Deck runs plugins on its own embedded Node. Pick the newest
+ * installed major-24 runtime so a Stream Deck update does not silently
+ * break the connected harness on a pinned patch version.
+ */
+function streamDeckNodeRuntime() {
+  const root = resolve(
+    homedir(),
+    "Library/Application Support/com.elgato.StreamDeck/NodeJS",
+  );
+  const candidates = readdirSync(root)
+    .filter((name) => /^24\.\d+\.\d+$/.test(name))
+    .sort((left, right) =>
+      right.localeCompare(left, undefined, { numeric: true }),
+    );
+  if (candidates.length === 0) {
+    throw new Error(`No Stream Deck Node 24 runtime found under ${root}`);
+  }
+  return resolve(root, candidates[0], "node");
+}
+
 function pluginInfo() {
   return JSON.stringify({
     application: {
@@ -40,7 +78,7 @@ function pluginInfo() {
         type: 7,
       },
     ],
-    plugin: { uuid: "com.todd.streamdeckcodex", version: "0.1.0.0" },
+    plugin: { uuid: "com.todd.streamdeckcodex", version: pluginVersion() },
   });
 }
 
@@ -97,10 +135,7 @@ export async function createStreamDeckActionHarness({
   });
 
   const child = spawn(
-    resolve(
-      homedir(),
-      "Library/Application Support/com.elgato.StreamDeck/NodeJS/24.13.1/node",
-    ),
+    streamDeckNodeRuntime(),
     [
       plugin,
       "-port",

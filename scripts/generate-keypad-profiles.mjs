@@ -122,14 +122,10 @@ async function writeExpected(path, value) {
     try {
       actual = await readFile(path, "utf8");
     } catch {
-      throw new Error(
-        `${path} is missing; run npm run keypad-profiles:generate.`,
-      );
+      throw new Error(`${path} is missing; run npm run profile:generate.`);
     }
     if (actual !== expected)
-      throw new Error(
-        `${path} is stale; run npm run keypad-profiles:generate.`,
-      );
+      throw new Error(`${path} is stale; run npm run profile:generate.`);
     return;
   }
   await mkdir(resolve(path, ".."), { recursive: true });

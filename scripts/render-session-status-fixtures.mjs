@@ -19,7 +19,7 @@ await build({
   bundle: true,
   format: "esm",
   platform: "node",
-  target: "node22",
+  target: "node24",
   outfile: bundledVisuals,
 });
 const { agentKeySvg, STATUS_COLOR } = await import(

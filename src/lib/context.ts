@@ -28,45 +28,13 @@ export function parseLatestContext(
   now = Date.now(),
   maxAgeMs = CONTEXT_STALE_MS,
 ): ContextSnapshot | undefined {
-  if (!threadId) return undefined;
-  const entries = lines.split("\n");
-  for (let index = entries.length - 1; index >= 0; index -= 1) {
-    const line = entries[index]!;
-    if (!line.includes('"token_count"')) continue;
-    try {
-      const event = JSON.parse(line) as TokenCountEvent;
-      const usedTokens = event.payload?.info?.last_token_usage?.total_tokens;
-      const maxTokens = event.payload?.info?.model_context_window;
-      const observedAt = Date.parse(event.timestamp ?? "");
-      if (
-        event.payload?.type !== "token_count" ||
-        typeof usedTokens !== "number" ||
-        !Number.isFinite(usedTokens) ||
-        usedTokens < 0 ||
-        typeof maxTokens !== "number" ||
-        !Number.isFinite(maxTokens) ||
-        maxTokens <= 0 ||
-        !Number.isFinite(observedAt) ||
-        observedAt > now + 60_000 ||
-        now - observedAt > maxAgeMs
-      ) {
-        continue;
-      }
-      return {
-        threadId,
-        usedTokens,
-        maxTokens,
-        remainingPercent: Math.max(
-          0,
-          Math.min(100, Math.round((1 - usedTokens / maxTokens) * 100)),
-        ),
-        observedAt,
-      };
-    } catch {
-      // Ignore malformed or partially written rollout lines.
-    }
-  }
-  return undefined;
+  const availability = contextAvailabilityFromLines(
+    lines,
+    threadId,
+    now,
+    maxAgeMs,
+  );
+  return availability.state === "ready" ? availability.value : undefined;
 }
 
 export function contextAvailabilityFromLines(

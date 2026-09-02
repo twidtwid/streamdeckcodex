@@ -12,7 +12,7 @@ await build({
   bundle: true,
   platform: "node",
   format: "esm",
-  target: "node22",
+  target: "node24",
   outfile: output,
 });
 const result = spawnSync(process.execPath, [output, ...process.argv.slice(2)], {
