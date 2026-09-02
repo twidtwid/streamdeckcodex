@@ -447,19 +447,23 @@ do {
         )
         dismissOpenMenus()
         let operationSnapshot = captureAXSnapshot(transaction.window)
-        let current = try readApprovalMode(in: operationSnapshot)
-        guard let index = approvalModes.firstIndex(of: current) else {
+        let (current, offered) = try offeredApprovalModes(
+            appElement: transaction.window,
+            initial: operationSnapshot
+        )
+        guard let requestedMode = nextOfferedApprovalMode(
+            current: current,
+            offered: offered
+        ) else {
             throw ControlError.failed(
-                "The visible Codex composer returned an unsupported approval mode."
+                "Codex offers no other approval mode to cycle to.",
+                "UNAVAILABLE"
             )
         }
-        let requestedMode = approvalModes[
-            (index + 1) % approvalModes.count
-        ]
         let mode = try applyApprovalMode(
             requestedMode,
             appElement: transaction.window,
-            initial: operationSnapshot
+            initial: captureAXSnapshot(transaction.window)
         )
         try recordTransactionOperation(&transaction)
         try postflightTargetTransaction(

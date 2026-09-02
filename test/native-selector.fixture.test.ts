@@ -16,6 +16,8 @@ type FixtureAction =
   | "--picker-label-fixture"
   | "--picker-wait-fixture"
   | "--ultra-confirmation-fixture"
+  | "--power-fixture"
+  | "--approval-cycle-fixture"
   | "--workspace-shortcut-fixture";
 
 function run(action: FixtureAction, scenario: string) {
@@ -188,4 +190,34 @@ describe("native Add Project ownership", () => {
       expect(run("--selector-fixture", scenario).status).toBe(0);
     },
   );
+});
+
+describe("native picker ladder and approval cycle", () => {
+  it("reads the picker title and maps effort to Power segments", () => {
+    for (const scenario of [
+      "title-medium",
+      "title-extra-high",
+      "title-light",
+      "title-unreadable",
+      "readout",
+      "readout-ultra",
+      "step",
+    ]) {
+      expect(run("--power-fixture", scenario).status, scenario).toBe(0);
+    }
+  });
+
+  it("cycles only through the approval modes Codex offers", () => {
+    for (const scenario of [
+      "three-modes",
+      "with-custom",
+      "single-mode",
+      "unknown-current",
+      "nested-confirm-label",
+    ]) {
+      expect(run("--approval-cycle-fixture", scenario).status, scenario).toBe(
+        0,
+      );
+    }
+  });
 });

@@ -1437,6 +1437,122 @@ func runFixtureAction(_ action: String, arguments: [String]) {
         )
     }
 
+    if action == "--power-fixture" {
+        let scenario = arguments.dropFirst().first ?? ""
+        let valid: Bool
+        switch scenario {
+        case "title-medium":
+            valid = parsePickerTitle("5.6 Sol Medium").map { $0 == ("5.6 Sol", "Medium") } ?? false
+        case "title-extra-high":
+            valid = parsePickerTitle("5.6 Luna Extra High").map { $0 == ("5.6 Luna", "Extra High") } ?? false
+        case "title-light":
+            // "Low" and "Light" both map to the Light picker label.
+            valid = parsePickerTitle("5.6 Terra Low")?.effort == "Light"
+                && parsePickerTitle("5.6 Terra Light")?.effort == "Light"
+        case "title-unreadable":
+            valid = parsePickerTitle("Sol") == nil && parsePickerTitle("") == nil
+        case "readout":
+            valid = parsePowerReadout("5.6 Sol Standard, 3 of 5.")
+                == PowerReadout(model: "5.6 Sol", level: "medium", position: 3)
+                && parsePowerReadout("5.6 Terra Light, 1 of 5.")
+                == PowerReadout(model: "5.6 Terra", level: "low", position: 1)
+                && parsePowerReadout("5.6 Sol Extra High, 4 of 5.")
+                == PowerReadout(model: "5.6 Sol", level: "xhigh", position: 4)
+                && parsePowerReadout("Use Left and Right arrow keys to adjust power") == nil
+        case "step":
+            // Each step is one segment toward the target; the ladder skips
+            // rungs per model (explicit Sol: Extra High at 4, Ultra at 5),
+            // so the walk re-reads rather than jumping by rank delta.
+            let onDefault = PowerReadout(model: "5.6 Sol", level: "medium", position: 3)
+            let onExplicit = PowerReadout(model: "5.6 Sol", level: "medium", position: 2)
+            let atExtraHigh = PowerReadout(model: "5.6 Sol", level: "xhigh", position: 4)
+            let atTop = PowerReadout(model: "5.6 Sol", level: "ultra", position: 5)
+            let atBottom = PowerReadout(model: "5.6 Terra", level: "low", position: 1)
+            valid = nextPowerSegment(from: onDefault, to: "high") == 4
+                && nextPowerSegment(from: onDefault, to: "low") == 2
+                && nextPowerSegment(from: onExplicit, to: "xhigh") == 3
+                && nextPowerSegment(from: onExplicit, to: "low") == 1
+                && nextPowerSegment(from: atExtraHigh, to: "ultra") == 5
+                && nextPowerSegment(from: atTop, to: "ultra") == nil
+                && nextPowerSegment(from: atTop, to: "low") == 4
+                && nextPowerSegment(from: atBottom, to: "low") == nil
+                && nextPowerSegment(from: atBottom, to: "medium") == 2
+                && nextPowerSegment(from: onDefault, to: "minimal") == nil
+        case "readout-ultra":
+            valid = parsePowerReadout("5.6 Sol Ultra, 5 of 5.")
+                == PowerReadout(model: "5.6 Sol", level: "ultra", position: 5)
+        default:
+            valid = false
+        }
+        emit(
+            ControlResult(
+                ok: valid,
+                action: action,
+                requested: scenario,
+                model: nil,
+                effort: nil,
+                message: valid ? "power fixture accepted" : "power fixture rejected"
+            ),
+            exitCode: valid ? 0 : 1
+        )
+    }
+
+    if action == "--approval-cycle-fixture" {
+        let scenario = arguments.dropFirst().first ?? ""
+        let valid: Bool
+        switch scenario {
+        case "three-modes":
+            // Current Codex offers Ask, Approve, Full access: the cycle wraps
+            // from Full access straight back to Ask instead of asking for Custom.
+            let offered = ["ask", "approve", "yolo"]
+            valid = nextOfferedApprovalMode(current: "ask", offered: offered) == "approve"
+                && nextOfferedApprovalMode(current: "approve", offered: offered) == "yolo"
+                && nextOfferedApprovalMode(current: "yolo", offered: offered) == "ask"
+        case "with-custom":
+            let offered = ["ask", "approve", "yolo", "custom"]
+            valid = nextOfferedApprovalMode(current: "yolo", offered: offered) == "custom"
+                && nextOfferedApprovalMode(current: "custom", offered: offered) == "ask"
+        case "single-mode":
+            valid = nextOfferedApprovalMode(current: "ask", offered: ["ask"]) == nil
+        case "unknown-current":
+            valid = nextOfferedApprovalMode(current: "other", offered: ["ask", "approve"]) == nil
+        case "nested-confirm-label":
+            // The live "Turn on Full Access?" dialog nests a static text that
+            // repeats each button label, so descendant text reads "Confirm
+            // Confirm" and "Cancel Cancel". The recognizer must still find
+            // exactly one Confirm button.
+            func node(_ id: String, _ parent: String?, _ role: String, _ title: String, _ frame: CGRect, depth: Int) -> NeutralAXNode {
+                NeutralAXNode(id: id, parentId: parent, role: role, title: title, description: "", value: "", help: "", elementFrame: frame, enabled: true, hidden: false, selected: false, depth: depth)
+            }
+            let dialog = CGRect(x: 100, y: 100, width: 400, height: 200)
+            let nodes = [
+                node("w", nil, kAXWindowRole as String, "ChatGPT", CGRect(x: 0, y: 0, width: 1200, height: 900), depth: 0),
+                node("g", "w", kAXGroupRole as String, "Turn on Full Access?", dialog, depth: 1),
+                node("h", "g", "AXHeading", "Turn on Full Access?", CGRect(x: 120, y: 110, width: 300, height: 24), depth: 2),
+                node("learn", "g", kAXButtonRole as String, "Learn more", CGRect(x: 120, y: 150, width: 90, height: 24), depth: 2),
+                node("cancel", "g", kAXButtonRole as String, "Cancel", CGRect(x: 300, y: 250, width: 80, height: 30), depth: 2),
+                node("cancel-text", "cancel", kAXStaticTextRole as String, "Cancel", CGRect(x: 310, y: 255, width: 60, height: 20), depth: 3),
+                node("confirm", "g", kAXButtonRole as String, "Confirm", CGRect(x: 400, y: 250, width: 80, height: 30), depth: 2),
+                node("confirm-text", "confirm", kAXStaticTextRole as String, "Confirm", CGRect(x: 410, y: 255, width: 60, height: 20), depth: 3),
+            ]
+            let query = NeutralAXQuery(nodes: nodes)
+            valid = fullAccessConfirmationButtonIndex(in: query) == 6
+        default:
+            valid = false
+        }
+        emit(
+            ControlResult(
+                ok: valid,
+                action: action,
+                requested: scenario,
+                model: nil,
+                effort: nil,
+                message: valid ? "approval cycle fixture accepted" : "approval cycle fixture rejected"
+            ),
+            exitCode: valid ? 0 : 1
+        )
+    }
+
     if action == "--approval-mode-fixture" {
         guard let expected = requested, let value = threadId else {
             emit(

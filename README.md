@@ -84,9 +84,10 @@ Codex version, and the failing action when
   idle, running, unread, needs-input, error, and focused states.
 - Opens the exact chat represented by a key or dial.
 - Toggles FAST and Plan only after verifying the visible Codex result.
-- Cycles the focused chat's real permission choices: Ask, Approve, YOLO, and
-  Custom. Entering YOLO handles Codex's Full Access confirmation and verifies
-  the result.
+- Cycles the focused chat's real permission choices in the order Codex
+  offers them (Ask, Approve, Full Access, and Custom when a chat has one).
+  Entering Full Access handles Codex's one-time confirmation and verifies the
+  result.
 - Provides guarded push-to-talk, New Chat, New Project, Compact, Review,
   Browser, Files, Side chat, Settings, and other Codex commands.
 - Launches named PR review, debugging, refactoring, testing, Git, and code
@@ -138,10 +139,12 @@ would be unsafe, or does not expose the expected control, the action fails
 closed and displays an alert.
 
 Current Codex builds may expose the empty composer hint as its accessibility
-value and keep Model/Reasoning under the picker's advanced options. The
-companion recognizes the exact empty hints, preserves all other draft text,
-opens the advanced controls when needed, and verifies the visible picker after
-each apply.
+value. The composer's Model/Effort picker shows the live state in its title,
+offers models under **Select model**, and sets effort with a five-segment
+**Power** control whose ladder depends on the chat. The companion reads the
+title without opening anything, selects models from that list, steps the Power
+control from its readout, refuses a segment that would change the model, and
+verifies the visible title after each apply.
 
 Push-to-talk uses the focused composer's native **Dictate** accessibility
 control and does not hold a keyboard shortcut. The watchdog verifies that

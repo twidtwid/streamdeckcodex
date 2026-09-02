@@ -26,72 +26,6 @@ func requirePicker(in elements: [ElementInfo]) throws -> ElementInfo {
     return picker
 }
 
-func menuItem(
-    in elements: [ElementInfo],
-    descriptionPrefix: String
-) -> ElementInfo? {
-    let matches = elements.filter { info in
-        info.role == (kAXMenuItemRole as String)
-            && info.description.lowercased().hasPrefix(descriptionPrefix.lowercased())
-    }
-    return matches.count == 1 ? matches[0] : nil
-}
-
-func exposeAdvancedPickerControls(
-    in appElement: AXUIElement
-) throws -> AXSnapshot {
-    func advancedSnapshot() -> AXSnapshot? {
-        let snapshot = captureAXSnapshot(appElement)
-        guard
-            menuItem(in: snapshot.elements, descriptionPrefix: "Model ") != nil,
-            menuItem(in: snapshot.elements, descriptionPrefix: "Effort ") != nil
-        else { return nil }
-        return snapshot
-    }
-
-    if let snapshot = advancedSnapshot() { return snapshot }
-    let opened = captureAXSnapshot(appElement)
-    guard let advanced = opened.elements.first(where: { info in
-        info.role == (kAXMenuItemRole as String)
-            && normalized(elementText(info)).contains("showadvancedoptions")
-    }) else {
-        throw ControlError.failed(
-            "Codex opened no advanced Model/Effort controls."
-        )
-    }
-    try clickMenuItem(advanced.element)
-    guard let snapshot = waitUntil(timeout: 1.5, operation: advancedSnapshot)
-    else {
-        throw ControlError.failed(
-            "Codex did not expose advanced Model/Effort controls."
-        )
-    }
-    return snapshot
-}
-
-func selectableMenuItem(
-    in elements: [ElementInfo],
-    label: String,
-    excludingDescriptionPrefix: String
-) -> ElementInfo? {
-    let matches = elements.filter { info in
-        guard info.role == (kAXMenuItemRole as String) else { return false }
-        let description = info.description
-        guard
-            !description.lowercased().hasPrefix(
-                excludingDescriptionPrefix.lowercased()
-            )
-        else {
-            return false
-        }
-        let text = normalized("\(info.title) \(description)")
-        return normalized(excludingDescriptionPrefix) == "effort"
-            ? effortMenuTextMatches(text, label: label)
-            : pickerMenuTextMatches(text, label: label)
-    }
-    return matches.count == 1 ? matches[0] : nil
-}
-
 func pickerMenuTextMatches(_ rawText: String, label: String) -> Bool {
     let text = normalized(rawText)
     let target = normalized(label)
@@ -111,27 +45,130 @@ func effortMenuTextMatches(_ rawText: String, label: String) -> Bool {
     return !target.isEmpty && (text == target || text.hasPrefix(target))
 }
 
+func menuItem(
+    in elements: [ElementInfo],
+    descriptionPrefix: String
+) -> ElementInfo? {
+    let matches = elements.filter { info in
+        info.role == (kAXMenuItemRole as String)
+            && info.description.lowercased().hasPrefix(descriptionPrefix.lowercased())
+    }
+    return matches.count == 1 ? matches[0] : nil
+}
+
+/// Effort ranks order the five-segment Power control. The ladder depends on
+/// the chat and the model: a Default-model chat puts a lighter model at
+/// segment 1, an explicit Sol chat ends at Ultra with no Max rung between.
+/// Ranks only give the direction; each step is one segment, re-read.
+let powerRanks = ["low": 0, "medium": 1, "high": 2, "xhigh": 3, "max": 4, "ultra": 5]
+let powerReadoutLevels: [(name: String, level: String)] = [
+    ("extra high", "xhigh"), ("extended", "high"), ("standard", "medium"),
+    ("light", "low"), ("maximum", "max"), ("max", "max"), ("ultra", "ultra"),
+]
+let pickerTitleEfforts: [(suffix: String, level: String)] = [
+    ("extra high", "xhigh"), ("extended", "high"), ("standard", "medium"),
+    ("light", "low"), ("minimal", "minimal"), ("medium", "medium"),
+    ("high", "high"), ("low", "low"), ("ultra", "ultra"), ("max", "max"),
+    ("none", "none"),
+]
+
+struct PowerReadout: Equatable {
+    let model: String
+    let level: String
+    let position: Int
+}
+
+/// Parse "5.6 Sol Standard, 3 of 5." into model, canonical level, and segment.
+func parsePowerReadout(_ readout: String) -> PowerReadout? {
+    let trimmed = readout.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard let comma = trimmed.lastIndex(of: ",") else { return nil }
+    let head = String(trimmed[..<comma]).trimmingCharacters(in: .whitespaces)
+    let tail = String(trimmed[trimmed.index(after: comma)...])
+    guard let digit = tail.first(where: \.isNumber), let position = Int(String(digit)),
+          (1...5).contains(position)
+    else { return nil }
+    let lower = head.lowercased()
+    for (name, level) in powerReadoutLevels where lower.hasSuffix(" " + name) {
+        let model = String(head.dropLast(name.count)).trimmingCharacters(in: .whitespaces)
+        guard !model.isEmpty else { return nil }
+        return PowerReadout(model: model, level: level, position: position)
+    }
+    return nil
+}
+
+/// The segment to click next: one step toward the target's rank, or nil when
+/// the readout already matches, the rank is unknown, or the ladder ends.
+func nextPowerSegment(from current: PowerReadout, to targetLevel: String) -> Int? {
+    guard let here = powerRanks[current.level], let there = powerRanks[targetLevel.lowercased()],
+          here != there
+    else { return nil }
+    let next = current.position + (there > here ? 1 : -1)
+    return (1...5).contains(next) ? next : nil
+}
+
+/// Parse the picker button title ("5.6 Sol Medium", "5.6 Luna Extra High")
+/// into the model name and the canonical picker effort label.
+func parsePickerTitle(_ title: String) -> (model: String, effort: String)? {
+    let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+    let lower = trimmed.lowercased()
+    for (suffix, level) in pickerTitleEfforts where lower.hasSuffix(" " + suffix) {
+        let model = String(trimmed.dropLast(suffix.count)).trimmingCharacters(in: .whitespaces)
+        guard !model.isEmpty, let label = effortLabels[level] else { return nil }
+        return (model, label)
+    }
+    return nil
+}
+
+func powerReadout(in snapshot: AXSnapshot) -> String? {
+    snapshot.elements.first {
+        $0.role == (kAXStaticTextRole as String) && $0.value.contains(" of 5")
+    }?.value
+}
+
+func powerControlFrame(in snapshot: AXSnapshot) -> CGRect? {
+    guard let index = snapshot.elements.firstIndex(where: {
+        $0.role == (kAXMenuItemRole as String) && normalized($0.description) == "power"
+    }) else { return nil }
+    let inner = snapshot.elements.enumerated()
+        .filter {
+            snapshot.query.isDescendant($0.offset, of: index)
+                && $0.element.role == (kAXGroupRole as String)
+                && ($0.element.elementFrame?.width ?? 0) > 150
+        }
+        .compactMap { $0.element.elementFrame }
+        .min { $0.width < $1.width }
+    return inner ?? snapshot.elements[index].elementFrame
+}
+
+func pickerMenuOpen(in snapshot: AXSnapshot) -> Bool {
+    snapshot.elements.contains {
+        $0.role == (kAXMenuItemRole as String) && normalized($0.description) == "selectmodel"
+    }
+}
+
+/// Current Codex builds put the live model and effort in the picker button
+/// title, so reading state opens nothing.
 func readPickerState(_ appElement: AXUIElement) throws -> (String?, String?) {
-    dismissOpenMenus()
-    let initial = captureAXSnapshot(appElement)
+    let snapshot = captureAXSnapshot(appElement)
+    let picker = try requirePicker(in: snapshot.elements)
+    guard let parsed = parsePickerTitle(picker.title) else {
+        throw ControlError.failed(
+            "Codex shows an unreadable Model/Effort picker title.",
+            "UNAVAILABLE"
+        )
+    }
+    return (parsed.model, parsed.effort)
+}
+
+func openPickerMenu(appElement: AXUIElement, initial: AXSnapshot) throws {
     let picker = try requirePicker(in: initial.elements)
     try click(picker.element)
-    defer { pressEscape() }
-    let snapshot = try exposeAdvancedPickerControls(in: appElement)
-    guard
-        let modelItem = menuItem(
-            in: snapshot.elements,
-            descriptionPrefix: "Model "
-        ),
-        let effortItem = menuItem(
-            in: snapshot.elements,
-            descriptionPrefix: "Effort "
-        )
-    else { throw ControlError.failed("Codex opened no readable Model/Effort menu.") }
-
-    let model = String(modelItem.description.dropFirst("Model ".count))
-    let effort = String(effortItem.description.dropFirst("Effort ".count))
-    return (model, effort)
+    guard waitUntil(timeout: 1.5, operation: {
+        pickerMenuOpen(in: captureAXSnapshot(appElement)) ? true : nil
+    }) != nil else {
+        pressEscape()
+        throw ControlError.failed("Codex opened no Model/Effort menu.", "UNAVAILABLE")
+    }
 }
 
 func composerCandidates(in appElement: AXUIElement) -> [ElementInfo] {
@@ -557,6 +594,59 @@ func readApprovalMode(_ appElement: AXUIElement) throws -> String {
     try readApprovalMode(in: captureAXSnapshot(appElement).elements)
 }
 
+/// Open the permission menu and report which canonical modes Codex offers.
+/// Current builds offer Ask, Approve, and Full Access; "custom" appears only
+/// when a chat has one configured, so the cycle must follow the live menu.
+func offeredApprovalModes(
+    appElement: AXUIElement,
+    initial: AXSnapshot
+) throws -> (current: String, offered: [String]) {
+    guard let composer = composerCandidates(in: initial).first else {
+        throw ControlError.failed(
+            "The live Codex composer is unavailable. Open an idle Codex chat."
+        )
+    }
+    guard
+        let (control, current) = approvalModeControl(
+            elements: initial.elements,
+            composer: composer,
+            query: initial.query
+        )
+    else {
+        throw ControlError.failed(
+            "Codex opened no verifiable approval mode control."
+        )
+    }
+    try click(control.element)
+    defer { dismissOpenMenus() }
+    guard let offered = waitUntil(timeout: 1.5, operation: { () -> [String]? in
+        let snapshot = captureAXSnapshot(appElement)
+        let modes = approvalModes.filter { approvalMenuItem(in: snapshot, mode: $0) != nil }
+        return modes.isEmpty ? nil : modes
+    }) else {
+        throw ControlError.failed(
+            "Codex opened no approval mode menu.",
+            "UNAVAILABLE"
+        )
+    }
+    return (current, offered)
+}
+
+/// The next mode in canonical order that Codex actually offers, wrapping.
+func nextOfferedApprovalMode(current: String, offered: [String]) -> String? {
+    guard let index = approvalModes.firstIndex(of: current) else { return nil }
+    for step in 1..<approvalModes.count {
+        let candidate = approvalModes[(index + step) % approvalModes.count]
+        if candidate != current, offered.contains(candidate) { return candidate }
+    }
+    return nil
+}
+
+enum FullAccessOutcome {
+    case confirmation(ElementInfo)
+    case applied
+}
+
 func approvalMenuItem(
     in snapshot: AXSnapshot,
     mode: String
@@ -618,30 +708,41 @@ func applyApprovalMode(
     try click(item.element)
 
     if requested == "yolo" {
-        guard let confirm = waitUntil(timeout: 1.8, operation: {
+        // Codex asks for Full Access confirmation the first time only, and the
+        // dialog can take over two seconds to appear. Accept either the dialog
+        // or a composer that already shows the mode.
+        guard let outcome = waitUntil(timeout: 4.5, operation: {
             singlePassQuery(
                 poll: SinglePassCapture<AXSnapshot>(),
                 capture: { captureAXSnapshot(appElement) },
-                query: { fullAccessConfirmationButton(in: $0) }
+                query: { snapshot -> FullAccessOutcome? in
+                    if let confirm = fullAccessConfirmationButton(in: snapshot) {
+                        return .confirmation(confirm)
+                    }
+                    return (try? readApprovalMode(in: snapshot)) == "yolo"
+                        ? .applied : nil
+                }
             ) ?? nil
         }) else {
             throw ControlError.failed(
-                "Codex showed no unique Full Access confirmation button.",
+                "Codex neither confirmed Full Access nor applied it.",
                 "UNAVAILABLE"
             )
         }
-        try click(confirm.element)
-        guard waitUntil(timeout: 2.4, operation: {
-            singlePassQuery(
-                poll: SinglePassCapture<AXSnapshot>(),
-                capture: { captureAXSnapshot(appElement) },
-                query: { fullAccessConfirmationVisible(in: $0) ? nil : true }
-            ) ?? nil
-        }) != nil else {
-            throw ControlError.failed(
-                "The Full Access confirmation did not dismiss.",
-                "TIMEOUT"
-            )
+        if case .confirmation(let confirm) = outcome {
+            try click(confirm.element)
+            guard waitUntil(timeout: 2.4, operation: {
+                singlePassQuery(
+                    poll: SinglePassCapture<AXSnapshot>(),
+                    capture: { captureAXSnapshot(appElement) },
+                    query: { fullAccessConfirmationVisible(in: $0) ? nil : true }
+                ) ?? nil
+            }) != nil else {
+                throw ControlError.failed(
+                    "The Full Access confirmation did not dismiss.",
+                    "TIMEOUT"
+                )
+            }
         }
     }
 
@@ -836,92 +937,147 @@ func applySelection(
     targetLabel: String,
     initial: AXSnapshot
 ) throws {
-    let picker = try requirePicker(in: initial.elements)
-    try click(picker.element)
-    let advanced = try exposeAdvancedPickerControls(in: appElement)
-    guard let categoryItem = menuItem(
-        in: advanced.elements,
-        descriptionPrefix: categoryPrefix
-    ) else {
-        pressEscape()
-        throw ControlError.failed("Codex did not expose the \(categoryPrefix) control.")
+    try openPickerMenu(appElement: appElement, initial: initial)
+    if categoryPrefix == "Model " {
+        try selectModel(targetLabel, appElement: appElement)
+    } else {
+        try selectPower(targetLabel, appElement: appElement, initial: initial)
     }
-    try click(categoryItem.element)
+    dismissOpenMenus()
+}
 
-    guard
-        waitUntil(timeout: 1.5, operation: {
-            let snapshot = captureAXSnapshot(appElement)
-            return selectableMenuItem(
-                in: snapshot.elements,
-                label: targetLabel,
-                excludingDescriptionPrefix: categoryPrefix
-            )
-        }) != nil
-    else {
+/// "Select model" opens a submenu of plain model titles ("5.6 Sol") with a
+/// check mark on the current one.
+func selectModel(_ targetLabel: String, appElement: AXUIElement) throws {
+    guard let entry = captureAXSnapshot(appElement).elements.first(where: {
+        $0.role == (kAXMenuItemRole as String) && normalized($0.description) == "selectmodel"
+    }) else {
+        pressEscape()
+        throw ControlError.failed("Codex did not expose the Select model control.", "UNAVAILABLE")
+    }
+    try clickMenuItem(entry.element)
+    guard let target = waitUntil(timeout: 1.5, operation: { () -> ElementInfo? in
         let snapshot = captureAXSnapshot(appElement)
-        let available = snapshot.elements
-            .filter { $0.role == (kAXMenuItemRole as String) }
-            .map { $0.description.isEmpty ? $0.title : $0.description }
-            .filter { !$0.isEmpty }
-            .joined(separator: " | ")
-        pressEscape()
-        throw ControlError.failed(
-            "Codex does not offer \(targetLabel) in the live \(categoryPrefix) menu. Available: \(available)"
-        )
-    }
-    // Chromium exposes submenu AX nodes before its opening animation has
-    // settled. Reacquire the exact unique item so the click never targets a
-    // stale frame or element identity.
-    usleep(220_000)
-    let settledSnapshot = captureAXSnapshot(appElement)
-    guard let settledTarget = selectableMenuItem(
-        in: settledSnapshot.elements,
-        label: targetLabel,
-        excludingDescriptionPrefix: categoryPrefix
-    ) else {
-        pressEscape()
-        throw ControlError.failed(
-            "Codex's \(targetLabel) menu item did not remain uniquely selectable."
-        )
-    }
-    let pressResult = AXUIElementPerformAction(
-        settledTarget.element,
-        kAXPressAction as CFString
-    )
-    guard pressResult == .success else {
-        pressEscape()
-        throw ControlError.failed(
-            "Codex rejected the \(targetLabel) menu-item press."
-        )
-    }
-    usleep(500_000)
-    if normalized(targetLabel) == "ultra" {
-        if let continueButton = waitUntil(timeout: 1.2, operation: {
-            ultraContinueButton(in: captureAXSnapshot(appElement))
-        }) {
-            try click(continueButton.element)
-            guard waitUntil(timeout: 1.5, operation: {
-                ultraContinueButton(in: captureAXSnapshot(appElement)) == nil
-                    ? true : nil
-            }) != nil else {
-                throw ControlError.failed(
-                    "Codex did not dismiss the Ultra confirmation."
-                )
-            }
-        } else {
-            let observed = try? readPickerState(appElement)
-            guard pickerSelectionConfirmed(
-                categoryPrefix: categoryPrefix,
-                targetLabel: targetLabel,
-                model: observed?.0,
-                effort: observed?.1
-            ) else {
-                throw ControlError.failed(
-                    "Codex showed no bounded Ultra confirmation."
-                )
-            }
+        let matches = snapshot.elements.filter {
+            $0.role == (kAXMenuItemRole as String)
+                && pickerMenuTextMatches($0.title, label: targetLabel)
         }
+        return matches.count == 1 ? matches[0] : nil
+    }) else {
+        let available = captureAXSnapshot(appElement).elements
+            .filter { $0.role == (kAXMenuItemRole as String) && !$0.title.isEmpty }
+            .map(\.title).joined(separator: " | ")
+        pressEscape()
+        throw ControlError.failed(
+            "Codex does not offer \(targetLabel) in the model list. Available: \(available)",
+            "UNAVAILABLE"
+        )
     }
+    // Reacquire after Chromium's submenu animation so the press hits a
+    // settled element.
+    usleep(220_000)
+    guard let settled = captureAXSnapshot(appElement).elements.first(where: {
+        $0.role == (kAXMenuItemRole as String) && pickerMenuTextMatches($0.title, label: targetLabel)
+    }) else {
+        pressEscape()
+        throw ControlError.failed("Codex's \(targetLabel) item did not remain selectable.")
+    }
+    _ = settled
+    guard AXUIElementPerformAction(target.element, kAXPressAction as CFString) == .success else {
+        pressEscape()
+        throw ControlError.failed("Codex rejected the \(targetLabel) menu-item press.")
+    }
+    usleep(400_000)
+}
+
+/// Effort is a five-segment Power control inside the open picker. Step from
+/// the current readout toward the level, re-reading after every click, and
+/// refuse a segment that changes the model.
+func selectPower(
+    _ targetLabel: String,
+    appElement: AXUIElement,
+    initial: AXSnapshot
+) throws {
+    guard let level = effortLabels.first(where: { $0.value == targetLabel })?.key,
+          powerRanks[level] != nil
+    else {
+        pressEscape()
+        throw ControlError.failed(
+            "Codex's Power control does not offer \(targetLabel).",
+            "UNAVAILABLE"
+        )
+    }
+    guard let current = parsePickerTitle(try requirePicker(in: initial.elements).title) else {
+        pressEscape()
+        throw ControlError.failed("Codex shows an unreadable Model/Effort picker title.", "UNAVAILABLE")
+    }
+    func readout() throws -> PowerReadout {
+        let snapshot = captureAXSnapshot(appElement)
+        guard let text = powerReadout(in: snapshot), let parsed = parsePowerReadout(text) else {
+            pressEscape()
+            throw ControlError.failed("Codex exposed no readable Power control.", "UNAVAILABLE")
+        }
+        return parsed
+    }
+    var state = try readout()
+    var previous = state.position
+    // Five segments: at most four clicks, then one final check.
+    for _ in 0..<5 {
+        if state.level == level, normalized(state.model) == normalized(current.model) { return }
+        guard normalized(state.model) == normalized(current.model) else {
+            // A segment switched the model. Step back and fail closed.
+            clickPowerSegment(previous, appElement: appElement)
+            pressEscape()
+            throw ControlError.failed(
+                "Codex's Power control moved to \(state.model) instead of \(current.model) \(targetLabel).",
+                "UNCHANGED"
+            )
+        }
+        guard let segment = nextPowerSegment(from: state, to: level) else {
+            pressEscape()
+            throw ControlError.failed(
+                "Codex's Power control does not reach \(targetLabel) for \(current.model).",
+                "UNAVAILABLE"
+            )
+        }
+        previous = state.position
+        clickPowerSegment(segment, appElement: appElement)
+        let before = state
+        guard let next = waitUntil(timeout: 1.5, operation: { () -> PowerReadout? in
+            guard let text = powerReadout(in: captureAXSnapshot(appElement)),
+                  let parsed = parsePowerReadout(text), parsed != before
+            else { return nil }
+            return parsed
+        }) else {
+            pressEscape()
+            throw ControlError.failed(
+                "Codex's Power control did not move from \(before.model) \(before.level).",
+                "UNCHANGED"
+            )
+        }
+        state = next
+    }
+    pressEscape()
+    throw ControlError.failed(
+        "Codex's Power control did not settle on \(current.model) \(targetLabel).",
+        "UNCHANGED"
+    )
+}
+
+func clickPowerSegment(_ segment: Int, appElement: AXUIElement) {
+    guard let frame = powerControlFrame(in: captureAXSnapshot(appElement)) else { return }
+    let point = CGPoint(
+        x: frame.minX + (CGFloat(segment) - 0.5) * frame.width / 5,
+        y: frame.midY
+    )
+    guard
+        let down = CGEvent(mouseEventSource: nil, mouseType: .leftMouseDown, mouseCursorPosition: point, mouseButton: .left),
+        let up = CGEvent(mouseEventSource: nil, mouseType: .leftMouseUp, mouseCursorPosition: point, mouseButton: .left)
+    else { return }
+    down.post(tap: .cghidEventTap)
+    usleep(40_000)
+    up.post(tap: .cghidEventTap)
+    usleep(150_000)
 }
 
 func pressKey(_ key: CGKeyCode, flags: CGEventFlags = []) throws {
