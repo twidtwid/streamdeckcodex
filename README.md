@@ -135,9 +135,13 @@ companion recognizes the exact empty hints, preserves all other draft text,
 opens the advanced controls when needed, and verifies the visible picker after
 each apply.
 
-Push-to-talk is guarded by a watchdog. Releasing the key, leaving the page,
-stopping the plugin, losing the parent process, a partial key-down failure, or
-the 60-second maximum hold releases every synthesized modifier.
+Push-to-talk uses the focused composer's native **Dictate** accessibility
+control and does not hold a keyboard shortcut. The watchdog verifies that
+**Stop dictation** appears before reporting a successful start. Releasing the
+key, leaving the page, stopping the plugin, losing the parent process, a failed
+start, or the 60-second maximum hold invokes the native stop path. A bounded
+legacy key-up cleanup remains only to recover from older installed builds that
+may have left a modifier pressed.
 
 ## Privacy and security
 
@@ -237,6 +241,9 @@ npm run pack        # create dist/com.todd.streamdeckcodex.streamDeckPlugin
 npm run qa:design   # render and evaluate every profile key
 npm run doctor      # read-only installed/runtime health and build identity
 ```
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the runtime boundaries, source
+layout, polling model, and safety invariants.
 
 The connected mutation gate is intentionally separate from CI and fails closed
 unless it can prove a disposable fixture, exact foreground chat, empty

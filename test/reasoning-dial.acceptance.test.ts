@@ -60,6 +60,12 @@ describe("reasoning dial acceptance", () => {
     ).toBe(0);
   });
 
+  it("selects High without confusing it with Extra High", () => {
+    expect(
+      spawnSync(native, ["--picker-label-fixture", "overlapping-high"]).status,
+    ).toBe(0);
+  });
+
   it("offers Ultra only when the active model advertises it", () => {
     const cache = {
       models: [

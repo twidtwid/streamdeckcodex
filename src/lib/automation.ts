@@ -16,6 +16,7 @@ import {
   type CodexMode,
   type LiveModeState,
   type LivePickerState,
+  captureLiveTarget,
   verifyLiveTarget,
 } from "./codex-ui-control.js";
 import {
@@ -127,10 +128,12 @@ export async function startDictation(threadId: string): Promise<void> {
         "Could not safely release the previous push-to-talk state",
       );
     }
-    const witnessToken = await verifyLiveTarget(threadId);
+    // PTT already targets the visible chat. Capturing that current target must
+    // not deep-link back to it and demand a navigation event that may not exist.
+    const witnessToken = await captureLiveTarget(threadId);
 
-    const child = spawn(process.execPath, [pttGuardScript, controlScript], {
-      stdio: ["pipe", "pipe", "ignore"],
+    const child = spawn(process.execPath, [pttGuardScript], {
+      stdio: ["pipe", "pipe", "pipe"],
       windowsHide: true,
       env: {
         ...process.env,
@@ -145,6 +148,11 @@ export async function startDictation(threadId: string): Promise<void> {
     pttGuard = child;
     inputReleaseGuard.markHeld("restart");
     child.stdout?.setEncoding("utf8");
+    child.stderr?.setEncoding("utf8");
+    let guardError = "";
+    child.stderr?.on("data", (chunk: string) => {
+      guardError = `${guardError}${chunk}`.slice(-2_000);
+    });
 
     try {
       await new Promise<void>((resolvePromise, reject) => {
@@ -158,9 +166,10 @@ export async function startDictation(threadId: string): Promise<void> {
         };
         child.once("error", finish);
         child.once("exit", (code) => {
+          const detail = guardError.trim();
           finish(
             new Error(
-              `Push-to-talk guard exited before ready with ${code ?? "unknown"}`,
+              `Push-to-talk guard exited before ready with ${code ?? "unknown"}${detail ? `: ${detail}` : ""}`,
             ),
           );
         });
@@ -177,7 +186,7 @@ export async function startDictation(threadId: string): Promise<void> {
 }
 
 export function releaseSynthesizedKeysSync(): boolean {
-  const result = spawnSync(
+  const legacyResult = spawnSync(
     "/usr/bin/osascript",
     [controlScript, "dictation-up"],
     {
@@ -187,7 +196,22 @@ export function releaseSynthesizedKeysSync(): boolean {
       killSignal: "SIGKILL",
     },
   );
-  return !result.error && result.status === 0;
+  const nativeResult = spawnSync(
+    resolve(pluginRoot, "bin", "codex-ui-control"),
+    ["dictation-stop"],
+    {
+      stdio: "ignore",
+      windowsHide: true,
+      timeout: 4_000,
+      killSignal: "SIGKILL",
+    },
+  );
+  return (
+    !legacyResult.error &&
+    legacyResult.status === 0 &&
+    !nativeResult.error &&
+    nativeResult.status === 0
+  );
 }
 
 function releaseDictationNow(
@@ -202,7 +226,9 @@ async function stopPttGuard(): Promise<void> {
   const child = pttGuard;
   pttGuard = undefined;
   if (!child) {
-    await runControl("dictation-up");
+    if (!releaseSynthesizedKeysSync()) {
+      throw new Error("Fallback dictation release failed");
+    }
     return;
   }
 

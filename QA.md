@@ -38,6 +38,7 @@ The design evaluator rejects:
 | Permissions      | Reads the focused Codex window's visible mode. Press performs one native read-cycle-verify transaction; `APPROVE → YOLO` must confirm and dismiss Codex's interactive Full Access dialog before the key redraws `YOLO`.                                                                                                                                    |
 | Usage            | Defaults to weekly percentage left and compact reset time; press toggles to available resets without consuming one.                                                                                                                                                                                                                                        |
 | Context          | Resolves only the focused primary task's fresh UTC-partitioned token snapshot. Press toggles remaining/exact views. Unknown is `CONTEXT / NO DATA` in both views.                                                                                                                                                                                          |
+| PTT              | Hold presses the focused composer's native `Dictate` control and must visibly confirm `Stop dictation`; release presses the native stop control and must confirm it disappears. No keyboard shortcut is synthesized. Timeout, process loss, page exit, and plugin shutdown all run idempotent stop cleanup.                                                |
 | Pages 3–7        | Git & Delivery, Code Quality, Decisions, Workspace, and Codex Panels preserve every documented functional key; intentionally empty positions remain empty rather than becoming filler.                                                                                                                                                                     |
 | Dials            | Agent, Action, Model, and Reasoning preserve selection-on-turn and one-apply-on-press semantics with visible feedback. Rotation performs zero Codex mutations. Model families and Reasoning values come from the active model catalog; `none`/`minimal` are supported, cache-only `MAX` is excluded, and Ultra appears only when that model advertises it. |
 | Health           | The optional action and `npm run doctor` are read-only. They expose bounded reason codes and build identity without changing the canonical profile or logging task content.                                                                                                                                                                                |
@@ -45,9 +46,8 @@ The design evaluator rejects:
 
 ## Connected release gate
 
-If the profile still has six pages, create Page 7 once with Stream Deck's
-**Add Page** control. Then close Stream Deck before installing so its cached
-profile cannot overwrite the new manifests:
+Close Stream Deck before installing a generated profile so its cached profile
+cannot overwrite the new manifests:
 
 ```sh
 npm run profile:keycaps:install -- "/path/to/Active.sdProfile"
@@ -97,17 +97,6 @@ turning the physical encoder, so physical-device evidence must still be observed
 on the installed build. A connected pass must record plugin SHA, Codex version,
 Stream Deck version, date, postcondition, and restoration result.
 
-The 2026-09-01 Sagan gate used Stream Deck 7.5.1, Node 24.13.1, Codex desktop
-26.715.72359, and an attached Stream Deck Plus. The profile rendered normally.
-The live adapter visibly changed 5.6 Sol/High to 5.6 Terra/Light. The separate
-action-event gate exercised Model, Reasoning, and Plan, then restored
-Terra/Light with Plan off. Rotation was preview-only and press applied once.
-The follow-up gate also toggled Plan and Fast on then off with one task-bound
-dispatch per press. Terra's live Ultra confirmation used the bounded Continue
-button, read back Ultra, and restored Light without enabling Full access.
-This is registered-action plus visible-UI evidence, not a claim that a human
-physically turned every encoder.
-
 Current Codex exposes compact picker state in the popup title and Model/Effort
 inside **Show advanced options**. Empty composers may expose `Do anything` or
 the Plan hint through AXValue rather than AXPlaceholderValue. The native gate
@@ -118,3 +107,8 @@ draft text.
 The complete non-connected release gate is `npm run release:verify`. It does
 not claim physical-device success. Run `npm run release:verify:connected` only
 with explicit connected QA intent and the required disposable fixture.
+
+Record connected evidence outside the repository while testing. A release note
+may summarize the verified device model, software versions, postconditions, and
+restoration result, but must not include device serials, task identifiers,
+private paths, Codex logs, or account data.

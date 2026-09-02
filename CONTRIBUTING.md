@@ -25,6 +25,10 @@ npm ci
 npm run check
 ```
 
+Read [ARCHITECTURE.md](ARCHITECTURE.md) before changing chat targeting, native
+Accessibility control, app-server transport, refresh scheduling, or process
+cleanup. Those boundaries carry the project's fail-closed guarantees.
+
 Connected foreground QA is never a CI requirement. It requires an explicitly
 marked disposable fixture, journals every mutation, and must restore the
 original task state. The gate deliberately stops rather than claims success

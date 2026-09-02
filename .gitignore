@@ -3,6 +3,7 @@ dist/
 logs/
 coverage/
 .cache/
+dashboard/activity.jsonl
 extracted-app-icons/
 .env
 .env.*

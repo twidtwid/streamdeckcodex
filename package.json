@@ -52,7 +52,8 @@
     "test": "vitest run",
     "test:unit": "vitest run",
     "validate": "streamdeck validate com.todd.streamdeckcodex.sdPlugin",
-    "pack": "npm run build && streamdeck pack com.todd.streamdeckcodex.sdPlugin --output dist --force && prettier --write com.todd.streamdeckcodex.sdPlugin/manifest.json",
+    "pack:artifact": "streamdeck pack com.todd.streamdeckcodex.sdPlugin --output dist --force && prettier --write com.todd.streamdeckcodex.sdPlugin/manifest.json",
+    "pack": "npm run build && npm run pack:artifact",
     "link": "npm run build && streamdeck link com.todd.streamdeckcodex.sdPlugin",
     "marketplace:media": "node scripts/generate-marketplace-media.mjs",
     "progress": "node scripts/progress-server.mjs",
@@ -75,18 +76,18 @@
     "qa:design": "npm run qa:visuals && node scripts/evaluate-profile-design.mjs",
     "qa:design:release": "npm run qa:visuals && node scripts/evaluate-profile-design.mjs --release",
     "check": "npm run public:check && npm run generated:check && npm run native:build && npm run format:check && npm run typecheck && npm run test:unit && npm run qa:design && npm run build:bundle && npm run validate",
-    "release:bundle": "npm run check && npm run pack && node scripts/stage-release.mjs",
-    "release:verify": "npm run audit:full && npm run audit:production && npm run check && npm run docs:check && npm run pack && npm run doctor -- --json --allow-degraded",
+    "release:bundle": "npm run check && npm run pack:artifact && node scripts/stage-release.mjs",
+    "release:verify": "npm run audit:full && npm run audit:production && npm run check && npm run docs:check && npm run pack:artifact && npm run doctor -- --json --allow-degraded",
     "release:verify:connected": "npm run qa:dials && npm run qa:modes && npm run qa:release:connected"
   },
   "dependencies": {
-    "@elgato/streamdeck": "2.1.2",
-    "lucide-static": "^1.38.0"
+    "@elgato/streamdeck": "2.1.2"
   },
   "devDependencies": {
     "@electron/asar": "4.3.0",
     "@elgato/cli": "1.9.0",
     "@types/node": "26.4.0",
+    "lucide-static": "^1.38.0",
     "acorn": "8.18.0",
     "esbuild": "0.28.2",
     "opentype.js": "1.3.4",

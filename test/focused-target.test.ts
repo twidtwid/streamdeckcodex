@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { parseActiveDesktopWitness } from "../src/lib/desktop-active.js";
 import { executeCommand } from "../src/lib/automation.js";
 import { COMMANDS } from "../src/lib/commands.js";
@@ -25,26 +24,6 @@ describe("focused target witness", () => {
     expect(accept).toBeDefined();
     await expect(executeCommand(accept!)).rejects.toThrow(
       "No focused Codex task is available.",
-    );
-  });
-
-  it("captures current-task mutations without deep-link navigation", () => {
-    const native = readFileSync("native/CodexUIControl.swift", "utf8");
-    expect(native).toContain("let currentTaskActions = Set([");
-    expect(native).toContain("target = try captureCurrentCodex(");
-    expect(native).toContain('let navigationActions = Set(["target-check"])');
-    expect(native).toContain("for path in desktopLogFiles()");
-    expect(native).toContain("desktopLogFiles().contains(expected.path)");
-    expect(native).toContain("kAXFocusedWindowAttribute as CFString");
-    expect(native).toContain(
-      "windows.contains(where: { sameElement($0, focusedWindow) })",
-    );
-    expect(native).toContain("func focusedCodexWindow(");
-    expect(native).toContain("activate: true");
-    expect(native).not.toContain("after == before");
-    expect(native).not.toContain("desktopLogFiles().first == expected.path");
-    expect(native).not.toContain(
-      'let target = action == "read" || action == "target-verify"',
     );
   });
 });

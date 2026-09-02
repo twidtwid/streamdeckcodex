@@ -1,15 +1,17 @@
-import { spawn, spawnSync } from "node:child_process";
-import { once } from "node:events";
+import { spawnSync } from "node:child_process";
 import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
-import { homedir, tmpdir } from "node:os";
-import { dirname, resolve } from "node:path";
-import { WebSocketServer } from "ws";
+import { tmpdir } from "node:os";
+import { resolve } from "node:path";
 import {
   createLiveStateRestorer,
   requireConnectedQaTarget,
   snapshotLiveState,
 } from "./lib/live-state-journal.mjs";
 import { activeForegroundThreadId } from "./lib/foreground-thread.mjs";
+import {
+  createStreamDeckActionHarness,
+  waitFor,
+} from "./lib/streamdeck-action-harness.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const plugin = resolve(
@@ -30,9 +32,6 @@ const nativeLog = resolve(scratch, "native-calls.jsonl");
 writeFileSync(nativeLog, "");
 chmodSync(proxy, 0o755);
 
-const delay = (milliseconds) =>
-  new Promise((resolvePromise) => setTimeout(resolvePromise, milliseconds));
-
 function native(action, mode, threadId) {
   const values = [action];
   if (mode !== undefined || threadId) values.push(mode ?? "");
@@ -42,16 +41,6 @@ function native(action, mode, threadId) {
   });
   const parsed = JSON.parse(result.stdout.trim());
   return { status: result.status, ...parsed };
-}
-
-async function waitFor(check, timeout = 12_000) {
-  const deadline = Date.now() + timeout;
-  while (Date.now() < deadline) {
-    const value = check();
-    if (value) return value;
-    await delay(50);
-  }
-  throw new Error("Timed out waiting for a mode event result");
 }
 
 async function waitForMode(mode, expected) {
@@ -79,109 +68,18 @@ if (typeof fastRead.active !== "boolean") {
   );
 }
 
-const server = new WebSocketServer({ host: "127.0.0.1", port: 0 });
-await once(server, "listening");
-const address = server.address();
-if (typeof address === "string" || !address) {
-  throw new Error("QA WebSocket server did not bind");
-}
-
-const info = JSON.stringify({
-  application: {
-    font: ".AppleSystemUIFont",
-    language: "en",
-    platform: "mac",
-    platformVersion: "26.5",
-    version: "7.5.0",
-  },
-  colors: {},
-  devicePixelRatio: 2,
-  devices: [
-    {
-      id: "qa-stream-deck-plus",
-      name: "QA Stream Deck +",
-      size: { columns: 4, rows: 2 },
-      type: 7,
-    },
-  ],
-  plugin: { uuid: "com.todd.streamdeckcodex", version: "0.1.0.0" },
-});
-
-let socket;
-const outbound = [];
-server.on("connection", (connected) => {
-  socket = connected;
-  connected.on("message", (data) => {
-    const message = JSON.parse(data.toString());
-    outbound.push(message);
-    if (message.event === "getGlobalSettings") {
-      connected.send(
-        JSON.stringify({
-          event: "didReceiveGlobalSettings",
-          payload: {
-            settings: { profileActivationVersion: "profile-v1" },
-          },
-        }),
-      );
-    }
-  });
-});
-
-const child = spawn(
-  resolve(
-    homedir(),
-    "Library/Application Support/com.elgato.StreamDeck/NodeJS/24.13.1/node",
-  ),
-  [
-    plugin,
-    "-port",
-    String(address.port),
-    "-pluginUUID",
-    "qa-mode-plugin-context",
-    "-registerEvent",
-    "registerPlugin",
-    "-info",
-    info,
-  ],
-  {
-    env: {
-      ...process.env,
-      NODE_ENV: "development",
-      CODEX_UI_CONTROL: proxy,
-      QA_NATIVE_REAL: nativeControl,
-      QA_NATIVE_LOG: nativeLog,
-    },
-    cwd: resolve(dirname(plugin), ".."),
-    stdio: ["ignore", "pipe", "pipe"],
-  },
-);
-
-const output = [];
-let childResult;
-child.stdout.setEncoding("utf8");
-child.stderr.setEncoding("utf8");
-child.stdout.on("data", (chunk) => output.push(chunk));
-child.stderr.on("data", (chunk) => output.push(chunk));
-child.once("exit", (code, signal) => {
-  childResult = { code, signal };
-});
-
 const restoreOnce = createLiveStateRestorer(native, initialState);
-const signals = ["SIGINT", "SIGTERM"];
-const onSignal = (signal) => {
-  child.kill("SIGTERM");
-  for (const client of server.clients) client.terminate();
-  server.close();
-  const failures = restoreOnce();
-  if (failures.length) {
-    process.stderr.write(`restore failures: ${failures.join("; ")}\n`);
-  }
-  process.exit(failures.length ? 1 : signal === "SIGINT" ? 130 : 143);
-};
-const signalHandlers = new Map(
-  signals.map((signal) => [signal, () => onSignal(signal)]),
-);
-for (const [signal, handler] of signalHandlers) process.once(signal, handler);
+const harness = await createStreamDeckActionHarness({
+  plugin,
+  pluginContext: "qa-mode-plugin-context",
+  env: {
+    CODEX_UI_CONTROL: proxy,
+    QA_NATIVE_REAL: nativeControl,
+    QA_NATIVE_LOG: nativeLog,
+  },
+  restore: restoreOnce,
+});
+const { outbound } = harness;
 
 const action = "com.todd.streamdeckcodex.command";
 const contexts = [];
@@ -197,15 +95,13 @@ async function pressMode(mode, commandIndex, expectedTitle) {
     resources: {},
     settings,
   };
-  socket.send(
-    JSON.stringify({
-      action,
-      context,
-      device: "qa-stream-deck-plus",
-      event: "willAppear",
-      payload,
-    }),
-  );
+  harness.send({
+    action,
+    context,
+    device: "qa-stream-deck-plus",
+    event: "willAppear",
+    payload,
+  });
   await waitFor(() =>
     outbound.some(
       (message) =>
@@ -216,15 +112,13 @@ async function pressMode(mode, commandIndex, expectedTitle) {
     ),
   );
   const before = outbound.length;
-  socket.send(
-    JSON.stringify({
-      action,
-      context,
-      device: "qa-stream-deck-plus",
-      event: "dialUp",
-      payload,
-    }),
-  );
+  harness.send({
+    action,
+    context,
+    device: "qa-stream-deck-plus",
+    event: "dialUp",
+    payload,
+  });
   const feedback = await waitFor(() =>
     outbound
       .slice(before)
@@ -240,18 +134,6 @@ async function pressMode(mode, commandIndex, expectedTitle) {
 }
 
 try {
-  await waitFor(() => {
-    if (childResult) {
-      throw new Error(
-        `Plugin exited before connecting: ${JSON.stringify(childResult)} ${output.join("")}`,
-      );
-    }
-    return socket;
-  });
-  await waitFor(() =>
-    outbound.some((message) => message.event === "registerPlugin"),
-  );
-
   const firstExpected = initialPlan.active ? "OFF" : "ACTIVE";
   const secondExpected = initialPlan.active ? "ACTIVE" : "OFF";
   const firstPlanFeedback = await pressMode("plan", 1, firstExpected);
@@ -317,7 +199,7 @@ try {
   );
 } catch (error) {
   process.stderr.write(
-    `${output.join("")}\n${JSON.stringify(
+    `${harness.output()}\n${JSON.stringify(
       outbound.filter(
         (message) =>
           contexts.includes(message.context) || message.event === "showAlert",
@@ -326,12 +208,7 @@ try {
   );
   throw error;
 } finally {
-  for (const [signal, handler] of signalHandlers) process.off(signal, handler);
-  child.kill("SIGTERM");
-  await Promise.race([once(child, "exit"), delay(2_000)]);
-  for (const client of server.clients) client.close();
-  server.close();
-  const failures = restoreOnce();
+  const failures = await harness.close();
   if (failures.length) {
     process.stderr.write(`restore failures: ${failures.join("; ")}\n`);
     process.exitCode = 1;

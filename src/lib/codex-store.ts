@@ -42,7 +42,7 @@ import {
   type LiveComposerState,
 } from "./codex-ui-control.js";
 
-const LIVE_COMPOSER_CACHE_MS = 1_000;
+export const LIVE_COMPOSER_CACHE_MS = 2_500;
 
 export {
   activeDesktopThreadId,

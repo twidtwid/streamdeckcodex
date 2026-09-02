@@ -1,7 +1,7 @@
 import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 
 const guardScript = "com.todd.streamdeckcodex.sdPlugin/scripts/ptt-guard.mjs";
@@ -14,10 +14,12 @@ function fixture(): { directory: string; log: string; runner: string } {
     runner,
     `#!/bin/sh
 printf '%s\\n' "$*" >> "$STREAMDECK_PTT_TEST_LOG"
-if [ "$STREAMDECK_PTT_FAIL_DOWN" = "1" ] && [ "$2" = "shortcut" ]; then
+if [ "$STREAMDECK_PTT_FAIL_DOWN" = "1" ] && [ "$1" = "dictation-start" ]; then
+  printf '%s\n' "mock dictation-start failure" >&2
   exit 7
 fi
 if [ "$STREAMDECK_PTT_FAIL_TARGET" = "1" ] && [ "$1" = "target-verify" ]; then
+  printf '%s\n' "mock target failure" >&2
   exit 8
 fi
 exit 0
@@ -33,30 +35,26 @@ function runGuard(options: {
   failTarget?: boolean;
   maxHoldMs?: number;
   targetWitness?: boolean;
-}): Promise<{ code: number | null; lines: string[]; ready: boolean }> {
+}): Promise<{
+  code: number | null;
+  lines: string[];
+  ready: boolean;
+  stderr: string;
+}> {
   const { log, runner } = fixture();
   return new Promise((resolve, reject) => {
-    const child = spawn(
-      process.execPath,
-      [guardScript, "control.applescript"],
-      {
-        stdio: ["pipe", "pipe", "pipe"],
-        env: {
-          ...process.env,
-          STREAMDECK_PTT_RUNNER: runner,
-          STREAMDECK_PTT_TEST_LOG: log,
-          STREAMDECK_PTT_MAX_HOLD_MS: String(options.maxHoldMs ?? 2_000),
-          ...(options.failDown ? { STREAMDECK_PTT_FAIL_DOWN: "1" } : {}),
-          ...(options.failTarget ? { STREAMDECK_PTT_FAIL_TARGET: "1" } : {}),
-          ...(options.targetWitness
-            ? {
-                STREAMDECK_PTT_TARGET_RUNNER: runner,
-                STREAMDECK_PTT_WITNESS_TOKEN: "opaque-witness-token",
-              }
-            : {}),
-        },
+    const child = spawn(process.execPath, [guardScript], {
+      stdio: ["pipe", "pipe", "pipe"],
+      env: {
+        ...process.env,
+        STREAMDECK_PTT_TARGET_RUNNER: runner,
+        STREAMDECK_PTT_WITNESS_TOKEN: "opaque-witness-token",
+        STREAMDECK_PTT_TEST_LOG: log,
+        STREAMDECK_PTT_MAX_HOLD_MS: String(options.maxHoldMs ?? 2_000),
+        ...(options.failDown ? { STREAMDECK_PTT_FAIL_DOWN: "1" } : {}),
+        ...(options.failTarget ? { STREAMDECK_PTT_FAIL_TARGET: "1" } : {}),
       },
-    );
+    });
     let ready = false;
     let stderr = "";
     child.stderr.setEncoding("utf8");
@@ -76,20 +74,21 @@ function runGuard(options: {
         reject(new Error(stderr || `Guard exited with ${code}`));
         return;
       }
-      resolve({ code, lines, ready });
+      resolve({ code, lines, ready, stderr });
     });
   });
 }
 
-describe("push-to-talk key lease", () => {
-  it("releases the accelerator when the parent closes its pipe", async () => {
+describe("push-to-talk dictation lease", () => {
+  it("stops native dictation when the parent closes its pipe", async () => {
     const result = await runGuard({ closeAfterReady: true });
 
     expect(result.ready).toBe(true);
     expect(result.code).toBe(0);
     expect(result.lines).toEqual([
-      "control.applescript shortcut dictation-down",
-      "control.applescript dictation-up",
+      "target-verify opaque-witness-token",
+      "dictation-start opaque-witness-token",
+      "dictation-stop",
     ]);
   });
 
@@ -98,9 +97,11 @@ describe("push-to-talk key lease", () => {
 
     expect(result.ready).toBe(false);
     expect(result.code).not.toBe(0);
+    expect(result.stderr).toContain("mock dictation-start failure");
     expect(result.lines).toEqual([
-      "control.applescript shortcut dictation-down",
-      "control.applescript dictation-up",
+      "target-verify opaque-witness-token",
+      "dictation-start opaque-witness-token",
+      "dictation-stop",
     ]);
   });
 
@@ -110,12 +111,13 @@ describe("push-to-talk key lease", () => {
     expect(result.ready).toBe(true);
     expect(result.code).toBe(0);
     expect(result.lines).toEqual([
-      "control.applescript shortcut dictation-down",
-      "control.applescript dictation-up",
+      "target-verify opaque-witness-token",
+      "dictation-start opaque-witness-token",
+      "dictation-stop",
     ]);
   });
 
-  it("checks the exact task/window witness at PTT key boundaries", async () => {
+  it("checks the exact task/window witness before native dictation starts", async () => {
     const result = await runGuard({
       closeAfterReady: true,
       targetWitness: true,
@@ -124,9 +126,8 @@ describe("push-to-talk key lease", () => {
     expect(result.ready).toBe(true);
     expect(result.lines).toEqual([
       "target-verify opaque-witness-token",
-      "control.applescript shortcut dictation-down",
-      "target-verify opaque-witness-token",
-      "control.applescript dictation-up",
+      "dictation-start opaque-witness-token",
+      "dictation-stop",
     ]);
   });
 
@@ -134,16 +135,17 @@ describe("push-to-talk key lease", () => {
     const result = await runGuard({ failTarget: true, targetWitness: true });
 
     expect(result.ready).toBe(false);
+    expect(result.stderr).toContain("mock target failure");
     expect(result.lines).toEqual([
       "target-verify opaque-witness-token",
-      "target-verify opaque-witness-token",
-      "control.applescript dictation-up",
+      "dictation-stop",
     ]);
   });
 
   it("registers startup, process-exit, and page-hide cleanup", () => {
     const plugin = readFileSync("src/plugin.ts", "utf8");
     const command = readFileSync("src/actions/command.ts", "utf8");
+    const automation = readFileSync("src/lib/automation.ts", "utf8");
     const control = readFileSync(
       "com.todd.streamdeckcodex.sdPlugin/scripts/codex-control.applescript",
       "utf8",
@@ -159,11 +161,19 @@ describe("push-to-talk key lease", () => {
     expect(plugin).toContain('process.once("exit"');
     expect(command).toContain("async onWillDisappear");
     expect(command).toContain("await endDictation()");
-    expect(control.match(/key down/g)).toHaveLength(2);
-    expect(control).toContain('if payload is "dictation-down" then');
+    expect(automation).toContain("await captureLiveTarget(threadId)");
+    expect(automation).not.toContain(
+      "const witnessToken = await verifyLiveTarget(threadId)",
+    );
+    expect(control).toContain('tell application id "com.openai.codex"');
+    expect(control).not.toContain('application "/Applications/Codex.app"');
+    expect(control).not.toContain("key down");
     expect(control).toContain('key up "d"');
     expect(control).toContain("key up shift");
     expect(control).toContain("key up control");
+    expect(automation).toContain('stdio: ["pipe", "pipe", "pipe"]');
+    expect(automation).toContain("guardError");
+    expect(automation).toContain('["dictation-stop"]');
   });
 
   it("bounds every AppleScript cleanup so missing Accessibility cannot block boot", () => {
@@ -173,5 +183,20 @@ describe("push-to-talk key lease", () => {
     expect(automation).toContain('killSignal: "SIGKILL"');
     expect(automation).toContain('child.kill("SIGKILL")');
     expect(automation).toContain("timed out after ${timeoutMs} ms");
+  });
+
+  it("recognizes only the visible Codex composer dictation states", () => {
+    const native = "com.todd.streamdeckcodex.sdPlugin/bin/codex-ui-control";
+    for (const scenario of [
+      "idle",
+      "recording",
+      "retry",
+      "system-menu-rejected",
+      "wrong-state-rejected",
+    ]) {
+      expect(spawnSync(native, ["--dictation-fixture", scenario]).status).toBe(
+        0,
+      );
+    }
   });
 });

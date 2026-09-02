@@ -66,15 +66,20 @@ describe("physical input acceptance", () => {
     });
   });
 
-  it("static release guard: PTT releases every synthesized modifier", () => {
+  it("PTT uses native composer dictation and retains legacy key-up cleanup only", () => {
     const script = source(
       "com.todd.streamdeckcodex.sdPlugin/scripts/codex-control.applescript",
     );
+    const guard = source(
+      "com.todd.streamdeckcodex.sdPlugin/scripts/ptt-guard.mjs",
+    );
 
-    expect(script).toContain('key down "d"');
+    expect(script).not.toContain("key down");
     expect(script).toContain('key up "d"');
     expect(script).toContain("key up shift");
     expect(script).toContain("key up control");
+    expect(guard).toContain('runTargetControl("dictation-start"');
+    expect(guard).toContain('runTargetControl("dictation-stop")');
   });
 
   it("requires compiled visible Plan and Fast transitions", () => {
@@ -93,7 +98,10 @@ describe("physical input acceptance", () => {
   });
 
   it("static release guard: native synthesized input always has an unconditional release", () => {
-    const native = source("native/CodexUIControl.swift");
+    const native = [
+      source("native/Accessibility.swift"),
+      source("native/ComposerControls.swift"),
+    ].join("\n");
 
     expect(native).toContain("var postedDown = false");
     expect(native).toContain("defer {");

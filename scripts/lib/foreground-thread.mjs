@@ -4,19 +4,61 @@ import { join } from "node:path";
 
 const THREAD_ID =
   /conversationId=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
+const CHUNK_BYTES = 1024 * 1024;
+const MAX_SCAN_BYTES = 128 * 1024 * 1024;
+const OVERLAP_BYTES = 8 * 1024;
 
-function tail(path, limit = 1024 * 1024) {
+function range(path, start, end) {
   let descriptor;
   try {
     descriptor = openSync(path, "r");
-    const size = statSync(path).size;
-    const length = Math.min(size, limit);
+    const length = Math.max(0, end - start);
     const buffer = Buffer.alloc(length);
-    readSync(descriptor, buffer, 0, length, size - length);
+    readSync(descriptor, buffer, 0, length, start);
     return buffer.toString("utf8");
   } finally {
     if (descriptor !== undefined) closeSync(descriptor);
   }
+}
+
+function witness(text, fallback) {
+  const lines = text.split("\n");
+  for (let index = lines.length - 1; index >= 0; index -= 1) {
+    const line = lines[index] ?? "";
+    if (
+      !line.includes("thread_stream_view_activity_changed") ||
+      !line.includes("active=true") ||
+      !line.includes("rendererWindowAppearance=primary") ||
+      !line.includes("rendererWindowFocused=true")
+    ) {
+      continue;
+    }
+    const id = line.match(THREAD_ID)?.[1];
+    if (!id) continue;
+    const timestamp = line.match(
+      /(?:^|\s)(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z)(?:\s|$)/,
+    )?.[1];
+    const observedAt = timestamp ? Date.parse(timestamp) : Number.NaN;
+    return {
+      id,
+      observedAt: Number.isFinite(observedAt) ? observedAt : fallback,
+    };
+  }
+  return undefined;
+}
+
+function latestWitness(path) {
+  const stat = statSync(path);
+  const minimum = Math.max(0, stat.size - MAX_SCAN_BYTES);
+  let end = stat.size;
+  while (end > minimum) {
+    const start = Math.max(minimum, end - CHUNK_BYTES);
+    const windowStart = Math.max(minimum, start - OVERLAP_BYTES);
+    const result = witness(range(path, windowStart, end), stat.mtimeMs);
+    if (result) return { ...result, modifiedAt: stat.mtimeMs };
+    end = start;
+  }
+  return undefined;
 }
 
 export function activeForegroundThreadId(now = new Date()) {
@@ -40,21 +82,13 @@ export function activeForegroundThreadId(now = new Date()) {
     }
   });
   logs.sort((left, right) => statSync(right).mtimeMs - statSync(left).mtimeMs);
-  for (const path of logs.slice(0, 8)) {
-    const lines = tail(path).split("\n");
-    for (let index = lines.length - 1; index >= 0; index -= 1) {
-      const line = lines[index] ?? "";
-      if (
-        !line.includes("thread_stream_view_activity_changed") ||
-        !line.includes("active=true") ||
-        !line.includes("rendererWindowAppearance=primary") ||
-        !line.includes("rendererWindowFocused=true")
-      ) {
-        continue;
-      }
-      const match = line.match(THREAD_ID);
-      if (match?.[1]) return match[1];
-    }
-  }
-  return undefined;
+  return logs
+    .slice(0, 8)
+    .map(latestWitness)
+    .filter(Boolean)
+    .sort(
+      (left, right) =>
+        right.observedAt - left.observedAt ||
+        right.modifiedAt - left.modifiedAt,
+    )[0]?.id;
 }

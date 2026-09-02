@@ -1,5 +1,4 @@
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -9,6 +8,7 @@ const native = resolve(
 
 type FixtureAction =
   | "--composer-draft-fixture"
+  | "--composer-witness-argument-fixture"
   | "--selector-fixture"
   | "--transaction-fixture"
   | "--mode-transition-fixture"
@@ -94,6 +94,15 @@ describe("native single-pass AX selectors", () => {
 });
 
 describe("native compiled action decisions", () => {
+  it.each(["missing", "empty-placeholder", "encoded-witness"])(
+    "distinguishes a fresh composer capture from witness reuse: %s",
+    (scenario) => {
+      expect(run("--composer-witness-argument-fixture", scenario).status).toBe(
+        0,
+      );
+    },
+  );
+
   it.each([
     "chromium-placeholder",
     "chatgpt-placeholder",
@@ -157,32 +166,9 @@ describe("native compiled action decisions", () => {
       expect(run("--workspace-shortcut-fixture", scenario).status).toBe(0);
     },
   );
-
-  it("pairs pointer clicks and uses semantic press for final picker selection", () => {
-    const source = readFileSync("native/CodexUIControl.swift", "utf8");
-    const implementation = source.match(
-      /func clickMenuItem[\s\S]*?\n}\n\nfunc pressEscape/,
-    )?.[0];
-    expect(implementation).toContain("mouseType: .mouseMoved");
-    expect(implementation).toContain("mouseType: .leftMouseDown");
-    expect(implementation).toContain("mouseType: .leftMouseUp");
-    expect(implementation).toContain("restore?.post");
-    expect(implementation).toContain("if postedDown");
-    expect(source).toContain("try clickMenuItem(advanced.element)");
-    expect(source).toContain("AXUIElementPerformAction(");
-    expect(source).toContain("settledTarget.element");
-    expect(source).toContain("kAXPressAction as CFString");
-  });
 });
 
 describe("native exact-target transaction", () => {
-  it("does not fail activation merely because Codex is already frontmost", () => {
-    const source = readFileSync("native/CodexUIControl.swift", "utf8");
-    expect(source).toMatch(
-      /if !isCodexFrontmost\(app\) \{\s*guard app\.activate\(\)/,
-    );
-  });
-
   it.each([
     "valid",
     "workspace-frontmost",
