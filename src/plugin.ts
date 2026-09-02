@@ -50,16 +50,16 @@ streamDeck.actions.registerAction(reasoning);
 streamDeck.actions.registerAction(usage);
 
 export const refresh = async (): Promise<void> => {
+  // The account-usage fetch spawns the app server at most once per window;
+  // it runs off the critical path and keys render the last cached value.
+  void codexStore.usageSnapshot();
   // One bounded composer observation per tick feeds every key that projects
   // live input; the store limits it to one native spawn per cache window and
   // keeps a structured reason when Codex is unreachable.
   await codexStore.refreshLiveComposer().catch(() => undefined);
-  // The account-usage fetch spawns the app server; it runs off the critical
-  // path and keys render the last cached value.
-  void codexStore.usageSnapshot();
   // Health summarizes what was observed and logs only transitions.
   // Rendering continues so every surface can show the same bounded reason.
-  const healthSnapshot = await collectHealth(codexStore);
+  const healthSnapshot = collectHealth(codexStore);
   healthTransitions.observe(healthSnapshot, (message) =>
     streamDeck.logger.info(message),
   );

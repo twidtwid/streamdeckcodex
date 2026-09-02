@@ -120,7 +120,9 @@ describe("focused native approval status", () => {
     try {
       await expect(store.refreshLiveComposer()).rejects.toThrow("no a");
       focused = "b";
-      now += LIVE_COMPOSER_CACHE_MS; // also expires the 700 ms focus cache
+      // Past the 700 ms focus cache but well inside the 2.5 s window, so only
+      // the thread change can let the read through.
+      now += 701;
       await expect(store.refreshLiveComposer()).rejects.toThrow("no b");
       expect(reader).toHaveBeenLastCalledWith("b");
     } finally {
@@ -151,6 +153,47 @@ describe("focused native approval status", () => {
         "busy",
       );
       now += 1;
+      await store.refreshLiveComposer();
+      expect(reader).toHaveBeenCalledTimes(2);
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
+  it("an observation superseded by a failed press does not re-arm the cadence", async () => {
+    let now = 10_000;
+    const clock = vi.spyOn(Date, "now").mockImplementation(() => now);
+    const state = {
+      pendingInput: false,
+      approvalMode: "ask" as const,
+      conversationId: "focused",
+      rendererWindowId: "renderer-focused",
+    };
+    let releaseRead!: () => void;
+    // Only the first observation stays in flight; later ones resolve at once.
+    const reader = vi.fn(async () => {
+      if (reader.mock.calls.length > 1) return state;
+      await new Promise<void>((resolve) => (releaseRead = resolve));
+      return state;
+    });
+    const store = new CodexStore({
+      activeThreadId: () => "focused",
+      liveComposerReader: reader,
+      approvalCycler: async () => {
+        throw new Error("Codex is busy");
+      },
+    });
+    try {
+      const inFlight = store.refreshLiveComposer();
+      await expect(store.cycleLiveComposerApprovalMode()).rejects.toThrow(
+        "busy",
+      );
+      now += 300;
+      releaseRead();
+      await inFlight;
+      expect(reader).toHaveBeenCalledTimes(1);
+
+      now += 1_250;
       await store.refreshLiveComposer();
       expect(reader).toHaveBeenCalledTimes(2);
     } finally {

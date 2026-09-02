@@ -231,9 +231,8 @@ export class CodexStore {
     | undefined;
   #liveComposerPromise: Promise<void> | undefined;
   #liveComposerFollowup = false;
-  #liveComposerReadAt = 0;
-  /** Thread the last completed observation targeted, successful or not. */
-  #liveComposerReadThreadId: string | undefined;
+  /** The last completed observation, successful or not, and its thread. */
+  #lastComposerRead: { at: number; threadId: string | undefined } | undefined;
   #liveComposerGeneration = 0;
   #liveComposerMutating = false;
   #liveComposerUnavailable = false;
@@ -341,7 +340,10 @@ export class CodexStore {
     if (cached && sameFile(cached.identity, identity)) return cached;
     const tail = this.#rolloutReader(canonicalPath);
     const events = this.#rolloutParser(tail);
-    if (identity)
+    // The reader reports a failed read as an empty tail. Never pin that for a
+    // file the stat says has content, or a transient error would stick until
+    // the file changed.
+    if (identity && (tail !== "" || identity.size === 0))
       this.#rolloutCache.set(canonicalPath, { identity, tail, events });
     else this.#rolloutCache.delete(canonicalPath);
     return { tail, events };
@@ -495,11 +497,12 @@ export class CodexStore {
       this.#liveComposerUnavailableReason = "no-focus";
       return;
     }
+    const last = this.#lastComposerRead;
     if (
       !force &&
-      this.#liveComposerReadAt > 0 &&
-      now - this.#liveComposerReadAt < LIVE_COMPOSER_CACHE_MS &&
-      this.#liveComposerReadThreadId === threadId
+      last &&
+      now - last.at < LIVE_COMPOSER_CACHE_MS &&
+      last.threadId === threadId
     )
       return;
     const readOnce = async (): Promise<void> => {
@@ -508,8 +511,7 @@ export class CodexStore {
       if (!requestedThreadId) {
         this.#liveComposerUnavailable = true;
         this.#liveComposerUnavailableReason = "no-focus";
-        this.#liveComposerReadAt = Date.now();
-        this.#liveComposerReadThreadId = undefined;
+        this.#lastComposerRead = { at: Date.now(), threadId: undefined };
         return;
       }
       let state: LiveComposerState | undefined;
@@ -522,9 +524,15 @@ export class CodexStore {
         throw error;
       } finally {
         // A failed observation counts toward the cadence too; without this
-        // the helper is respawned every tick while Codex is unreachable.
-        this.#liveComposerReadAt = Date.now();
-        this.#liveComposerReadThreadId = requestedThreadId;
+        // the helper is respawned every tick while Codex is unreachable. An
+        // observation a user press superseded is discarded and must not
+        // re-arm the cadence that press just cleared.
+        if (generation === this.#liveComposerGeneration) {
+          this.#lastComposerRead = {
+            at: Date.now(),
+            threadId: requestedThreadId,
+          };
+        }
       }
       if (
         generation === this.#liveComposerGeneration &&
@@ -597,7 +605,7 @@ export class CodexStore {
       this.#liveComposerCache = undefined;
       // A failed user press must not be rate-limited: the next tick
       // re-observes immediately.
-      this.#liveComposerReadAt = 0;
+      this.#lastComposerRead = undefined;
       this.#liveComposerUnavailable = true;
       this.#liveComposerUnavailableReason = availabilityReasonFromError(error);
       this.#cache = undefined;
@@ -611,8 +619,7 @@ export class CodexStore {
   #setLiveComposer(state: LiveComposerState): void {
     const now = Date.now();
     this.#liveComposerCache = { at: now, state };
-    this.#liveComposerReadAt = now;
-    this.#liveComposerReadThreadId = state.conversationId;
+    this.#lastComposerRead = { at: now, threadId: state.conversationId };
     this.#liveComposerUnavailable = false;
     this.#liveComposerUnavailableReason = "not-exposed";
     this.#cache = undefined;
@@ -778,14 +785,13 @@ export class CodexStore {
         reason = availabilityReasonFromError(error);
         try {
           snapshot = this.recentThreads(12)
-            .map((thread) => parseLatestUsage(readFileTail(thread.rolloutPath)))
+            .map((thread) =>
+              parseLatestUsage(this.#rolloutTail(thread.rolloutPath)),
+            )
             .filter((usage): usage is UsageSnapshot => usage !== undefined)
             .sort((left, right) => right.observedAt - left.observedAt)[0];
-        } catch (fallbackError) {
-          // Keep the more specific fetch reason (timeout, busy) over a generic
-          // fallback failure.
-          if (reason === "not-exposed")
-            reason = availabilityReasonFromError(fallbackError);
+        } catch {
+          // The fetch reason is the useful one; a fallback failure adds nothing.
         }
       }
       this.#usageCache = {
@@ -799,7 +805,11 @@ export class CodexStore {
     return this.#usagePromise;
   }
 
-  /** The last fetched usage, served synchronously while a refresh is in flight. */
+  /**
+   * The last successful fetch within the current window, served synchronously
+   * while a refresh is in flight. A failed refresh clears it so stale usage is
+   * never shown as current.
+   */
   usageSnapshotCached(): UsageSnapshot | undefined {
     return this.#usageCache?.snapshot;
   }
@@ -808,12 +818,10 @@ export class CodexStore {
     const snapshot = this.#usageCache?.snapshot;
     return snapshot
       ? ready(snapshot, snapshot.observedAt)
-      : unavailable(this.#usageCache?.reason ?? "not-exposed");
-  }
-
-  async usageAvailability(): Promise<Availability<UsageSnapshot>> {
-    await this.usageSnapshot();
-    return this.usageAvailabilityCached();
+      : unavailable(
+          this.#usageCache?.reason ?? "not-exposed",
+          this.#usageCache?.at,
+        );
   }
 
   #open(): DatabaseSync {
