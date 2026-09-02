@@ -6,8 +6,12 @@ import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 const packageJson = JSON.parse(readFileSync("package.json", "utf8")) as {
+  version: string;
   scripts: Record<string, string>;
 };
+const manifest = JSON.parse(
+  readFileSync("com.todd.streamdeckcodex.sdPlugin/manifest.json", "utf8"),
+) as { Version: string };
 const temporaryRoots: string[] = [];
 
 afterEach(() => {
@@ -17,6 +21,10 @@ afterEach(() => {
 });
 
 describe("non-repeating check pipeline", () => {
+  it("keeps the package and four-part Stream Deck versions aligned", () => {
+    expect(manifest.Version).toBe(`${packageJson.version}.0`);
+  });
+
   it("checks generated sources, builds native once, and uses a pretest-free unit stage", () => {
     const check = packageJson.scripts.check!;
     expect(check).toBe(
