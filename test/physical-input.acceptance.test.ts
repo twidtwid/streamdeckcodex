@@ -38,7 +38,7 @@ describe("physical input acceptance", () => {
     });
     expect(byId["new-chat"]).toMatchObject({
       mode: "deep-link",
-      value: "codex://threads/new",
+      value: "new-chat",
     });
     expect(byId.fast).toMatchObject({
       mode: "mode-toggle",

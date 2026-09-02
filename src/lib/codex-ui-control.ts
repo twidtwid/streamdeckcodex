@@ -85,7 +85,6 @@ function invoke(
     | "model"
     | "reasoning"
     | "composer-read"
-    | "mode-read"
     | "mode-toggle"
     | "approval-cycle"
     | "dispatch"
@@ -93,8 +92,7 @@ function invoke(
     | "workflow"
     | "route"
     | "target-capture"
-    | "target-check"
-    | "target-verify",
+    | "target-check",
   requested?: string,
   timeoutMs?: number,
   threadId?: string,
@@ -333,10 +331,6 @@ export const __liveComposerTest = {
   },
 };
 
-export async function readLivePicker(): Promise<LivePickerState> {
-  return invoke("read");
-}
-
 export type CodexMode = "plan" | "fast";
 export type CodexApprovalMode = "ask" | "approve" | "yolo" | "custom";
 
@@ -355,16 +349,6 @@ function verifiedModeResult(
     );
   }
   return { mode: requested, active: result.active };
-}
-
-export async function readLiveMode(
-  mode: CodexMode,
-  threadId: string,
-): Promise<LiveModeState> {
-  return verifiedModeResult(
-    mode,
-    await invoke("mode-read", mode, undefined, threadId),
-  );
 }
 
 export async function toggleLiveMode(
@@ -491,12 +475,6 @@ export async function captureLiveTarget(threadId: string): Promise<string> {
     throw new Error("Codex returned no exact current focused window witness.");
   }
   return result.witnessToken;
-}
-
-export async function verifyLiveTargetAtMutation(
-  witnessToken: string,
-): Promise<void> {
-  await invoke("target-verify", witnessToken);
 }
 
 export function pickerFailureLabel(error: unknown): string {

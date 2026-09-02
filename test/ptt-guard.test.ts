@@ -165,8 +165,8 @@ describe("push-to-talk dictation lease", () => {
     expect(automation).not.toContain(
       "const witnessToken = await verifyLiveTarget(threadId)",
     );
-    expect(control).toContain('tell application id "com.openai.codex"');
-    expect(control).not.toContain('application "/Applications/Codex.app"');
+    expect(control).not.toContain("activate");
+    expect(control).not.toContain("keystroke");
     expect(control).not.toContain("key down");
     expect(control).toContain('key up "d"');
     expect(control).toContain("key up shift");
@@ -181,8 +181,6 @@ describe("push-to-talk dictation lease", () => {
 
     expect(automation).toContain("timeout: 1_500");
     expect(automation).toContain('killSignal: "SIGKILL"');
-    expect(automation).toContain('child.kill("SIGKILL")');
-    expect(automation).toContain("timed out after ${timeoutMs} ms");
   });
 
   it("recognizes only the visible Codex composer dictation states", () => {

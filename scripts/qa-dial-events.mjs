@@ -8,7 +8,7 @@ import {
   selectionPayload,
   snapshotLiveState,
 } from "./lib/live-state-journal.mjs";
-import { activeForegroundThreadId } from "./lib/foreground-thread.mjs";
+import { activeDesktopThreadId } from "../src/lib/desktop-active.ts";
 import {
   createStreamDeckActionHarness,
   delay,
@@ -76,7 +76,7 @@ async function readPicker(threadId, timeout = 8_000) {
 }
 
 const activeThreadId = requireConnectedQaTarget(
-  activeForegroundThreadId(),
+  activeDesktopThreadId(),
   process.env.STREAMDECK_QA_THREAD_ID,
 );
 spawnSync("/usr/bin/open", [`codex://threads/${activeThreadId}`]);
