@@ -10,8 +10,10 @@ Console in `marketplace/media/`:
 - `gallery-04-key-actions.png`
 - `app-icon.png` — 288 × 288 Maker Console app icon
 
-Every image is a 1920 × 960 PNG. The generator builds the compositions from
-the project’s generated profile-key renderings in `.cache/profile-visual-qa`.
+Every image is a 1920 × 960 PNG. Maker Console uploads come straight from
+this directory; there is no separate submission copy to keep in sync. The
+generator builds the compositions from the project’s generated profile-key
+renderings in `.cache/profile-visual-qa`.
 Those renders contain only this project’s original key artwork; the media does
 not include Codex, Stream Deck, or other application screenshots.
 
