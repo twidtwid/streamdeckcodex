@@ -10,10 +10,11 @@ All notable changes to this project are documented here.
   cadence as a successful one, so an unreachable or backgrounded Codex no
   longer spawns the helper on every tick.
 - The account-usage fetch runs off the refresh tick's critical path; keys
-  render the last cached value and the Quota key shows `NO DATA` for a few
-  seconds after start instead of delaying the first tick.
-- Health collection reads cached state on the tick; `npm run doctor` still
-  takes a full live snapshot.
+  render the last cached value. After plugin start the Quota key shows
+  `NO DATA` until the first app-server usage read completes (bounded by its
+  five-second timeout) instead of delaying the first tick.
+- Health collection summarizes cached state on the tick; `npm run doctor`
+  still observes the composer and usage live before summarizing.
 - The app server now receives the real plugin version in `clientInfo`.
 
 ### Removed
