@@ -50,6 +50,8 @@ import {
 export const LIVE_COMPOSER_CACHE_MS = 2_500;
 /** Cheap SQLite and desktop-log projections are reused within one tick. */
 const STORE_CACHE_MS = 700;
+/** One bounded `codex app-server` spawn per window for account limits. */
+const USAGE_CACHE_MS = 30_000;
 
 export {
   activeDesktopThreadId,
@@ -204,8 +206,11 @@ export class CodexStore {
   readonly #acknowledged = new Map<string, number>();
   #database: DatabaseSync | undefined;
   #cache: { at: number; snapshots: AgentSnapshot[] } | undefined;
-  #usageCache: { at: number; snapshot?: UsageSnapshot } | undefined;
+  #usageCache:
+    | { at: number; snapshot?: UsageSnapshot; reason?: AvailabilityReason }
+    | undefined;
   #usagePromise: Promise<UsageSnapshot | undefined> | undefined;
+  readonly #usageFetcher: () => Promise<UsageSnapshot>;
   #contextCache:
     | {
         at: number;
@@ -261,8 +266,10 @@ export class CodexStore {
       rolloutReader?: (path: string) => string;
       rolloutParser?: (content: string) => RolloutEvent[];
       modelReader?: (path: string) => string;
+      usageFetcher?: () => Promise<UsageSnapshot>;
     } = {},
   ) {
+    this.#usageFetcher = options.usageFetcher ?? fetchAccountUsage;
     this.codexHome = options.codexHome ?? resolveCodexHome();
     this.databasePath =
       options.databasePath ?? resolveStateDatabase(this.codexHome);
@@ -323,17 +330,29 @@ export class CodexStore {
     return { ...record, ...rollout, displayTitle: readableThreadTitle(record) };
   }
 
-  #rolloutEvents(path: string): RolloutEvent[] {
+  /**
+   * One bounded tail read per rollout file version. Status reduction and
+   * context both consume it, so the focused rollout is read once per tick.
+   */
+  #rolloutEntry(path: string): { tail: string; events: RolloutEvent[] } {
     const canonicalPath = resolve(path);
     const identity = this.#fileObserver(canonicalPath);
     const cached = this.#rolloutCache.get(canonicalPath);
-    if (cached && sameFile(cached.identity, identity)) return cached.events;
+    if (cached && sameFile(cached.identity, identity)) return cached;
     const tail = this.#rolloutReader(canonicalPath);
     const events = this.#rolloutParser(tail);
     if (identity)
       this.#rolloutCache.set(canonicalPath, { identity, tail, events });
     else this.#rolloutCache.delete(canonicalPath);
-    return events;
+    return { tail, events };
+  }
+
+  #rolloutEvents(path: string): RolloutEvent[] {
+    return this.#rolloutEntry(path).events;
+  }
+
+  #rolloutTail(path: string): string {
+    return this.#rolloutEntry(path).tail;
   }
 
   #retainRolloutCache(): void {
@@ -643,7 +662,7 @@ export class CodexStore {
       return this.#contextCache.availability;
     }
     const availability = contextAvailabilityFromLines(
-      this.#rolloutReader(thread.rolloutPath),
+      this.#rolloutTail(thread.rolloutPath),
       thread.id,
       now,
     );
@@ -738,26 +757,40 @@ export class CodexStore {
     this.#focusedProjectionCache = undefined;
   }
 
+  /**
+   * Refresh account usage at most once per window. Never rejects: a failed
+   * fetch and a failed rollout fallback both record a structured reason so
+   * the tick can kick this without awaiting it.
+   */
   async usageSnapshot(): Promise<UsageSnapshot | undefined> {
     const now = Date.now();
-    if (this.#usageCache && now - this.#usageCache.at < 30_000) {
+    if (this.#usageCache && now - this.#usageCache.at < USAGE_CACHE_MS) {
       return this.#usageCache.snapshot;
     }
     if (this.#usagePromise) return this.#usagePromise;
 
     this.#usagePromise = (async () => {
       let snapshot: UsageSnapshot | undefined;
+      let reason: AvailabilityReason = "not-exposed";
       try {
-        snapshot = await fetchAccountUsage();
-      } catch {
-        snapshot = this.recentThreads(12)
-          .map((thread) => parseLatestUsage(readFileTail(thread.rolloutPath)))
-          .filter((usage): usage is UsageSnapshot => usage !== undefined)
-          .sort((left, right) => right.observedAt - left.observedAt)[0];
+        snapshot = await this.#usageFetcher();
+      } catch (error) {
+        reason = availabilityReasonFromError(error);
+        try {
+          snapshot = this.recentThreads(12)
+            .map((thread) => parseLatestUsage(readFileTail(thread.rolloutPath)))
+            .filter((usage): usage is UsageSnapshot => usage !== undefined)
+            .sort((left, right) => right.observedAt - left.observedAt)[0];
+        } catch (fallbackError) {
+          // Keep the more specific fetch reason (timeout, busy) over a generic
+          // fallback failure.
+          if (reason === "not-exposed")
+            reason = availabilityReasonFromError(fallbackError);
+        }
       }
       this.#usageCache = {
         at: Date.now(),
-        ...(snapshot ? { snapshot } : {}),
+        ...(snapshot ? { snapshot } : { reason }),
       };
       return snapshot;
     })().finally(() => {
@@ -766,15 +799,21 @@ export class CodexStore {
     return this.#usagePromise;
   }
 
+  /** The last fetched usage, served synchronously while a refresh is in flight. */
+  usageSnapshotCached(): UsageSnapshot | undefined {
+    return this.#usageCache?.snapshot;
+  }
+
+  usageAvailabilityCached(): Availability<UsageSnapshot> {
+    const snapshot = this.#usageCache?.snapshot;
+    return snapshot
+      ? ready(snapshot, snapshot.observedAt)
+      : unavailable(this.#usageCache?.reason ?? "not-exposed");
+  }
+
   async usageAvailability(): Promise<Availability<UsageSnapshot>> {
-    try {
-      const snapshot = await this.usageSnapshot();
-      return snapshot
-        ? ready(snapshot, snapshot.observedAt)
-        : unavailable("not-exposed");
-    } catch (error) {
-      return unavailable(availabilityReasonFromError(error));
-    }
+    await this.usageSnapshot();
+    return this.usageAvailabilityCached();
   }
 
   #open(): DatabaseSync {

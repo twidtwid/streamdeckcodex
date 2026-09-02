@@ -71,7 +71,7 @@ const relevantStatus = git(
 );
 const store = new CodexStore();
 try {
-  const health = await collectHealth(store);
+  const health = await collectHealth(store, { refresh: true });
   const report = {
     schemaVersion: 1,
     build: {

@@ -29,13 +29,22 @@ function summarize<T>(
     : availability;
 }
 
+/**
+ * Summarize what the store last observed. By default this reads only cached
+ * state, so the per-tick transition log costs no native or child-process
+ * work; the doctor passes `refresh: true` for a full live snapshot.
+ */
 export async function collectHealth(
   store: CodexStore,
+  options: { refresh?: boolean } = {},
 ): Promise<HealthSnapshot> {
-  try {
-    await store.refreshLiveComposer();
-  } catch {
-    // The store retains a structured reason for the health snapshot.
+  if (options.refresh) {
+    try {
+      await store.refreshLiveComposer();
+    } catch {
+      // The store retains a structured reason for the health snapshot.
+    }
+    await store.usageSnapshot();
   }
   const composer = store.liveComposerAvailability();
   const input = inputReleaseSnapshot();
@@ -66,7 +75,7 @@ export async function collectHealth(
         (snapshot) => snapshot.current,
       ),
       usage: summarize(
-        await store.usageAvailability(),
+        store.usageAvailabilityCached(),
         (snapshot) => `${Math.round(100 - snapshot.usedPercent)}% left`,
       ),
       input: inputHealth,
