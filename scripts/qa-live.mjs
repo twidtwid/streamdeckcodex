@@ -7,7 +7,8 @@ import {
   resolveStateDatabase,
 } from "../src/lib/codex-store.ts";
 import { activeDesktopThreadId } from "../src/lib/desktop-active.ts";
-import { parseLatestContext } from "../src/lib/context.ts";
+import { contextAvailabilityFromLines } from "../src/lib/context.ts";
+import { supportedModelOptions } from "../src/lib/model.ts";
 import { fetchAccountUsage } from "../src/lib/usage.ts";
 
 const codexHome = resolveCodexHome();
@@ -60,16 +61,12 @@ if (!reasoningLevels.includes(current.reasoning_effort)) {
   );
 }
 
-// Any other catalog model with the same reasoning coverage is a safe
-// round-trip target; the catalog, not a hard-coded slug list, decides.
-const alternateModel = models.find(
-  (model) =>
-    typeof model.slug === "string" &&
-    model.slug !== current.model &&
-    /-(luna|terra|sol)$/i.test(model.slug) &&
-    (model.supported_reasoning_levels ?? []).some(
-      (item) => item.effort === current.reasoning_effort,
-    ),
+// The plugin's own catalog filter decides which models exist; pick any other
+// offered model that supports the current effort as the round-trip target.
+const alternateModel = supportedModelOptions(cache).find(
+  (option) =>
+    option.slug !== current.model &&
+    option.supportedReasoning.includes(current.reasoning_effort),
 );
 const alternateEffort = reasoningLevels.find(
   (effort) => effort !== current.reasoning_effort,
@@ -129,17 +126,18 @@ try {
     expected: "number",
     observed: typeof usage.usedPercent,
   });
-  const context = parseLatestContext(
+  const context = contextAvailabilityFromLines(
     readFileSync(current.rollout_path, "utf8"),
     current.id,
   );
   results.push({
     control: "Focused live context",
     expected: activeThreadId,
-    observed: context?.threadId ?? "--",
-    detail: context
-      ? `${context.usedTokens}/${context.maxTokens} (${context.remainingPercent}% left)`
-      : "--",
+    observed: context.state === "ready" ? context.value.threadId : "--",
+    detail:
+      context.state === "ready"
+        ? `${context.value.usedTokens}/${context.value.maxTokens} (${context.value.remainingPercent}% left)`
+        : context.reason,
   });
 } finally {
   const restored = readSettings();

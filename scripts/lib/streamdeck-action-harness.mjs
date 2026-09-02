@@ -22,8 +22,8 @@ export async function waitFor(
   throw new Error(`Timed out waiting for ${message}`);
 }
 
-function pluginVersion() {
-  const manifest = JSON.parse(
+function pluginManifest() {
+  return JSON.parse(
     readFileSync(
       resolve(
         import.meta.dirname,
@@ -35,31 +35,36 @@ function pluginVersion() {
       "utf8",
     ),
   );
-  return String(manifest.Version);
 }
 
 /**
- * Stream Deck runs plugins on its own embedded Node. Pick the newest
- * installed major-24 runtime so a Stream Deck update does not silently
- * break the connected harness on a pinned patch version.
+ * Stream Deck runs plugins on its own embedded Node. Follow the major the
+ * manifest declares and pick the newest installed patch of it, so neither a
+ * Stream Deck update nor a manifest runtime bump silently leaves the connected
+ * harness on a different runtime than the plugin.
  */
-function streamDeckNodeRuntime() {
+function streamDeckNodeRuntime(manifest) {
+  const major = String(manifest.Nodejs?.Version ?? "");
+  if (!/^\d+$/.test(major)) {
+    throw new Error("The plugin manifest declares no Node.js major version.");
+  }
   const root = resolve(
     homedir(),
     "Library/Application Support/com.elgato.StreamDeck/NodeJS",
   );
+  const pattern = new RegExp(`^${major}\\.\\d+\\.\\d+$`);
   const candidates = readdirSync(root)
-    .filter((name) => /^24\.\d+\.\d+$/.test(name))
+    .filter((name) => pattern.test(name))
     .sort((left, right) =>
       right.localeCompare(left, undefined, { numeric: true }),
     );
   if (candidates.length === 0) {
-    throw new Error(`No Stream Deck Node 24 runtime found under ${root}`);
+    throw new Error(`No Stream Deck Node ${major} runtime found under ${root}`);
   }
   return resolve(root, candidates[0], "node");
 }
 
-function pluginInfo() {
+function pluginInfo(manifest) {
   return JSON.stringify({
     application: {
       font: ".AppleSystemUIFont",
@@ -78,7 +83,10 @@ function pluginInfo() {
         type: 7,
       },
     ],
-    plugin: { uuid: "com.todd.streamdeckcodex", version: pluginVersion() },
+    plugin: {
+      uuid: "com.todd.streamdeckcodex",
+      version: String(manifest.Version),
+    },
   });
 }
 
@@ -107,6 +115,10 @@ export async function createStreamDeckActionHarness({
   env = {},
   restore = () => [],
 }) {
+  // Resolve the runtime before binding the socket so a missing runtime fails
+  // with nothing left open.
+  const manifest = pluginManifest();
+  const nodeRuntime = streamDeckNodeRuntime(manifest);
   const server = new WebSocketServer({ host: "127.0.0.1", port: 0 });
   await once(server, "listening");
   const address = server.address();
@@ -135,7 +147,7 @@ export async function createStreamDeckActionHarness({
   });
 
   const child = spawn(
-    streamDeckNodeRuntime(),
+    nodeRuntime,
     [
       plugin,
       "-port",
@@ -145,7 +157,7 @@ export async function createStreamDeckActionHarness({
       "-registerEvent",
       "registerPlugin",
       "-info",
-      pluginInfo(),
+      pluginInfo(manifest),
     ],
     {
       env: { ...process.env, NODE_ENV: "development", ...env },

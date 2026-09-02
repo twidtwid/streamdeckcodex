@@ -62,7 +62,7 @@
     "audit:production": "npm audit --omit=dev --audit-level=high",
     "deps:outdated": "npm outdated",
     "public:check": "node scripts/check-public-tree.mjs",
-    "qa:store": "node scripts/qa-live.mjs",
+    "qa:store": "node scripts/run-qa-store.mjs",
     "qa:dials": "node scripts/qa-dial-events.mjs",
     "qa:modes": "node scripts/qa-mode-events.mjs",
     "qa:keys:preflight": "node scripts/qa-profile-keys.mjs --preflight",

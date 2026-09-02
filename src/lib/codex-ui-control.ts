@@ -81,7 +81,6 @@ function ensureNativeHelperExecutable(executablePath: string): void {
 
 function invoke(
   action:
-    | "read"
     | "model"
     | "reasoning"
     | "composer-read"

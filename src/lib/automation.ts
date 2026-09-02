@@ -41,10 +41,12 @@ export async function executeCommand(
   threadId?: string,
 ): Promise<LiveModeState | undefined> {
   if (command.mode === "deep-link") {
-    if (command.id === "new-chat") await openNewChat();
-    else if (command.id === "skills") await openSkills();
+    // The value names the verified native route, so the catalog entry and
+    // the dispatch cannot drift apart.
+    if (command.value === "new-chat") await openNewChat();
+    else if (command.value === "skills") await openSkills();
     else
-      throw new Error(`Unsupported verified deep-link command: ${command.id}`);
+      throw new Error(`Unsupported verified deep-link route: ${command.value}`);
     return undefined;
   }
   if (!threadId) {
