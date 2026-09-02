@@ -41,15 +41,21 @@ or endorsed by OpenAI, Elgato, or Corsair.
 - **Setup guide:** https://github.com/twidtwid/streamdeckcodex#install-from-github
 - **Privacy:** https://github.com/twidtwid/streamdeckcodex#privacy-and-security
 
-## Release notes — 0.1.0
+## Release notes — 0.2.1
 
-Initial public beta:
+- Repairs the bundled native helper's executable permission on fresh installs
+- Documents the separate `trampoline_handler` Accessibility grant used by
+  Stream Deck 7.5
 
+## Release notes — 0.2
+
+- Editable profiles generated for Stream Deck, Mini, Neo, XL, and Stream Deck +
+  from one 50-key contract
 - Live Codex chat status, unread, running, approval, usage, and context keys
 - Fast-mode and permission controls, including Ask, Approve, YOLO, and Custom
 - Push-to-talk, compact, new chat, new project, workflow, and command actions
 - Stream Deck + dials for sessions, actions, model, and reasoning effort
-- Editable profiles for Stream Deck, Mini, Neo, XL, and Stream Deck +
+- Reason-coded failure states instead of an ambiguous Unknown
 - Local-only macOS integration with no API keys or telemetry
 
 ## Media

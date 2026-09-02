@@ -119,7 +119,7 @@
         "layout": "$B1",
         "TriggerDescription": {
           "Push": "Apply displayed effort",
-          "Rotate": "Adjust reasoning effort"
+          "Rotate": "Preview reasoning effort"
         }
       },
       "Icon": "imgs/actions/reasoning",
@@ -151,12 +151,12 @@
           "Image": "imgs/actions/navigator"
         }
       ],
-      "Tooltip": "Browse recent Codex chats on the touch strip and open one with the dial.",
+      "Tooltip": "Rotate to browse recent Codex chats and press to open the selected one.",
       "UUID": "com.todd.streamdeckcodex.agent-navigator"
     },
     {
       "Controllers": ["Keypad"],
-      "Icon": "imgs/actions/context",
+      "Icon": "imgs/actions/usage",
       "Name": "Live Usage",
       "States": [
         {
@@ -169,7 +169,7 @@
     },
     {
       "Controllers": ["Keypad"],
-      "Icon": "imgs/actions/usage",
+      "Icon": "imgs/actions/context",
       "Name": "Live Context",
       "States": [
         {

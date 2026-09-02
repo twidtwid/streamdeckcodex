@@ -33,7 +33,7 @@
     ["send", "Send composer"],
     ["new-chat", "New chat"],
     ["fast", "Toggle Fast mode"],
-    ["plan", "Enable Plan mode"],
+    ["plan", "Toggle Plan mode"],
     ["compact", "Compact task"],
     ["skills", "Open Skills"],
     ["sidebar", "Toggle sidebar"],
@@ -46,7 +46,7 @@
 
   const workflowOptions = [
     ["pr-review", "PR review"],
-    ["debug", "Debug and fix"],
+    ["debug", "Debug"],
     ["refactor", "Refactor"],
     ["tests", "Add tests"],
   ];
@@ -86,7 +86,7 @@
     if (actionId.endsWith(".agent-status")) {
       html =
         number("slot", "Agent slot", 1, 1, 8) +
-        `<p class="muted note">Slots follow Codex chat recency. Press a key to open and acknowledge that chat.</p>`;
+        `<p class="muted note">Slots follow Codex chat recency; the bundled pages place slots 1 to 6. Press a key to open and acknowledge that chat.</p>`;
     } else if (actionId.endsWith(".command")) {
       html =
         controller === "Encoder"
@@ -100,7 +100,7 @@
     } else if (actionId.endsWith(".reasoning")) {
       html = `<p class="muted note">The dial reads the model's supported levels from Codex and applies changes to the active chat.</p>`;
     } else if (actionId.endsWith(".agent-navigator")) {
-      html = `<p class="muted note">Rotate to browse recent chats, press or tap to open, and hold the touch strip to start a new chat.</p>`;
+      html = `<p class="muted note">Rotate to browse recent chats and press to open the selected one. With no recent chats, press starts a new chat. Touch-strip taps and holds are intentionally inert.</p>`;
     } else {
       html = `<p class="muted note">No settings are required for this action.</p>`;
     }

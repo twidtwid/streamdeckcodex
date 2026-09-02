@@ -12,7 +12,16 @@ body:
     id: version
     attributes:
       label: Plugin version
-      placeholder: 0.1.0
+      placeholder: 0.2.1
+    validations:
+      required: true
+
+  - type: input
+    id: build
+    attributes:
+      label: Doctor build line
+      description: The first line printed by `npm run doctor` (version, commit, tree state), or the plugin version from the Stream Deck app if you installed a release
+      placeholder: Codex Companion 0.2.1.0 6badd40… (clean)
     validations:
       required: true
 

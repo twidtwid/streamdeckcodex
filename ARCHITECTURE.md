@@ -15,22 +15,43 @@ Codex's databases, rollout files, or configuration.
 
 ## Source layout
 
-| Path                            | Responsibility                                                                         |
-| ------------------------------- | -------------------------------------------------------------------------------------- |
-| `src/plugin.ts`                 | Action registration, profile activation, serialized refresh lifecycle, cleanup         |
-| `src/actions/`                  | Stream Deck key and dial event handlers                                                |
-| `src/lib/codex-store.ts`        | Shared read model for tasks, live composer state, context, model, reasoning, and usage |
-| `src/lib/codex-ui-control.ts`   | Typed bridge to the native Accessibility helper                                        |
-| `src/lib/app-server*.ts`        | Bounded Codex app-server transport and allowed operations                              |
-| `src/lib/bounded-process.ts`    | Output caps and TERM/KILL/reap lifecycle shared by child processes                     |
-| `native/Accessibility.swift`    | Accessibility traversal and element helpers                                            |
-| `native/Targeting.swift`        | Exact frontmost task/window witnesses and incremental continuity checks                |
-| `native/ComposerControls.swift` | Picker, composer, mode, permission, PTT, and workflow operations                       |
-| `native/Models.swift`           | Native request, response, snapshot, and error types                                    |
-| `native/Fixtures.swift`         | Compiled native fixture entry points used by acceptance tests                          |
-| `native/main.swift`             | Native command allow-list and CLI dispatch                                             |
-| `scripts/`                      | Generated assets/profiles, packaging, release validation, and connected QA             |
-| `test/`                         | Unit, compiled-native, event-path, profile, visual, and safety regression tests        |
+| Path                                                         | Responsibility                                                                     |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| `src/plugin.ts`                                              | Action registration, profile activation, serialized refresh lifecycle, cleanup     |
+| `src/types.ts`                                               | Shared snapshot and record types                                                   |
+| `src/actions/`                                               | Stream Deck key and dial event handlers, one file per action                       |
+| `src/lib/codex-store.ts`                                     | Read model for tasks, live composer state, context, model, reasoning, and usage    |
+| `src/lib/codex-ui-control.ts`                                | Typed bridge to the native Accessibility helper                                    |
+| `src/lib/automation.ts`                                      | Command dispatch, workflow launch, and the push-to-talk lifecycle                  |
+| `src/lib/input-release-guard.ts`                             | Idempotent held-input release ledger used by push-to-talk                          |
+| `src/lib/app-server-rpc.ts`                                  | Bounded JSON-line transport to `codex app-server`                                  |
+| `src/lib/app-server.ts`                                      | Allowed app-server operations and Codex binary discovery                           |
+| `src/lib/bounded-process.ts`                                 | Output caps and TERM/KILL/reap lifecycle shared by child processes                 |
+| `src/lib/desktop-active.ts`                                  | Focused-thread witness from the Codex desktop logs                                 |
+| `src/lib/rollout-status.ts`                                  | Rollout JSONL reduction into idle/running/unread/needs-input/error                 |
+| `src/lib/context.ts`, `usage.ts`                             | Token-context and account-usage parsing and availability                           |
+| `src/lib/model.ts`, `reasoning.ts`                           | Model catalog filtering and dial preview/apply state                               |
+| `src/lib/availability.ts`                                    | `Availability<T>` and the reason-code vocabulary every surface shares              |
+| `src/lib/health.ts`                                          | Health snapshot and transition logging                                             |
+| `src/lib/commands.ts`, `workflows.ts`, `keycap-workflows.ts` | Static catalogs of commands, dial commands, and keycap workflows                   |
+| `src/lib/chat-label.ts`                                      | Compact session labels for keys and the touch strip                                |
+| `src/lib/visuals.ts`                                         | SVG key renderers, dial feedback shapes, and the status palette                    |
+| `src/lib/render-cache.ts`                                    | Deduplicated, serialized key and dial transport                                    |
+| `src/lib/refresh-coordinator.ts`                             | Serial tick runner that collapses overlapping refreshes                            |
+| `src/lib/bundled-profiles.ts`                                | Device-type to profile mapping and activation checks                               |
+| `src/lib/build-info.ts`                                      | Build identity injected by the bundler                                             |
+| `src/lib/lucide-paths.ts`, `wordmark-paths.ts`               | Generated icon and wordmark path data                                              |
+| `native/Accessibility.swift`                                 | Accessibility traversal and element helpers                                        |
+| `native/Targeting.swift`                                     | Exact frontmost task/window witnesses and incremental continuity checks            |
+| `native/ComposerControls.swift`                              | Picker, composer, mode, permission, PTT, and workflow operations                   |
+| `native/Models.swift`                                        | Native request, response, snapshot, and error types                                |
+| `native/Fixtures.swift`                                      | Compiled native fixture entry points used by acceptance tests                      |
+| `native/main.swift`                                          | Native command allow-list and CLI dispatch                                         |
+| `profile-src/`                                               | `profile-contract.json` (the 50-key source of truth) and generated device profiles |
+| `com.todd.streamdeckcodex.sdPlugin/`                         | Manifest, action artwork, property inspector, and the `ptt-guard.mjs` watchdog     |
+| `scripts/`                                                   | Generated assets/profiles, packaging, release validation, and connected QA         |
+| `marketplace/`, `assets/`                                    | Maker Console media and the fonts and photos the generators use                    |
+| `test/`                                                      | Unit, compiled-native, event-path, profile, visual, and safety regression tests    |
 
 ## Runtime flow
 
@@ -57,8 +78,10 @@ visible UI before displaying success.
   scoped to the frontmost primary Codex chat.
 - Dial rotation changes only local preview state. A press performs at most one
   apply transaction.
-- Synthesized key or mouse input is not used for PTT. Legacy key-up cleanup is
-  release-only and idempotent.
+- Synthesized key or mouse input is not used for PTT. The out-of-process
+  `ptt-guard.mjs` watchdog stops dictation if the plugin dies, the page
+  changes, or the maximum hold elapses. Legacy key-up cleanup is release-only
+  and idempotent.
 - Child stdout and JSON-line responses have hard caps. stderr is retained only
   as a bounded tail. Timeout and shutdown paths close stdin, escalate from TERM
   to KILL, and confirm process exit.

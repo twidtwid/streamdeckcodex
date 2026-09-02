@@ -44,9 +44,11 @@ installation is required.
 ### Included profiles
 
 The editable profile for the connected model should install automatically.
-Every layout starts with Live Controls, followed by Agents & Sessions, then the
-workflow pages. Mini splits sections across additional pages to fit its six
-keys without dropping actions.
+Stream Deck + opens on Agents & Sessions, followed by Live Controls, then the
+five workflow pages. The button-only layouts (Stream Deck, Mini, Neo, XL) open
+on Live Controls, followed by Agents & Sessions, then the workflow pages. Mini
+splits sections across additional pages (twelve in total) to fit its six keys
+without dropping actions.
 
 If no profile appears, download and open the matching release asset:
 
@@ -58,10 +60,11 @@ If no profile appears, download and open the matching release asset:
 | Stream Deck XL   | `streamdeckcodex-xl.streamDeckProfile`          |
 | Stream Deck +    | `streamdeckcodex-plus.streamDeckProfile`        |
 
-The first page contains FAST, Permissions, PTT, Quota, YEET, New Project,
+Live Controls contains FAST, Permissions, PTT, Quota, YEET, New Project,
 Compact, and Context. Agents & Sessions contains six live chat slots, New Chat,
-and Plan. The remaining sections are Git & Delivery, Code Quality, Decisions,
-Workspace, and Codex Panels.
+and Plan; the Agent Status action supports up to eight slots if you add keys.
+The remaining sections are Git & Delivery, Code Quality, Decisions, Workspace,
+and Codex Panels.
 
 Reinstalling a profile creates another copy instead of overwriting personal
 changes. Remove an older test copy in Stream Deck's Profiles settings if you no
@@ -77,8 +80,8 @@ Codex version, and the failing action when
 
 ## What it does
 
-- Shows six recent Codex chats with live idle, running, unread, needs-input,
-  error, and focused states.
+- Shows up to eight recent Codex chats (six on the bundled pages) with live
+  idle, running, unread, needs-input, error, and focused states.
 - Opens the exact chat represented by a key or dial.
 - Toggles FAST and Plan only after verifying the visible Codex result.
 - Cycles the focused chat's real permission choices: Ask, Approve, YOLO, and
@@ -95,7 +98,9 @@ Codex version, and the failing action when
   signed-in Codex model catalog; Ultra appears only when the selected model
   advertises it.
 - Provides an optional read-only Companion Health action and `npm run doctor`
-  report without adding another key to the bundled profiles.
+  report. The Health action is not placed on any bundled page; add it from the
+  action list, and press it to cycle through focus, permissions, context,
+  model, reasoning, usage, and input.
 
 ### Live status colors
 
@@ -179,10 +184,21 @@ The plugin refuses ambiguous focus instead of sending input to another chat.
 
 Open the intended Codex chat and keep its composer frontmost, then press
 Permissions again. The key reads the visible composer; it does not guess from
-saved configuration or another chat. It now shows a compact cause such as
-`No Chat`, `Background`, `Access`, `Timeout`, `Wrong Chat`, or `No Data` instead
-of the ambiguous `Unknown`. The read-only doctor reports the same stable reason
-codes in full.
+saved configuration or another chat. Instead of a success state it shows one of
+these causes, which the Health action and `npm run doctor` report as the
+matching reason code:
+
+| Key label     | Reason code          | Meaning                                               |
+| ------------- | -------------------- | ----------------------------------------------------- |
+| `No Chat`     | `no-focus`           | No focused primary Codex chat was found               |
+| `Background`  | `codex-background`   | Codex is not the frontmost app                        |
+| `Access`      | `accessibility`      | macOS Accessibility permission is missing             |
+| `Stale`       | `stale`              | The newest local data is older than the freshness cap |
+| `Unsupported` | `unsupported-schema` | Codex exposed data in a shape this build cannot read  |
+| `Timeout`     | `timeout`            | The native read did not finish within its budget      |
+| `Wrong Chat`  | `target-mismatch`    | Focus moved to a different chat during the read       |
+| `Busy`        | `busy`               | A draft or an in-flight operation blocked the read    |
+| `No Data`     | `not-exposed`        | Codex did not expose the control at all               |
 
 ### No profile appeared
 
@@ -200,9 +216,10 @@ value from another chat. Run:
 npm run doctor
 ```
 
-The report gives a compact reason such as `no-focus`, `codex-background`,
-`stale`, or `unsupported-schema`. It is local and omits task IDs, titles,
-prompts, transcripts, URLs, and full paths by default.
+The report gives one of the reason codes from the table above. It is local and
+omits task IDs, titles, prompts, transcripts, URLs, and full paths by default;
+pass `--include-paths` to include the resolved install path, and `--json` for
+the machine-readable form.
 
 ### Reporting a bug
 
@@ -226,7 +243,10 @@ Include the plugin build SHA printed by `npm run doctor -- --json`.
 
 ## Build from source
 
-Development requires Node.js 24, librsvg, and ImageMagick.
+Development requires Node.js 24, the Xcode command-line tools (for `swiftc`),
+librsvg, and ImageMagick. Stream Deck runs the plugin on its own embedded
+Node 24, so verify on Node 24 before a release even when a newer Node is on
+your PATH.
 
 ```sh
 git clone https://github.com/twidtwid/streamdeckcodex.git
@@ -240,10 +260,29 @@ Useful commands:
 
 ```sh
 npm run check       # formatting, types, tests, visual QA, build, validation
+npm test            # build the native helper, then run every test
+npm run test:fast   # unit tests only; no native helper or subprocesses
 npm run pack        # create dist/com.todd.streamdeckcodex.streamDeckPlugin
 npm run qa:design   # render and evaluate every profile key
 npm run doctor      # read-only installed/runtime health and build identity
 ```
+
+Run a single test file with `npx vitest run test/<name>.test.ts`.
+
+### Environment variables
+
+| Variable                     | Read by        | Effect                                                          |
+| ---------------------------- | -------------- | --------------------------------------------------------------- |
+| `CODEX_HOME`                 | plugin, doctor | Codex home directory (default `~/.codex`)                       |
+| `CODEX_SQLITE_HOME`          | plugin, doctor | Directory or file for `state_5.sqlite`; overrides `config.toml` |
+| `CODEX_UI_CONTROL`           | plugin, doctor | Path to the native helper (default `bin/codex-ui-control`)      |
+| `STREAMDECK_CODEX_BIN`       | plugin, doctor | Codex CLI used for the local app-server usage read              |
+| `STREAMDECK_PTT_MAX_HOLD_MS` | push-to-talk   | Maximum hold before dictation stops (default 60000)             |
+| `STREAMDECK_CODEX_ROOT`      | doctor         | Repository root the doctor reports against                      |
+
+The plugin sets `STREAMDECK_PTT_TARGET_RUNNER` and
+`STREAMDECK_PTT_WITNESS_TOKEN` for its own push-to-talk guard; they are not
+user settings.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the runtime boundaries, source
 layout, polling model, and safety invariants.
@@ -265,7 +304,8 @@ creation, documentation checks, and a read-only doctor report. Connected
 mutations remain separate and must be run explicitly with
 `npm run release:verify:connected` only after the visible composer is empty.
 
-The release should contain:
+Pushing a `v*` tag runs `release:bundle` in GitHub Actions and publishes the
+release. It contains:
 
 - `com.todd.streamdeckcodex.streamDeckPlugin`
 - `streamdeckcodex-stream-deck.streamDeckProfile`
@@ -273,6 +313,7 @@ The release should contain:
 - `streamdeckcodex-neo.streamDeckProfile`
 - `streamdeckcodex-xl.streamDeckProfile`
 - `streamdeckcodex-plus.streamDeckProfile`
+- `SHA256SUMS.txt`
 - release notes naming supported macOS, Stream Deck, and Codex versions
 
 The package includes this project's MIT license and complete license texts for
