@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented here.
 
+## 0.2.1 — 2026-09-02
+
+### Fixed
+
+- Repair the bundled native helper's executable permission before spawning it;
+  Elgato's plugin packer stores the helper as `0644` in fresh installs.
+- Document the separate `trampoline_handler` Accessibility grant used by
+  Stream Deck 7.5 to launch plugin processes.
+
 ## 0.1.0-beta.1 — 2026-07-26
 
 First friend-test beta.

@@ -1,7 +1,18 @@
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { EventEmitter } from "node:events";
-import { describe, expect, it } from "vitest";
+import { chmodSync, mkdtempSync, statSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
 import { __nativeControlTest } from "../src/lib/codex-ui-control.js";
+
+const temporaryDirectories: string[] = [];
+
+afterEach(() => {
+  for (const directory of temporaryDirectories.splice(0)) {
+    spawnSync("trash", [directory]);
+  }
+});
 
 class StubbornChild extends EventEmitter {
   readonly stdout = new EventEmitter() as EventEmitter & {
@@ -25,6 +36,26 @@ class StubbornChild extends EventEmitter {
 }
 
 describe("native control timeout lifecycle", () => {
+  it("repairs an installed native helper that lost its executable bit", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "streamdeck-native-mode-"));
+    temporaryDirectories.push(directory);
+    const executable = join(directory, "fixture.mjs");
+    writeFileSync(
+      executable,
+      [
+        "#!/usr/bin/env node",
+        'process.stdout.write(JSON.stringify({ ok: true, action: "read", message: "ok" }));',
+        "",
+      ].join("\n"),
+    );
+    chmodSync(executable, 0o644);
+
+    await expect(
+      __nativeControlTest.invokeWithExecutable("read", executable, 1_000),
+    ).resolves.toMatchObject({ ok: true, action: "read" });
+    expect(statSync(executable).mode & 0o111).not.toBe(0);
+  });
+
   it("rejects oversized native output before it can grow unbounded", async () => {
     const child = new StubbornChild();
     const spawnStubborn = (() => child) as unknown as typeof spawn;

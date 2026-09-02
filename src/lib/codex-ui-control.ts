@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { accessSync, chmodSync, constants } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { BoundedTextBuffer, terminateAndReap } from "./bounded-process.js";
@@ -67,6 +68,17 @@ function isNativeFailureCode(value: unknown): value is NativeFailureCode {
   ].includes(value as NativeFailureCode);
 }
 
+function ensureNativeHelperExecutable(executablePath: string): void {
+  try {
+    accessSync(executablePath, constants.X_OK);
+  } catch {
+    // Elgato's .streamDeckPlugin packer stores bundled binaries as 0644.
+    // Repair the installed copy before spawning it instead of requiring a
+    // manual chmod after every fresh install or update.
+    chmodSync(executablePath, 0o755);
+  }
+}
+
 function invoke(
   action:
     | "read"
@@ -90,6 +102,7 @@ function invoke(
   spawnProcess: typeof spawn = spawn,
 ): Promise<NativeControlResult> {
   return new Promise((resolvePromise, reject) => {
+    if (spawnProcess === spawn) ensureNativeHelperExecutable(executablePath);
     const args = [
       action,
       ...(requested !== undefined || threadId ? [requested ?? ""] : []),

@@ -33,8 +33,10 @@ Requirements:
 2. Download `com.todd.streamdeckcodex.streamDeckPlugin` from the newest release.
 3. Double-click the downloaded file and approve installation in Stream Deck.
 4. Open Codex and select a chat.
-5. Grant **Stream Deck** Accessibility permission in
-   **System Settings → Privacy & Security → Accessibility**.
+5. In **System Settings → Privacy & Security → Accessibility**, grant
+   access to **Elgato Stream Deck** and, when listed, its
+   **trampoline_handler** helper. Stream Deck 7.5 launches plugin processes
+   through that helper, so macOS may require both entries.
 
 No API key, account token, background service, or separate Codex CLI
 installation is required.
@@ -121,8 +123,9 @@ command accidentally.
 ## macOS Accessibility
 
 Commands that operate Codex's visible UI need Accessibility permission for the
-Stream Deck App. The native helper has a fixed allow-list; it cannot execute an
-arbitrary shell command.
+Stream Deck App and, on Stream Deck versions that use it to launch plugins, the
+listed `trampoline_handler` helper. The native helper has a fixed allow-list;
+it cannot execute an arbitrary shell command.
 
 Plan, FAST, Model, Reasoning, and Permissions reread the visible Codex control
 before reporting success. If Codex changes focus, contains a draft where that
