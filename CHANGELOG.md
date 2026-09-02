@@ -27,6 +27,14 @@ All notable changes to this project are documented here.
 
 ### Fixed
 
+- Model and reasoning dials work again with the current Codex picker: the
+  live state is read from the picker title, models are chosen from **Select
+  model**, and effort is stepped through the five-segment **Power** control
+  with the readout verified after every click. Picker transactions get the
+  same 12-second budget as the verified mode toggle.
+- Permissions cycle only through the modes Codex offers, so Full Access cycles
+  back to Ask when no Custom mode exists, and the one-time Full Access
+  confirmation is optional.
 - `qa:store` could not start on any Node version; it now runs through the
   same bundler as the doctor.
 - The build-pipeline test skipped the keypad-profile generator check and

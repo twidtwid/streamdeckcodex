@@ -414,7 +414,12 @@ struct NeutralAXQuery {
                   let buttonFrame = button.elementFrame,
                   !buttonFrame.isEmpty
             else { continue }
-            let buttonText = visibleText[buttonIndex]
+            // Chromium nests a static text that repeats the label inside the
+            // button, so descendant text reads "Confirm Confirm". Judge the
+            // button by its own text first and fall back to descendants only
+            // for an unlabeled button.
+            let ownText = neutralNodeText(button)
+            let buttonText = ownText.isEmpty ? visibleText[buttonIndex] : ownText
             let isConfirm = isFullAccessConfirmationButton(buttonText)
             let isCancel = normalized(buttonText) == "cancel"
             guard isConfirm || isCancel else { continue }
@@ -605,12 +610,12 @@ func ultraContinueButtonIndex(in query: NeutralAXQuery) -> Int? {
                         )
                     } == true)
         }
-        let continueButtons = buttons.filter {
-            normalized(query.visibleDescendantText[$0]) == "continue"
+        func ownLabel(_ index: Int) -> String {
+            let own = neutralNodeText(query.nodes[index])
+            return normalized(own.isEmpty ? query.visibleDescendantText[index] : own)
         }
-        let fullAccessButtons = buttons.filter {
-            normalized(query.visibleDescendantText[$0]) == "usefullaccess"
-        }
+        let continueButtons = buttons.filter { ownLabel($0) == "continue" }
+        let fullAccessButtons = buttons.filter { ownLabel($0) == "usefullaccess" }
         guard continueButtons.count == 1, fullAccessButtons.count == 1
         else { return nil }
         return (query.subtreeSizes[ownerIndex], continueButtons[0])

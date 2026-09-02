@@ -36,7 +36,7 @@ The design evaluator rejects:
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Page 1 sessions  | Six ordered live sessions, New Chat, and Plan Mode use the exact 50-key contract. Sessions use the same compact labels and status palette as Dial 1; the focused session shows `NOW`, and an empty slot shows `New chat / EMPTY SLOT` and opens a new chat.                                                                                                |
 | Page 2 controls  | FAST, Permissions, PTT, Quota, YEET, New Project, Compact, and Context appear once and remain legible at hardware size.                                                                                                                                                                                                                                    |
-| Permissions      | Reads the focused Codex window's visible mode. Press performs one native read-cycle-verify transaction; `APPROVE → YOLO` must confirm and dismiss Codex's interactive Full Access dialog before the key redraws `YOLO`.                                                                                                                                    |
+| Permissions      | Reads the focused Codex window's visible mode. Press performs one native read-cycle-verify transaction through the modes Codex offers; `APPROVE → YOLO` confirms Codex's Full Access dialog when it appears (first time only) before the key redraws `YOLO`, and `YOLO` cycles back to `ASK` when no Custom mode is offered.                               |
 | Usage            | Defaults to weekly percentage left and compact reset time; press toggles to available resets without consuming one.                                                                                                                                                                                                                                        |
 | Context          | Resolves only the focused primary task's fresh UTC-partitioned token snapshot. Press toggles remaining/exact views. Unknown is `CONTEXT / NO DATA` in both views.                                                                                                                                                                                          |
 | PTT              | Hold presses the focused composer's native `Dictate` control and must visibly confirm `Stop dictation`; release presses the native stop control and must confirm it disappears. No keyboard shortcut is synthesized. Timeout, process loss, page exit, and plugin shutdown all run idempotent stop cleanup.                                                |
@@ -98,12 +98,14 @@ turning the physical encoder, so physical-device evidence must still be observed
 on the installed build. A connected pass must record plugin SHA, Codex version,
 Stream Deck version, date, postcondition, and restoration result.
 
-Current Codex exposes compact picker state in the popup title and Model/Effort
-inside **Show advanced options**. Empty composers may expose `Do anything` or
-the Plan hint through AXValue rather than AXPlaceholderValue. The native gate
-has compiled fixtures for these placeholders, traverses the advanced picker,
-uses semantic AXPress for the final selection, and still rejects arbitrary
-draft text.
+Current Codex exposes the live model and effort in the picker button title,
+lists models under **Select model**, and sets effort with a five-segment
+**Power** control whose readout (`5.6 Sol Standard, 3 of 5.`) names the model,
+the level, and the segment. Empty composers may expose `Do anything` or the
+Plan hint through AXValue rather than AXPlaceholderValue. The native gate has
+compiled fixtures for these placeholders, the title and readout parsers, the
+Power stepping rule, and the offered-mode permission cycle, uses semantic
+AXPress for model selection, and still rejects arbitrary draft text.
 
 The complete non-connected release gate is `npm run release:verify`. It does
 not claim physical-device success. `npm run release:verify:connected` runs

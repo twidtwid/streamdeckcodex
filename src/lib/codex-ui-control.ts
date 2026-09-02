@@ -330,6 +330,8 @@ export const __liveComposerTest = {
   },
 };
 
+const PICKER_TRANSACTION_TIMEOUT_MS = 12_000;
+
 export type CodexMode = "plan" | "fast";
 export type CodexApprovalMode = "ask" | "approve" | "yolo" | "custom";
 
@@ -403,10 +405,12 @@ export async function applyLiveModel(
   pickerLabel: string,
   threadId: string,
 ): Promise<LivePickerState> {
+  // Picker transactions open a menu, press an item, and verify the visible
+  // title; give them the same bridge budget as the verified mode toggle.
   return invoke(
     "model",
     encodeNativePayload({ value: slug, label: pickerLabel }),
-    undefined,
+    PICKER_TRANSACTION_TIMEOUT_MS,
     threadId,
   );
 }
@@ -419,7 +423,7 @@ export async function applyLiveReasoning(
   return invoke(
     "reasoning",
     encodeNativePayload({ value: level, label: pickerLabel }),
-    undefined,
+    PICKER_TRANSACTION_TIMEOUT_MS,
     threadId,
   );
 }
