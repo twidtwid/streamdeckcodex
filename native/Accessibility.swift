@@ -3,6 +3,32 @@ import ApplicationServices
 import Darwin
 import Foundation
 
+// Chromium shells use AXEnhancedUserInterface; Electron also exposes its own
+// AXManualAccessibility switch. Both debounce activation for two seconds.
+// https://github.com/chromium/chromium/blob/main/chrome/browser/chrome_browser_application_mac.mm
+func initializePickerAccessibility(
+    read: (String) -> Bool,
+    enable: (String) -> AXError,
+    settle: () -> Void
+) -> String {
+    let manual = "AXManualAccessibility"
+    let enhanced = "AXEnhancedUserInterface"
+    if read(manual) || read(enhanced) { return "already enabled" }
+    let manualResult = enable(manual)
+    if manualResult == .success {
+        settle()
+        return "manual enabled"
+    }
+    guard manualResult == .attributeUnsupported || manualResult == .notImplemented else {
+        return "manual set=\(manualResult.rawValue)"
+    }
+    let enhancedResult = enable(enhanced)
+    // Chromium applies the switch before delegating to AppKit, which can
+    // report notImplemented even though activation has been scheduled.
+    if enhancedResult == .success || enhancedResult == .notImplemented { settle() }
+    return "manual set=\(manualResult.rawValue), enhanced set=\(enhancedResult.rawValue)"
+}
+
 func attribute(_ element: AXUIElement, _ name: CFString) -> CFTypeRef? {
     var value: CFTypeRef?
     guard AXUIElementCopyAttributeValue(element, name, &value) == .success else {
@@ -493,10 +519,30 @@ func uniqueComposerIndex(in query: NeutralAXQuery) -> Int? {
             let elementFrame = node.elementFrame
         else { return false }
         return elementFrame.width >= 240
-            && elementFrame.height >= 36
+            && elementFrame.height >= 16
             && !elementFrame.isEmpty
     }
-    return candidates.count == 1 ? candidates[0] : nil
+    // An unfocused composer can collapse to one 19px line. Identify it by
+    // the adjacent model/effort selector instead of requiring editing focus.
+    // This also distinguishes inline answer fields elsewhere in the task.
+    let paired = candidates.filter { index in
+        let region = composerControlRegion(query.nodes[index].elementFrame!)
+        return query.nodes.indices.filter { control in
+            let node = query.nodes[control]
+            return node.role == (kAXPopUpButtonRole as String)
+                && node.enabled && query.ownerIsVisible(control)
+                && node.elementFrame.map { region.intersects($0) } == true
+                && parsePickerTitle(node.title) != nil
+        }.count == 1
+    }
+    if !paired.isEmpty { return paired.count == 1 ? paired[0] : nil }
+    let expanded = candidates.filter { (query.nodes[$0].elementFrame?.height ?? 0) >= 36 }
+    return expanded.count == 1 ? expanded[0] : nil
+}
+
+func composerControlRegion(_ composerFrame: CGRect) -> CGRect {
+    CGRect(x: composerFrame.minX - 24, y: composerFrame.minY - 24,
+           width: composerFrame.width + 48, height: composerFrame.height + 112)
 }
 
 func controlIndex(
@@ -509,12 +555,7 @@ func controlIndex(
           let composerFrame = query.nodes[composerIndex].elementFrame else {
         return nil
     }
-    let region = CGRect(
-        x: composerFrame.minX - 24,
-        y: composerFrame.minY - 24,
-        width: composerFrame.width + 48,
-        height: composerFrame.height + 112
-    )
+    let region = composerControlRegion(composerFrame)
     let matches = query.nodes.indices.filter { index in
         let node = query.nodes[index]
         guard

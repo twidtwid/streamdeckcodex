@@ -2,8 +2,8 @@ import type { ModelOption } from "../types.js";
 import { normalizeReasoningLevels } from "./reasoning.js";
 import type { DialFeedback } from "./visuals.js";
 
-const MODEL_FAMILIES = ["luna", "terra", "sol"] as const;
-const MODEL_SLUG = /^gpt-[a-z0-9.-]+-(luna|terra|sol)$/i;
+const MODEL_FAMILIES = ["luna", "terra", "sol", "astra"] as const;
+const MODEL_SLUG = /^gpt-[a-z0-9.-]+-(luna|terra|sol|astra)$/i;
 const SAFE_DISPLAY_NAME = /^[a-z0-9 ._-]{1,64}$/i;
 const REASONING_LEVELS = new Set([
   "none",
@@ -12,6 +12,7 @@ const REASONING_LEVELS = new Set([
   "medium",
   "high",
   "xhigh",
+  "max",
   "ultra",
 ]);
 
@@ -36,7 +37,7 @@ export function supportedModelOptions(parsed: unknown): ModelOption[] {
   return MODEL_FAMILIES.flatMap((family) => {
     const model = models.find(
       (candidate) =>
-        typeof candidate.slug === "string" &&
+        typeof candidate?.slug === "string" &&
         candidate.slug.length <= 64 &&
         MODEL_SLUG.test(candidate.slug) &&
         candidate.slug.toLowerCase().endsWith(`-${family}`),
@@ -47,7 +48,10 @@ export function supportedModelOptions(parsed: unknown): ModelOption[] {
         .map((entry) => entry.effort?.toLowerCase())
         .filter(
           (effort): effort is string =>
-            typeof effort === "string" && REASONING_LEVELS.has(effort),
+            typeof effort === "string" &&
+            REASONING_LEVELS.has(effort) &&
+            // Current desktops advertise Max in the cache but skip it in Power.
+            effort !== "max",
         ),
     );
     if (supportedReasoning.length === 0) return [];

@@ -257,6 +257,7 @@ let effortLabels = [
     "medium": "Medium",
     "high": "High",
     "xhigh": "Extra High",
+    "max": "Max",
     "ultra": "Ultra",
 ]
 
@@ -272,7 +273,7 @@ func validatedModelSelection(_ payload: String) -> PickerSelectionRequest? {
         })
     else { return nil }
     let lower = request.value.lowercased()
-    let family = ["luna", "terra", "sol"].first(where: {
+    let family = ["luna", "terra", "sol", "astra"].first(where: {
         lower.hasSuffix("-\($0)")
     })
     guard let family, normalized(request.label) == normalized(family) else {

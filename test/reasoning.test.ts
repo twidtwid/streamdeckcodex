@@ -8,7 +8,7 @@ describe("reasoning effort", () => {
   it("orders and deduplicates supported levels", () => {
     expect(
       normalizeReasoningLevels(["high", "low", "max", "xhigh", "low"]),
-    ).toEqual(["low", "high", "xhigh"]);
+    ).toEqual(["low", "high", "xhigh", "max"]);
   });
 
   it("steps and clamps at supported boundaries", () => {

@@ -36,6 +36,10 @@ describe("native single-pass AX selectors", () => {
   it.each([
     "one-composer",
     "composer-visible",
+    "composer-compact",
+    "composer-compact-unpaired",
+    "composer-compact-hidden-picker",
+    "composer-compact-ambiguous",
     "zero-composers",
     "two-composers",
     "two-visible-composers",

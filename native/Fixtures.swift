@@ -71,6 +71,17 @@ func selectorFixtureNodes(_ scenario: String) -> [NeutralAXNode] {
         frame: CGRect(x: 0, y: 0, width: 900, height: 700)
     )
     switch scenario {
+    case "composer-compact", "composer-compact-unpaired", "composer-compact-hidden-picker", "composer-compact-ambiguous":
+        var nodes = [root,
+            selectorFixtureNode("compact", parentId: "root", role: kAXTextAreaRole as String, text: "", frame: CGRect(x: 260, y: 500, width: 525, height: 19)),
+            selectorFixtureNode("answer", parentId: "root", role: kAXTextAreaRole as String, text: "", frame: CGRect(x: 260, y: 180, width: 425, height: 20))]
+        if scenario != "composer-compact-unpaired" {
+            nodes.append(selectorFixtureNode("picker", parentId: "root", role: kAXPopUpButtonRole as String, text: "GPT-6 Astra Medium", frame: CGRect(x: 280, y: 545, width: 180, height: 28), hidden: scenario == "composer-compact-hidden-picker"))
+        }
+        if scenario == "composer-compact-ambiguous" {
+            nodes.append(selectorFixtureNode("other-picker", parentId: "root", role: kAXPopUpButtonRole as String, text: "5.6 Sol Medium", frame: CGRect(x: 280, y: 220, width: 180, height: 28)))
+        }
+        return nodes
     case "one-composer", "composer-visible":
         return [root, composer]
     case "zero-composers":
@@ -789,6 +800,7 @@ func fixtureComposerSnapshot(_ scenario: String) -> NeutralComposerSnapshot {
 }
 
 func runFixtureAction(_ action: String, arguments: [String]) {
+
     if action == "--composer-witness-argument-fixture" {
         let scenario = arguments.dropFirst().first ?? "missing"
         let requested: String?
@@ -842,9 +854,9 @@ func runFixtureAction(_ action: String, arguments: [String]) {
         let composerIndex = uniqueComposerIndex(in: query)
         let valid: Bool
         switch scenario {
-        case "one-composer", "composer-visible":
+        case "one-composer", "composer-visible", "composer-compact":
             valid = composerIndex != nil
-        case "zero-composers", "two-composers", "two-visible-composers", "composer-hidden-ancestor", "composer-offwindow":
+        case "zero-composers", "two-composers", "two-visible-composers", "composer-hidden-ancestor", "composer-offwindow", "composer-compact-unpaired", "composer-compact-hidden-picker", "composer-compact-ambiguous":
             valid = composerIndex == nil
         case "permission-inside":
             valid = composerIndex.flatMap {
@@ -1441,6 +1453,42 @@ func runFixtureAction(_ action: String, arguments: [String]) {
         let scenario = arguments.dropFirst().first ?? ""
         let valid: Bool
         switch scenario {
+        case "fast-control", "fast-control-hidden", "fast-control-disabled", "fast-control-ambiguous", "fast-speed-menu", "fast-speed-option":
+            let root = selectorFixtureNode("root", parentId: nil, role: kAXWindowRole as String, text: "", frame: CGRect(x: 0, y: 0, width: 900, height: 700))
+            let label = scenario == "fast-speed-menu" ? "Speed Standard" : scenario == "fast-speed-option" ? "Fast" : "Enable Fast mode"
+            let control = selectorFixtureNode("fast", parentId: "root", role: kAXMenuItemRole as String, text: label, frame: CGRect(x: 300, y: 400, width: 120, height: 30), enabled: scenario != "fast-control-disabled", hidden: scenario == "fast-control-hidden", depth: 1)
+            var nodes = [root, control]
+            if scenario == "fast-control-ambiguous" {
+                nodes.append(selectorFixtureNode("duplicate", parentId: "root", role: kAXMenuItemRole as String, text: label, frame: CGRect(x: 450, y: 400, width: 120, height: 30), depth: 1))
+            }
+            if scenario == "fast-speed-option" {
+                nodes.append(selectorFixtureNode("ultrafast", parentId: "root", role: kAXMenuItemRole as String, text: "Ultrafast", frame: CGRect(x: 300, y: 450, width: 120, height: 30), depth: 1))
+            }
+            let index = fastControlIndex(in: NeutralAXQuery(nodes: nodes), speedMenu: scenario == "fast-speed-menu", option: scenario == "fast-speed-option" ? "fast" : nil)
+            valid = ["fast-control", "fast-speed-menu", "fast-speed-option"].contains(scenario) ? index == 1 : index == nil
+        case "accessibility-chromium", "accessibility-chromium-appkit", "accessibility-electron", "accessibility-enabled", "accessibility-denied":
+            var enabled: [String] = []
+            var settled = 0
+            _ = initializePickerAccessibility(
+                read: { scenario == "accessibility-enabled" && $0 == "AXEnhancedUserInterface" },
+                enable: { name in
+                    enabled.append(name)
+                    if scenario == "accessibility-denied" { return .apiDisabled }
+                    if scenario.hasPrefix("accessibility-chromium") && name == "AXManualAccessibility" { return .attributeUnsupported }
+                    if scenario == "accessibility-chromium-appkit" { return .notImplemented }
+                    return .success
+                },
+                settle: { settled += 1 }
+            )
+            if scenario == "accessibility-enabled" {
+                valid = enabled.isEmpty && settled == 0
+            } else if scenario == "accessibility-denied" {
+                valid = enabled == ["AXManualAccessibility"] && settled == 0
+            } else {
+                let expected = scenario.hasPrefix("accessibility-chromium")
+                    ? ["AXManualAccessibility", "AXEnhancedUserInterface"] : ["AXManualAccessibility"]
+                valid = enabled == expected && settled == 1
+            }
         case "title-medium":
             valid = parsePickerTitle("5.6 Sol Medium").map { $0 == ("5.6 Sol", "Medium") } ?? false
         case "title-extra-high":
@@ -1481,6 +1529,52 @@ func runFixtureAction(_ action: String, arguments: [String]) {
         case "readout-ultra":
             valid = parsePowerReadout("5.6 Sol Ultra, 5 of 5.")
                 == PowerReadout(model: "5.6 Sol", level: "ultra", position: 5)
+        case "title-astra":
+            valid = parsePickerTitle("6 Astra Max").map { $0 == ("6 Astra", "Max") } ?? false
+        case "readout-astra":
+            valid = parsePowerReadout("6 Astra Ultra, 6 of 6.")
+                == PowerReadout(model: "6 Astra", level: "ultra", position: 6, total: 6)
+                && parsePowerReadout("6 Astra Max, 5 of 6.")?.level == "max"
+                && parsePowerReadout("6 Astra Medium, 2 of 6.")?.level == "medium"
+                && parsePowerReadout("6 Astra High, 3 of 6.")?.level == "high"
+        case "readout-invalid":
+            valid = ["6 Astra Max, 0 of 6.", "6 Astra Max, 7 of 6.", "6 Astra Max, 1 of 0.", "6 Astra Max, 1 of 99.", "6 Astra Max, 5 whatever", "6 Astra Max, 5 of 6. extra"].allSatisfy { parsePowerReadout($0) == nil }
+                && parsePowerReadout("6 Astra Max, 10 of 12.")?.position == 10
+        case "step-astra":
+            let atMax = PowerReadout(model: "6 Astra", level: "max", position: 5, total: 6)
+            let atUltra = PowerReadout(model: "6 Astra", level: "ultra", position: 6, total: 6)
+            valid = nextPowerSegment(from: atMax, to: "ultra") == 6
+                && nextPowerSegment(from: atUltra, to: "max") == 5
+                && nextPowerSegment(from: atUltra, to: "ultra") == nil
+        case "geometry-astra":
+            let frame = CGRect(x: 10, y: 20, width: 300, height: 30)
+            valid = powerSegmentPoint(6, total: 6, frame: frame) == CGPoint(x: 285, y: 35)
+                && powerSegmentPoint(5, total: 5, frame: frame) == CGPoint(x: 280, y: 35)
+                && powerSegmentPoint(1, total: 6, frame: frame) == CGPoint(x: 35, y: 35)
+                && powerSegmentPoint(7, total: 6, frame: frame) == nil
+        case "readout-menu-scope", "readout-group-scope":
+            func element(_ role: String, _ text: String, parent: Int? = nil, hidden: Bool = false) -> ElementInfo {
+                ElementInfo(element: AXUIElementCreateSystemWide(), role: role, title: "", description: role == (kAXMenuItemRole as String) ? text : "", value: role == (kAXStaticTextRole as String) ? text : "", help: "", elementFrame: nil, enabled: true, hidden: hidden, selected: false, parentIndex: parent, depth: parent == nil ? 0 : 1)
+            }
+            var elements = [
+                element(kAXStaticTextRole as String, "5.6 Sol Standard, 3 of 5."),
+                element(scenario == "readout-group-scope" ? kAXGroupRole as String : kAXMenuRole as String, ""),
+                element(kAXMenuItemRole as String, "Power", parent: 1),
+                element(kAXStaticTextRole as String, "6 Astra Max, 5 of 6.", parent: 1),
+                element(kAXStaticTextRole as String, "6 Astra High, 3 of 6.", parent: 1, hidden: true),
+            ]
+            func read() -> String? {
+                powerReadout(in: AXSnapshot(elements: elements, query: NeutralAXQuery(nodes: neutralNodes(from: elements))))
+            }
+            let scoped = read() == "6 Astra Max, 5 of 6."
+            elements.append(element(kAXStaticTextRole as String, "6 Astra Ultra, 6 of 6.", parent: 1))
+            valid = scoped && read() == nil
+        case "astra-payload":
+            let data = try! JSONEncoder().encode(PickerSelectionRequest(value: "gpt-6-astra", label: "Astra"))
+            valid = validatedModelSelection(data.base64EncodedString()) != nil
+        case "max-payload":
+            let data = try! JSONEncoder().encode(PickerSelectionRequest(value: "max", label: "Max"))
+            valid = validatedEffortSelection(data.base64EncodedString()) != nil
         default:
             valid = false
         }

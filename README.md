@@ -116,12 +116,12 @@ Codex version, and the failing action when
 
 ### Stream Deck + dials
 
-| Dial      | Turn                                      | Press                          |
-| --------- | ----------------------------------------- | ------------------------------ |
-| Agent     | Browse recent chats                       | Open selected chat             |
-| Action    | Select a curated Codex action             | Run the displayed action       |
-| Model     | Preview available Luna/Terra/Sol families | Apply once to the focused chat |
-| Reasoning | Preview a level supported by that model   | Apply once to the focused chat |
+| Dial      | Turn                                            | Press                          |
+| --------- | ----------------------------------------------- | ------------------------------ |
+| Agent     | Browse recent chats                             | Open selected chat             |
+| Action    | Select a curated Codex action                   | Run the displayed action       |
+| Model     | Preview available Luna/Terra/Sol/Astra families | Apply once to the focused chat |
+| Reasoning | Preview a level supported by that model         | Apply once to the focused chat |
 
 Touch-strip taps and holds are intentionally inert so a page swipe cannot run a
 command accidentally.
@@ -140,11 +140,14 @@ closed and displays an alert.
 
 Current Codex builds may expose the empty composer hint as its accessibility
 value. The composer's Model/Effort picker shows the live state in its title,
-offers models under **Select model**, and sets effort with a five-segment
+offers models under **Select model**, and sets effort with a model-dependent
 **Power** control whose ladder depends on the chat. The companion reads the
-title without opening anything, selects models from that list, steps the Power
-control from its readout, refuses a segment that would change the model, and
-verifies the visible title after each apply.
+title without opening anything, selects models from that list, and steps the
+Power control using the segment count in its readout. Cache-only Max is omitted
+because current pickers skip it. The companion selects the current model explicitly before changing
+effort, refuses a segment that changes the model, and verifies the visible title
+after each apply. Five- and six-segment readouts are supported. The task must
+be active, but the composer does not need a blinking cursor.
 
 Push-to-talk uses the focused composer's native **Dictate** accessibility
 control and does not hold a keyboard shortcut. The watchdog verifies that
@@ -178,7 +181,7 @@ See [SECURITY.md](SECURITY.md) for private vulnerability reporting.
 
 1. Confirm Codex is open with a chat selected.
 2. Confirm Stream Deck is enabled under macOS Accessibility.
-3. Clear any unsent draft before using Plan or FAST.
+3. Clear any unsent draft before using Plan. FAST uses the picker control and preserves drafts.
 4. Press the key again while the intended Codex window is visible.
 
 The plugin refuses ambiguous focus instead of sending input to another chat.

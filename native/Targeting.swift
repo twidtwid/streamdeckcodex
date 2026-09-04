@@ -595,7 +595,15 @@ func verifyTarget(
         requestedThreadId: expected.conversationId,
         requestedRendererWindowId: expected.rendererWindowId
     ) != nil else {
-        throw ControlError.failed("The exact focused target could not be proved.", "TARGET_MISMATCH")
+        let elements = composerElements ?? []
+        let query = NeutralAXQuery(nodes: neutralNodes(from: elements))
+        let areas = elements.indices.filter { elements[$0].role == (kAXTextAreaRole as String) }.prefix(8).map { index in
+            let info = elements[index]
+            let size = info.elementFrame.map { "\(Int($0.width))x\(Int($0.height))" } ?? "unframed"
+            return "depth=\(info.depth),size=\(size),enabled=\(info.enabled),hidden=\(info.hidden),visible=\(query.ownerIsVisible(index))"
+        }.joined(separator: "; ")
+        let roles = Dictionary(grouping: elements, by: \.role).map { "\($0.key)=\($0.value.count)" }.sorted().joined(separator: ",")
+        throw ControlError.failed("The exact focused target could not be proved. Composer candidates=\(neutral.composerCount), captured depth=\(elements.map(\.depth).max() ?? 0), roles=[\(roles)], text areas=[\(areas)].", "TARGET_MISMATCH")
     }
     return window
 }

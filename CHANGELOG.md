@@ -2,6 +2,31 @@
 
 All notable changes to this project are documented here.
 
+## 0.2.3 — 2026-09-04
+
+### Fixed
+
+- Add Astra to the Model dial; omit Max, which current pickers skip despite
+  advertising it in the model cache.
+- Read the Power control's actual segment count instead of assuming five,
+  supporting both five- and six-segment ladders.
+- Select the current model explicitly before changing effort, keeping Default
+  Power from switching models. Existing five-segment pickers remain supported.
+- Press the freshly reacquired model menu item and dismiss menus on failures.
+- Initialize the Chromium or Electron accessibility tree on a picker press,
+  allowing its activation delay to finish before locating the composer.
+- Recognize the compact unfocused composer by its adjacent model selector,
+  so changing model or effort does not require clicking into the text box.
+- Toggle Fast through the visible checkbox or Speed menu and verify the state,
+  preserving composer drafts instead of typing a slash command.
+
+### Validation
+
+- Added regression fixtures for Astra/Max payloads, six-segment readouts,
+  malformed positions, stepping, and click geometry.
+- All 539 tests pass. Physical-device testing confirmed model and effort
+  changes without composer focus, permission cycling, Fast toggling, and PTT.
+
 ## 0.2.2 — 2026-09-02
 
 Updated for the new Codex model navigation: Codex 26.818 replaced the

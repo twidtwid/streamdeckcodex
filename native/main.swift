@@ -19,6 +19,7 @@ let threadId = arguments.count > 2 ? arguments[2] : nil
 
 runFixtureAction(action, arguments: arguments)
 
+var accessibilityInitialization = "not attempted"
 do {
     guard AXIsProcessTrusted() else {
         throw ControlError.failed(
@@ -27,6 +28,15 @@ do {
     }
     let app = try runningCodex()
     let appElement = AXUIElementCreateApplication(app.processIdentifier)
+    // Only initialize on a picker press. Background reads must not repeatedly
+    // reset Chromium's two-second accessibility activation debounce.
+    if action == "model" || action == "reasoning" || (action == "mode-toggle" && requested == "fast") {
+        accessibilityInitialization = initializePickerAccessibility(
+            read: { boolAttribute(appElement, $0 as CFString) },
+            enable: { AXUIElementSetAttributeValue(appElement, $0 as CFString, kCFBooleanTrue) },
+            settle: { usleep(2_200_000) }
+        )
+    }
 
     let navigationActions = Set(["target-check"])
     let currentTaskActions = Set([
@@ -654,7 +664,7 @@ do {
             model: nil,
             effort: nil,
             reasonCode: reasonCode,
-            message: error.localizedDescription
+            message: error.localizedDescription + (reasonCode == "TARGET_MISMATCH" ? " Accessibility: \(accessibilityInitialization)." : "")
         ),
         exitCode: 1
     )

@@ -99,9 +99,14 @@ on the installed build. A connected pass must record plugin SHA, Codex version,
 Stream Deck version, date, postcondition, and restoration result.
 
 Current Codex exposes the live model and effort in the picker button title,
-lists models under **Select model**, and sets effort with a five-segment
+lists models under **Select model**, and sets effort with a model-dependent
 **Power** control whose readout (`5.6 Sol Standard, 3 of 5.`) names the model,
-the level, and the segment. Empty composers may expose `Do anything` or the
+the level, the segment, and the total segment count. Fixtures also cover a
+six-segment ladder (`6 Astra Ultra, 6 of 6.`), invalid readouts,
+and click geometry. Current pickers skip cache-only Max; the dial omits it.
+Compact composer fixtures cover selecting without text-entry focus and reject
+unrelated or ambiguous inline answer fields. Offline fixtures do not establish a connected UI pass.
+Empty composers may expose `Do anything` or the
 Plan hint through AXValue rather than AXPlaceholderValue. The native gate has
 compiled fixtures for these placeholders, the title and readout parsers, the
 Power stepping rule, and the offered-mode permission cycle, uses semantic

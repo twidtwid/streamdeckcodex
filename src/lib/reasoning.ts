@@ -13,17 +13,10 @@ export function normalizeReasoningLevels(levels: readonly string[]): string[] {
     "medium",
     "high",
     "xhigh",
+    "max",
     "ultra",
   ];
-  const unique = [
-    ...new Set(
-      levels
-        .map((level) => level.toLowerCase())
-        // Codex Desktop's actual picker does not expose a Max setting even
-        // when stale model-cache metadata advertises one.
-        .filter((level) => level !== "max"),
-    ),
-  ];
+  const unique = [...new Set(levels.map((level) => level.toLowerCase()))];
   return unique.sort((a, b) => {
     const ai = preferred.indexOf(a);
     const bi = preferred.indexOf(b);
@@ -45,6 +38,7 @@ export function reasoningPickerLabel(level: string): string | undefined {
     medium: "Medium",
     high: "High",
     xhigh: "Extra High",
+    max: "Max",
     ultra: "Ultra",
   }[level.toLowerCase()];
 }

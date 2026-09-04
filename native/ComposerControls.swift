@@ -7,7 +7,7 @@ func pickerCandidate(in elements: [ElementInfo]) -> ElementInfo? {
     let matches = elements.filter { info in
         guard info.role == (kAXPopUpButtonRole as String) else { return false }
         let text = normalized("\(info.title) \(info.description)")
-        return text.contains("luna") || text.contains("terra") || text.contains("sol")
+        return !info.hidden && (text.contains("luna") || text.contains("terra") || text.contains("sol") || text.contains("astra"))
     }
     return matches.count == 1 ? matches[0] : nil
 }
@@ -56,7 +56,7 @@ func menuItem(
     return matches.count == 1 ? matches[0] : nil
 }
 
-/// Effort ranks order the five-segment Power control. The ladder depends on
+/// Effort ranks order the Power control. The ladder depends on
 /// the chat and the model: a Default-model chat puts a lighter model at
 /// segment 1, an explicit Sol chat ends at Ultra with no Max rung between.
 /// Ranks only give the direction; each step is one segment, re-read.
@@ -64,6 +64,7 @@ let powerRanks = ["low": 0, "medium": 1, "high": 2, "xhigh": 3, "max": 4, "ultra
 let powerReadoutLevels: [(name: String, level: String)] = [
     ("extra high", "xhigh"), ("extended", "high"), ("standard", "medium"),
     ("light", "low"), ("maximum", "max"), ("max", "max"), ("ultra", "ultra"),
+    ("medium", "medium"), ("high", "high"), ("low", "low"),
 ]
 let pickerTitleEfforts: [(suffix: String, level: String)] = [
     ("extra high", "xhigh"), ("extended", "high"), ("standard", "medium"),
@@ -76,6 +77,7 @@ struct PowerReadout: Equatable {
     let model: String
     let level: String
     let position: Int
+    var total: Int = 5
 }
 
 /// Parse "5.6 Sol Standard, 3 of 5." into model, canonical level, and segment.
@@ -84,14 +86,17 @@ func parsePowerReadout(_ readout: String) -> PowerReadout? {
     guard let comma = trimmed.lastIndex(of: ",") else { return nil }
     let head = String(trimmed[..<comma]).trimmingCharacters(in: .whitespaces)
     let tail = String(trimmed[trimmed.index(after: comma)...])
-    guard let digit = tail.first(where: \.isNumber), let position = Int(String(digit)),
-          (1...5).contains(position)
+    guard let regex = try? NSRegularExpression(pattern: #"^\s*([1-9][0-9]*) of ([1-9][0-9]*)\.\s*$"#),
+          let match = regex.firstMatch(in: tail, range: NSRange(tail.startIndex..., in: tail)),
+          let position = Int((tail as NSString).substring(with: match.range(at: 1))),
+          let total = Int((tail as NSString).substring(with: match.range(at: 2))),
+          (1...16).contains(total), (1...total).contains(position)
     else { return nil }
     let lower = head.lowercased()
     for (name, level) in powerReadoutLevels where lower.hasSuffix(" " + name) {
         let model = String(head.dropLast(name.count)).trimmingCharacters(in: .whitespaces)
         guard !model.isEmpty else { return nil }
-        return PowerReadout(model: model, level: level, position: position)
+        return PowerReadout(model: model, level: level, position: position, total: total)
     }
     return nil
 }
@@ -103,7 +108,7 @@ func nextPowerSegment(from current: PowerReadout, to targetLevel: String) -> Int
           here != there
     else { return nil }
     let next = current.position + (there > here ? 1 : -1)
-    return (1...5).contains(next) ? next : nil
+    return (1...current.total).contains(next) ? next : nil
 }
 
 /// Parse the picker button title ("5.6 Sol Medium", "5.6 Luna Extra High")
@@ -120,9 +125,29 @@ func parsePickerTitle(_ title: String) -> (model: String, effort: String)? {
 }
 
 func powerReadout(in snapshot: AXSnapshot) -> String? {
-    snapshot.elements.first {
-        $0.role == (kAXStaticTextRole as String) && $0.value.contains(" of 5")
-    }?.value
+    let controls = snapshot.elements.indices.filter {
+        snapshot.elements[$0].role == (kAXMenuItemRole as String)
+            && normalized(snapshot.elements[$0].description) == "power"
+            && !snapshot.elements[$0].hidden
+    }
+    guard controls.count == 1 else { return nil }
+    // The announcement and Power item are siblings in SimpleView. Chromium
+    // exposes that container as AXGroup; it need not have an AXMenu ancestor.
+    guard let container = snapshot.elements[controls[0]].parentIndex else { return nil }
+    let matches = snapshot.elements.indices.filter { index in
+        let info = snapshot.elements[index]
+        guard info.role == (kAXStaticTextRole as String),
+              snapshot.query.isDescendant(index, of: container),
+              parsePowerReadout(info.value) != nil else { return false }
+        var ancestor: Int? = index
+        while let i = ancestor {
+            if snapshot.elements[i].hidden { return false }
+            ancestor = snapshot.elements[i].parentIndex
+        }
+        return true
+    }.map { snapshot.elements[$0].value }
+    let unique = Set(matches)
+    return unique.count == 1 ? unique.first : nil
 }
 
 func powerControlFrame(in snapshot: AXSnapshot) -> CGRect? {
@@ -371,6 +396,66 @@ func readFastMode(_ appElement: AXUIElement) throws -> Bool {
         )
     }
     return active
+}
+
+func fastControlIndex(in query: NeutralAXQuery, speedMenu: Bool = false, option: String? = nil) -> Int? {
+    let roles = Set([kAXMenuItemRole as String, kAXCheckBoxRole as String, kAXButtonRole as String])
+    let matches = query.nodes.indices.filter { index in
+        let node = query.nodes[index]
+        guard roles.contains(node.role), node.enabled, query.ownerIsVisible(index) else { return false }
+        let labels = [node.title, node.description]
+        if let option {
+            return node.role == (kAXMenuItemRole as String) && labels.contains {
+                $0.lowercased().split(whereSeparator: { $0.isWhitespace }).first.map(String.init) == option
+            }
+        }
+        if speedMenu {
+            return labels.contains { $0.lowercased().hasPrefix("speed ") }
+        }
+        return labels.contains { ["enablefastmode", "enablestandardmode"].contains(normalized($0)) }
+    }
+    return matches.count == 1 ? matches[0] : nil
+}
+
+func toggleFastMode(appElement: AXUIElement, initial: AXSnapshot) throws -> Bool {
+    defer { dismissOpenMenus() }
+    guard let composer = composerCandidates(in: initial).first else {
+        throw ControlError.failed("The live Codex composer is unavailable.", "UNAVAILABLE")
+    }
+    let originalDraft = composerDraft(composer)
+    try exposeFastControl(in: appElement)
+    let opened = captureAXSnapshot(appElement)
+    guard let before = pickerFastState(in: opened.elements) else {
+        throw ControlError.failed("Codex opened no verifiable Fast mode state.", "UNAVAILABLE")
+    }
+    if let control = fastControlIndex(in: opened.query) {
+        try pressAccessibilityControl(opened.elements[control].element)
+    } else if let speed = fastControlIndex(in: opened.query, speedMenu: true) {
+        try clickMenuItem(opened.elements[speed].element)
+        let option = before ? "standard" : "fast"
+        guard let target = waitUntil(timeout: 1.5, operation: { () -> ElementInfo? in
+            let snapshot = captureAXSnapshot(appElement)
+            return fastControlIndex(in: snapshot.query, option: option).map { snapshot.elements[$0] }
+        }) else {
+            throw ControlError.failed("Codex does not offer the requested \(option) speed.", "UNAVAILABLE")
+        }
+        try pressAccessibilityControl(target.element)
+    } else {
+        throw ControlError.failed("Codex exposed no unique enabled Fast toggle.", "UNAVAILABLE")
+    }
+    guard let after = waitUntil(timeout: 2.4, operation: { () -> Bool? in
+        let snapshot = captureAXSnapshot(appElement)
+        guard let active = pickerFastState(in: snapshot.elements), active != before else { return nil }
+        return active
+    }) else {
+        throw ControlError.failed("The visible Fast control did not confirm a change.", "UNCHANGED")
+    }
+    dismissOpenMenus()
+    guard let finalComposer = composerCandidates(in: captureAXSnapshot(appElement)).first,
+          composerDraft(finalComposer) == originalDraft else {
+        throw ControlError.failed("The composer changed during the Fast toggle.", "TARGET_MISMATCH")
+    }
+    return after
 }
 
 let approvalModes = ["ask", "approve", "yolo", "custom"]
@@ -854,6 +939,8 @@ func toggleMode(
     appElement: AXUIElement,
     initial: AXSnapshot
 ) throws -> Bool {
+    if mode == "fast" { return try toggleFastMode(appElement: appElement, initial: initial) }
+    guard mode == "plan" else { throw ControlError.failed("Unsupported Codex mode.", "UNAVAILABLE") }
     guard let composer = composerCandidates(in: initial).first else {
         throw ControlError.failed(
             "The live Codex composer is unavailable. Open an idle Codex chat."
@@ -898,37 +985,7 @@ func toggleMode(
         return requestedState
     }
 
-    // `/fast` is the supported Codex toggle. Driving the compact picker's
-    // menu-item checkbox directly was brittle across desktop builds and could
-    // click without changing the service tier. Read the picker only to verify
-    // the slash command's postcondition.
-    let previousState = try readFastMode(appElement)
-    try click(composer.element)
-    usleep(80_000)
-    try typeCommandAndReturn("/fast")
-    usleep(220_000)
-    try exposeFastControl(in: appElement)
-
-    guard
-        let confirmedState = waitUntil(timeout: 2.4, operation: { () -> Bool? in
-            let snapshot = captureAXSnapshot(appElement)
-            guard let active = pickerFastState(in: snapshot.elements) else {
-                return nil
-            }
-            return modeTransitionObserved(
-                mode: mode,
-                draftEmpty: true,
-                before: previousState,
-                requested: !previousState,
-                observed: active
-            ) ? active : nil
-        })
-    else {
-        throw ControlError.failed(
-            "The visible Codex composer did not confirm that /fast changed the service tier."
-        )
-    }
-    return confirmedState
+    throw ControlError.failed("Unsupported Codex mode.", "UNAVAILABLE")
 }
 
 func applySelection(
@@ -937,13 +994,13 @@ func applySelection(
     targetLabel: String,
     initial: AXSnapshot
 ) throws {
+    defer { dismissOpenMenus() }
     try openPickerMenu(appElement: appElement, initial: initial)
     if categoryPrefix == "Model " {
         try selectModel(targetLabel, appElement: appElement)
     } else {
         try selectPower(targetLabel, appElement: appElement, initial: initial)
     }
-    dismissOpenMenus()
 }
 
 /// "Select model" opens a submenu of plain model titles ("5.6 Sol") with a
@@ -956,14 +1013,14 @@ func selectModel(_ targetLabel: String, appElement: AXUIElement) throws {
         throw ControlError.failed("Codex did not expose the Select model control.", "UNAVAILABLE")
     }
     try clickMenuItem(entry.element)
-    guard let target = waitUntil(timeout: 1.5, operation: { () -> ElementInfo? in
+    guard waitUntil(timeout: 1.5, operation: { () -> ElementInfo? in
         let snapshot = captureAXSnapshot(appElement)
         let matches = snapshot.elements.filter {
             $0.role == (kAXMenuItemRole as String)
                 && pickerMenuTextMatches($0.title, label: targetLabel)
         }
         return matches.count == 1 ? matches[0] : nil
-    }) else {
+    }) != nil else {
         let available = captureAXSnapshot(appElement).elements
             .filter { $0.role == (kAXMenuItemRole as String) && !$0.title.isEmpty }
             .map(\.title).joined(separator: " | ")
@@ -982,15 +1039,14 @@ func selectModel(_ targetLabel: String, appElement: AXUIElement) throws {
         pressEscape()
         throw ControlError.failed("Codex's \(targetLabel) item did not remain selectable.")
     }
-    _ = settled
-    guard AXUIElementPerformAction(target.element, kAXPressAction as CFString) == .success else {
+    guard AXUIElementPerformAction(settled.element, kAXPressAction as CFString) == .success else {
         pressEscape()
         throw ControlError.failed("Codex rejected the \(targetLabel) menu-item press.")
     }
     usleep(400_000)
 }
 
-/// Effort is a five-segment Power control inside the open picker. Step from
+/// Effort is a model-dependent Power control inside the open picker. Step from
 /// the current readout toward the level, re-reading after every click, and
 /// refuse a segment that changes the model.
 func selectPower(
@@ -1011,29 +1067,41 @@ func selectPower(
         pressEscape()
         throw ControlError.failed("Codex shows an unreadable Model/Effort picker title.", "UNAVAILABLE")
     }
+    // Default Power can span models. Pin the current model first so a request
+    // for a lighter effort stays on that model, including Astra.
+    try selectModel(current.model, appElement: appElement)
     func readout() throws -> PowerReadout {
         let snapshot = captureAXSnapshot(appElement)
         guard let text = powerReadout(in: snapshot), let parsed = parsePowerReadout(text) else {
+            let controls = snapshot.elements.indices.filter { normalized(snapshot.elements[$0].description) == "power" }
+            let roles = controls.map { index in
+                let parent = snapshot.elements[index].parentIndex.map { snapshot.elements[$0].role } ?? "none"
+                return "\(snapshot.elements[index].role)/\(parent)"
+            }.joined(separator: ",")
+            let readouts = snapshot.elements.filter { parsePowerReadout($0.value) != nil }.count
             pressEscape()
-            throw ControlError.failed("Codex exposed no readable Power control.", "UNAVAILABLE")
+            throw ControlError.failed("Codex exposed no readable Power control. Controls=[\(roles)], readouts=\(readouts).", "UNAVAILABLE")
         }
         return parsed
     }
     var state = try readout()
     var previous = state.position
-    // Five segments: at most four clicks, then one final check.
-    for _ in 0..<5 {
+    // The current picker advertises its ladder length (Astra includes a sixth
+    // Ultra segment). Retain the five-segment path for older installations.
+    var visited = Set<Int>()
+    for _ in 0..<state.total {
         if state.level == level, normalized(state.model) == normalized(current.model) { return }
         guard normalized(state.model) == normalized(current.model) else {
             // A segment switched the model. Step back and fail closed.
-            clickPowerSegment(previous, appElement: appElement)
+            clickPowerSegment(previous, total: state.total, appElement: appElement)
             pressEscape()
             throw ControlError.failed(
                 "Codex's Power control moved to \(state.model) instead of \(current.model) \(targetLabel).",
                 "UNCHANGED"
             )
         }
-        guard let segment = nextPowerSegment(from: state, to: level) else {
+        guard visited.insert(state.position).inserted,
+              let segment = nextPowerSegment(from: state, to: level) else {
             pressEscape()
             throw ControlError.failed(
                 "Codex's Power control does not reach \(targetLabel) for \(current.model).",
@@ -1041,11 +1109,12 @@ func selectPower(
             )
         }
         previous = state.position
-        clickPowerSegment(segment, appElement: appElement)
+        clickPowerSegment(segment, total: state.total, appElement: appElement)
         let before = state
         guard let next = waitUntil(timeout: 1.5, operation: { () -> PowerReadout? in
             guard let text = powerReadout(in: captureAXSnapshot(appElement)),
-                  let parsed = parsePowerReadout(text), parsed != before
+                  let parsed = parsePowerReadout(text), parsed != before,
+                  parsed.total == before.total
             else { return nil }
             return parsed
         }) else {
@@ -1064,12 +1133,14 @@ func selectPower(
     )
 }
 
-func clickPowerSegment(_ segment: Int, appElement: AXUIElement) {
+func powerSegmentPoint(_ segment: Int, total: Int, frame: CGRect) -> CGPoint? {
+    guard (1...16).contains(total), (1...total).contains(segment), !frame.isEmpty else { return nil }
+    return CGPoint(x: frame.minX + (CGFloat(segment) - 0.5) * frame.width / CGFloat(total), y: frame.midY)
+}
+
+func clickPowerSegment(_ segment: Int, total: Int, appElement: AXUIElement) {
     guard let frame = powerControlFrame(in: captureAXSnapshot(appElement)) else { return }
-    let point = CGPoint(
-        x: frame.minX + (CGFloat(segment) - 0.5) * frame.width / 5,
-        y: frame.midY
-    )
+    guard let point = powerSegmentPoint(segment, total: total, frame: frame) else { return }
     guard
         let down = CGEvent(mouseEventSource: nil, mouseType: .leftMouseDown, mouseCursorPosition: point, mouseButton: .left),
         let up = CGEvent(mouseEventSource: nil, mouseType: .leftMouseUp, mouseCursorPosition: point, mouseButton: .left)

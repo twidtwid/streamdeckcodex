@@ -91,9 +91,10 @@ const effortLabels = {
   medium: "Medium",
   high: "High",
   xhigh: "Extra High",
+  max: "Max",
   ultra: "Ultra",
 };
-const capabilities = ["luna", "terra", "sol"].flatMap((family) => {
+const capabilities = ["luna", "terra", "sol", "astra"].flatMap((family) => {
   const model = cache.models?.find(
     (candidate) =>
       typeof candidate.slug === "string" &&
@@ -102,7 +103,7 @@ const capabilities = ["luna", "terra", "sol"].flatMap((family) => {
   if (!model) return [];
   const reasoning = (model.supported_reasoning_levels ?? [])
     .map((entry) => entry.effort)
-    .filter((effort) => effortLabels[effort]);
+    .filter((effort) => effortLabels[effort] && effort !== "max");
   return reasoning.length
     ? [
         {
@@ -147,8 +148,8 @@ if (composer.draftEmpty !== true) {
   );
 }
 const initialPlan = initialState.plan;
-const baseModel = capabilities.at(-1);
-const modelTarget = capabilities.at(-2);
+const baseModel = capabilities.at(-2);
+const modelTarget = capabilities.at(-1);
 if (!baseModel || !modelTarget) throw new Error("No reversible model pair.");
 const baseReasoningIndex = Math.min(1, baseModel.reasoning.length - 1);
 const baseReasoning = baseModel.reasoning[baseReasoningIndex];
@@ -198,7 +199,7 @@ try {
     ),
   );
   const modelBeforeRotate = (await readPicker(activeThreadId)).model;
-  harness.send(event(modelAction, modelContext, "dialRotate", { ticks: -1 }));
+  harness.send(event(modelAction, modelContext, "dialRotate", { ticks: 1 }));
   await waitFor(() =>
     outbound.some(
       (message) =>
