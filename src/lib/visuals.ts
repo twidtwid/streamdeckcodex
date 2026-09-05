@@ -130,13 +130,14 @@ function commandIcon(
   accent: string,
   top = 16,
   scale = 3,
+  filled = false,
 ): string {
   const lucide = LUCIDE_PATHS[icon] ?? LUCIDE_PATHS.command;
   if (!lucide) throw new Error(`Missing Lucide icon mapping: ${icon}`);
   const normalizedScale = Number(scale.toFixed(2));
   const normalizedTop = Number(top.toFixed(2));
   const left = Number(((144 - 24 * normalizedScale) / 2).toFixed(2));
-  return `<g transform="translate(${left} ${normalizedTop}) scale(${normalizedScale})" fill="none" stroke="${accent}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${lucide}</g>`;
+  return `<g transform="translate(${left} ${normalizedTop}) scale(${normalizedScale})" fill="${filled ? accent : "none"}" stroke="${accent}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${lucide}</g>`;
 }
 
 const KEYCAP_ACCENT: Record<string, string> = {
@@ -229,7 +230,13 @@ export function commandKeySvg(
     icon === "compact"
       ? `<circle cx="72" cy="56" r="34" fill="${accent}"/>
          ${commandIcon(icon, "#090B0F", 26, 2.55)}`
-      : commandIcon(icon, accent, modeState ? 39 : 18, modeState ? 2.55 : 3.15);
+      : commandIcon(
+          icon,
+          accent,
+          modeState ? 39 : 18,
+          modeState ? 2.55 : 3.15,
+          icon === "fast" && modeState === "ACTIVE",
+        );
   return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
     <rect width="144" height="144" fill="#090B0F"/>
     ${stateMarkup}

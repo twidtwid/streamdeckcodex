@@ -28,9 +28,10 @@ do {
     }
     let app = try runningCodex()
     let appElement = AXUIElementCreateApplication(app.processIdentifier)
-    // Only initialize on a picker press. Background reads must not repeatedly
-    // reset Chromium's two-second accessibility activation debounce.
-    if action == "model" || action == "reasoning" || (action == "mode-toggle" && requested == "fast") {
+    // Chromium may expose only a shallow shell until manual accessibility is
+    // enabled. The initializer first reads the process flag, so recurring
+    // background reads settle once and do not reset its activation debounce.
+    if shouldInitializeCodexAccessibility(action: action) {
         accessibilityInitialization = initializePickerAccessibility(
             read: { boolAttribute(appElement, $0 as CFString) },
             enable: { AXUIElementSetAttributeValue(appElement, $0 as CFString, kCFBooleanTrue) },

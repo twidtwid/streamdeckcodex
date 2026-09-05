@@ -482,6 +482,27 @@ describe("executable 50-key profile contract", () => {
     }
   });
 
+  it("redraws a visible command key when its inspector setting changes", async () => {
+    const action = new FakeStreamDeckAction({ commandId: "accept" });
+    const handler = new CommandAction();
+    await handler.onWillAppear(keyDown(action) as never);
+    const acceptImage = action.calls.find(
+      ({ method }) => method === "setImage",
+    )?.value;
+
+    await action.setSettings({ commandId: "fast" });
+    await handler.onDidReceiveSettings(keyDown(action) as never);
+    const images = action.calls
+      .filter(({ method }) => method === "setImage")
+      .map(({ value }) => value);
+
+    expect(images).toHaveLength(2);
+    expect(images[1]).not.toBe(acceptImage);
+    expect(
+      Buffer.from(String(images[1]).split(",")[1]!, "base64").toString("utf8"),
+    ).toContain(">FAST</text>");
+  });
+
   it("alerts on post-dispatch failure for every mutating key family", async () => {
     const cases = [
       {

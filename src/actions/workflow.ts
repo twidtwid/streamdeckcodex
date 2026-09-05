@@ -3,6 +3,7 @@ import {
   type Action,
   type DialRotateEvent,
   type DialUpEvent,
+  type DidReceiveSettingsEvent,
   type KeyDownEvent,
   SingletonAction,
   type WillAppearEvent,
@@ -41,6 +42,17 @@ export class WorkflowAction extends SingletonAction<WorkflowSettings> {
     const configured = configuredWorkflow(event.payload.settings);
     const index = Math.max(0, WORKFLOWS.indexOf(configured));
     this.#selection.set(event.action.id, index);
+    await this.draw(event.action, configured);
+  }
+
+  async onDidReceiveSettings(
+    event: DidReceiveSettingsEvent<WorkflowSettings>,
+  ): Promise<void> {
+    const configured = configuredWorkflow(event.payload.settings);
+    this.#selection.set(
+      event.action.id,
+      Math.max(0, WORKFLOWS.indexOf(configured)),
+    );
     await this.draw(event.action, configured);
   }
 

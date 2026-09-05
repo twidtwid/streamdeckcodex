@@ -103,6 +103,16 @@ describe("native workflow postcondition fixture", () => {
     expect(run("unknown")).toBe(1);
   });
 
+  it("initializes Chromium accessibility before background composer reads", () => {
+    const run = (action: string) =>
+      spawnSync(native, ["--accessibility-initialization-fixture", action], {
+        encoding: "utf8",
+      }).status;
+    expect(run("composer-read")).toBe(0);
+    expect(run("approval-cycle")).toBe(0);
+    expect(run("target-capture")).toBe(1);
+  });
+
   it("fails closed for command postcondition divergences", () => {
     const run = (state: Record<string, unknown>) =>
       spawnSync(native, ["--dispatch-fixture", encodeNativePayload(state)], {

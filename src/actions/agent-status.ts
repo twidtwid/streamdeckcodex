@@ -1,6 +1,7 @@
 import {
   action,
   type Action,
+  type DidReceiveSettingsEvent,
   type KeyDownEvent,
   SingletonAction,
   type WillAppearEvent,
@@ -17,7 +18,13 @@ type AgentSettings = {
 @action({ UUID: "com.todd.streamdeckcodex.agent-status" })
 export class AgentStatusAction extends SingletonAction<AgentSettings> {
   async onWillAppear(event: WillAppearEvent<AgentSettings>): Promise<void> {
-    await this.draw(event.action);
+    await this.draw(event.action, event.payload.settings);
+  }
+
+  async onDidReceiveSettings(
+    event: DidReceiveSettingsEvent<AgentSettings>,
+  ): Promise<void> {
+    await this.draw(event.action, event.payload.settings);
   }
 
   async onKeyDown(event: KeyDownEvent<AgentSettings>): Promise<void> {
@@ -47,9 +54,13 @@ export class AgentStatusAction extends SingletonAction<AgentSettings> {
     );
   }
 
-  private async draw(actionInstance: Action<AgentSettings>): Promise<void> {
+  private async draw(
+    actionInstance: Action<AgentSettings>,
+    receivedSettings?: AgentSettings,
+  ): Promise<void> {
     if (!actionInstance.isKey()) return;
-    const settings = await actionInstance.getSettings<AgentSettings>();
+    const settings =
+      receivedSettings ?? (await actionInstance.getSettings<AgentSettings>());
     const slot = this.slotFrom(
       settings,
       (actionInstance.coordinates?.column ?? 0) + 1,

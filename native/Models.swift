@@ -48,6 +48,23 @@ struct AXSnapshot {
 // and diagnostics cannot silently diverge as the Electron tree gains wrappers.
 let maximumCodexWindowTraversalDepth = 32
 
+func shouldInitializeCodexAccessibility(action: String) -> Bool {
+    Set([
+        "dictation-start",
+        "dictation-stop",
+        "composer-read",
+        "target-check",
+        "dispatch",
+        "new-project",
+        "approval-cycle",
+        "mode-read",
+        "mode-toggle",
+        "read",
+        "model",
+        "reasoning",
+    ]).contains(action)
+}
+
 func shouldReuseComposerWitness(action: String, requested: String?) -> Bool {
     action == "composer-read" && !(requested ?? "").isEmpty
 }

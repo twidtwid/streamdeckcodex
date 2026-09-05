@@ -56,10 +56,22 @@ export const refresh = async (): Promise<void> => {
   // One bounded composer observation per tick feeds every key that projects
   // live input; the store limits it to one native spawn per cache window and
   // keeps a structured reason when Codex is unreachable.
-  await codexStore.refreshLiveComposer().catch(() => undefined);
+  await codexStore.refreshLiveComposer().catch((error) => {
+    const signature =
+      error instanceof Error
+        ? `${error.name}: ${error.message}`
+        : String(error);
+    if (signature !== lastComposerFailure) {
+      lastComposerFailure = signature;
+      streamDeck.logger.warn(`Live composer refresh failed: ${signature}`);
+    }
+  });
   // Health summarizes what was observed and logs only transitions.
   // Rendering continues so every surface can show the same bounded reason.
   const healthSnapshot = collectHealth(codexStore);
+  if (healthSnapshot.components.focus.state === "ready") {
+    lastComposerFailure = undefined;
+  }
   healthTransitions.observe(healthSnapshot, (message) =>
     streamDeck.logger.info(message),
   );
@@ -76,6 +88,7 @@ export const refresh = async (): Promise<void> => {
 };
 
 const healthTransitions = new HealthTransitionLogger();
+let lastComposerFailure: string | undefined;
 
 const activateBundledProfileOnce = async (): Promise<void> => {
   const globalSettings = await streamDeck.settings.getGlobalSettings<{

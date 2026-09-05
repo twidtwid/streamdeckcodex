@@ -2,6 +2,25 @@
 
 All notable changes to this project are documented here.
 
+## 0.2.4 — 2026-09-05
+
+### Fixed
+
+- Initialize Chromium accessibility for all composer controls, including
+  background reads, permissions, and dictation. Hand-built profiles no longer
+  require using a model dial first to expose the active composer.
+- Refresh command, workflow, and agent-slot keys when their inspector settings
+  change, preventing newly configured commands from retaining Accept artwork.
+- Fill the Fast lightning bolt when its toggle confirms Fast is active; keep
+  the outline when inactive or its state is unknown.
+- Log distinct composer-read failures to help diagnose unavailable controls.
+
+### Validation
+
+- Audited all five bundled device profiles; generated sources match their
+  canonical layouts without changes.
+- Verified the loaded plugin reports focused-task and permission state as ready.
+
 ## 0.2.3 — 2026-09-04
 
 ### Fixed

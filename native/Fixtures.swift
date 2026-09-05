@@ -1949,6 +1949,11 @@ func runFixtureAction(_ action: String, arguments: [String]) {
         )
     }
 
+    if action == "--accessibility-initialization-fixture" {
+        let requestedAction = arguments.dropFirst().first ?? ""
+        exit(shouldInitializeCodexAccessibility(action: requestedAction) ? 0 : 1)
+    }
+
     if action == "--composer-draft-fixture" {
         let scenario = arguments.dropFirst().first ?? ""
         let valid: Bool

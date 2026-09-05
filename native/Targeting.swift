@@ -602,8 +602,23 @@ func verifyTarget(
             let size = info.elementFrame.map { "\(Int($0.width))x\(Int($0.height))" } ?? "unframed"
             return "depth=\(info.depth),size=\(size),enabled=\(info.enabled),hidden=\(info.hidden),visible=\(query.ownerIsVisible(index))"
         }.joined(separator: "; ")
+        let controls = elements.filter {
+            !$0.hidden
+                && (!$0.title.isEmpty || !$0.description.isEmpty || !$0.value.isEmpty)
+        }.filter {
+            $0.role == (kAXPopUpButtonRole as String)
+                || $0.role == (kAXButtonRole as String)
+                || $0.role == (kAXGroupRole as String)
+        }.prefix(24).map { info in
+            let text = [info.title, info.description, info.value]
+                .filter { !$0.isEmpty }
+                .joined(separator: "|")
+                .prefix(80)
+            let size = info.elementFrame.map { "\(Int($0.width))x\(Int($0.height))" } ?? "unframed"
+            return "\(info.role):\(text)@d\(info.depth),\(size)"
+        }.joined(separator: "; ")
         let roles = Dictionary(grouping: elements, by: \.role).map { "\($0.key)=\($0.value.count)" }.sorted().joined(separator: ",")
-        throw ControlError.failed("The exact focused target could not be proved. Composer candidates=\(neutral.composerCount), captured depth=\(elements.map(\.depth).max() ?? 0), roles=[\(roles)], text areas=[\(areas)].", "TARGET_MISMATCH")
+        throw ControlError.failed("The exact focused target could not be proved. Composer candidates=\(neutral.composerCount), captured depth=\(elements.map(\.depth).max() ?? 0), roles=[\(roles)], text areas=[\(areas)], controls=[\(controls)].", "TARGET_MISMATCH")
     }
     return window
 }

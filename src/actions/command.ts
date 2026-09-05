@@ -3,6 +3,7 @@ import streamDeck, {
   type Action,
   type DialRotateEvent,
   type DialUpEvent,
+  type DidReceiveSettingsEvent,
   type KeyDownEvent,
   type KeyUpEvent,
   SingletonAction,
@@ -70,6 +71,20 @@ export class CommandAction extends SingletonAction<CommandSettings> {
   }
 
   async onWillAppear(event: WillAppearEvent<CommandSettings>): Promise<void> {
+    const configured = event.action.isDial()
+      ? configuredDialCommand(event.payload.settings)
+      : configuredCommand(event.payload.settings);
+    const index = Math.max(
+      0,
+      (event.action.isDial() ? DIAL_COMMANDS : COMMANDS).indexOf(configured),
+    );
+    this.#selection.set(event.action.id, index);
+    await this.draw(event.action, configured);
+  }
+
+  async onDidReceiveSettings(
+    event: DidReceiveSettingsEvent<CommandSettings>,
+  ): Promise<void> {
     const configured = event.action.isDial()
       ? configuredDialCommand(event.payload.settings)
       : configuredCommand(event.payload.settings);
