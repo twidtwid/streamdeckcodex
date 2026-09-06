@@ -31,7 +31,7 @@ export class ClaudeProvider implements DesktopProvider {
     const reply = await this.call(
       "claude",
       encodeNativePayload(request),
-      10000,
+      ["plan", "permission-cycle"].includes(request.operation) ? 15000 : 10000,
     );
     if (!reply.providerState)
       throw new Error("Claude returned no verified result");

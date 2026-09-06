@@ -1,4 +1,4 @@
-> **v0.3.0-beta.1: Claude Code preview for hardware acceptance.** Native controls
+> **v0.3.0-beta.2: Claude Code preview for hardware acceptance.** Native controls
 > have been tested separately on Local and SSH sessions in Claude Desktop 1.46388.4.
 > Physical Mini/Plus acceptance of this candidate is pending; stable v0.2.4 is unchanged.
 > See the [research and capability matrix](docs/claude-integration-research.md).
@@ -24,11 +24,13 @@
 | Browser pane                                                                    | Verified    | Unsupported | Unsupported |
 | Approvals, new/send/stop, compact, files, side chat, workflows, navigation, PTT | Unsupported | Unsupported | Unsupported |
 
-Permission cycling excludes Bypass because Claude requires a separate confirmation.
-Plan restores a previously observed non-Plan mode, except Bypass; select Bypass in
-Claude itself. Effort choices come from the actual slider range: unobserved labels
-appear as ordinal levels. Weekly usage names the displayed model-family bucket;
-it does not imply an account-wide percentage. These Claude gaps do not alter Codex controls.
+Permission cycling includes every offered mode, including Bypass. Selecting Bypass
+also confirms Claude's workspace-specific first-use dialog. Plan restores the last
+observed non-Plan mode, including Bypass; without history it uses Claude's marked
+Default, or Manual if no default is exposed. Effort previews use the verified names:
+Low, Medium, High, Extra, Max and Ultracode, with the actual slider range checked.
+Weekly usage names the displayed model-family bucket; it does not imply an
+account-wide percentage. These Claude gaps do not alter Codex controls.
 
 # Stream Deck Codex Companion
 

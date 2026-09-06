@@ -153,3 +153,10 @@ See the research matrix for the exact live cases already completed.
 The complete Local and SSH replays passed on 2026-09-06 after fixing the metadata size limit;
 see `docs/claude-integration-research.md`. Locked desktops must return `LOCKED`
 without a Claude target. Physical Mini/Plus acceptance is still required before stable.
+
+For beta 2, verify named effort previews including Ultracode, a full five-mode cycle,
+Bypass → Plan → Bypass, and a Plan exit with no plugin history. The permission-cycle
+test includes Bypass and may accept Claude's first-use workspace confirmation;
+Claude remembers that consent even after the test restores the original mode.
+Also verify that a recreated composer after that specific confirmation is accepted
+only if the original window/session and draft match.

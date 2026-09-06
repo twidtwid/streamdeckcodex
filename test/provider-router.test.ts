@@ -217,6 +217,55 @@ describe("shared action adapter", () => {
       dial.calls.filter((c) => c.method === "setFeedback").at(-1)?.value,
     ).toMatchObject({ value: "ACTIVE" });
   });
+  it("previews and selects Ultracode by name on the effort dial", async () => {
+    fake.observation.effort = "Max";
+    fake.perform.mockImplementation(async () => ({
+      ...fake.observation,
+      observedAt: Date.now(),
+      options: [
+        { value: "slider:4", label: "Max" },
+        { value: "slider:5", label: "Ultracode" },
+      ],
+    }));
+    const { router } = action("reasoning");
+    const dial = new FakeStreamDeckAction({ provider: "claude" }, "dial");
+    await router.onWillAppear(keyEvent(dial));
+    await router.onDialRotate({
+      ...keyEvent(dial),
+      payload: { settings: { provider: "claude" }, ticks: 1 },
+    });
+    expect(
+      dial.calls.filter((c) => c.method === "setFeedback").at(-1)?.value,
+    ).toMatchObject({ value: "Ultracode" });
+    await router.onDialUp(keyEvent(dial));
+    expect(fake.perform.mock.calls.at(-1)![0]).toMatchObject({
+      operation: "reasoning",
+      value: "slider:5",
+    });
+  });
+  it.each(["command", "keycap", "dial"])(
+    "restores Bypass through the %s Plan control",
+    async (surface) => {
+      fake.observation.target = {
+        ...target,
+        sessionId: `bypass-plan-${surface}`,
+      };
+      fake.observation.permission = "Bypass permissions";
+      const { router } = action(surface === "keycap" ? "keycap" : "command");
+      const key = new FakeStreamDeckAction(
+        { provider: "claude", commandId: "plan", action: "command:plan" },
+        surface === "dial" ? "dial" : "key",
+      );
+      await router.onWillAppear(keyEvent(key));
+      fake.observation.permission = "Plan";
+      if (surface === "dial") await router.onDialUp(keyEvent(key));
+      else await router.onKeyDown(keyEvent(key));
+      expect(fake.perform.mock.calls.at(-1)![0]).toMatchObject({
+        operation: "plan",
+        value: "Bypass permissions",
+      });
+    },
+  );
   it("remembers a prior permission mode per exact session for Plan toggle", async () => {
     const { router } = action("command");
     const key = new FakeStreamDeckAction({

@@ -104,11 +104,11 @@ describe("Claude native selector policy", () => {
       "hide sidebar",
     );
   });
-  it("cycles offered permission modes without opening Bypass confirmation", () => {
+  it("cycles all offered permission modes including Bypass", () => {
     const choices = "Auto|Manual|Accept edits|Plan|Bypass permissions";
     expect(
       fixture({ kind: "permission-next", choices, text: "Plan" }).model,
-    ).toBe("Auto");
+    ).toBe("Bypass permissions");
     expect(
       fixture({ kind: "permission-next", choices, text: "Bypass permissions" })
         .model,
@@ -119,6 +119,105 @@ describe("Claude native selector policy", () => {
     expect(
       fixture({ kind: "permission-next", choices: "Plan", text: "Plan" }).model,
     ).toBeUndefined();
+  });
+  it("names every offered effort level including Ultracode", () => {
+    const options = fixture({
+      kind: "effort-options",
+      selected: "2",
+      text: "High",
+    }).providerState.options;
+    expect(options.map((o: any) => o.label)).toEqual([
+      "Low",
+      "Medium",
+      "High",
+      "Extra",
+      "Max",
+      "Ultracode",
+    ]);
+    expect(options.at(-1)).toEqual({ value: "slider:5", label: "Ultracode" });
+    expect(
+      fixture({ kind: "reasoning", text: "Effort: Ultracode" }).model,
+    ).toBe("Ultracode");
+  });
+  it.each([
+    { high: "6", selected: "2", text: "High" },
+    { low: "1", selected: "2", text: "High" },
+    { selected: "2", text: "Different" },
+    { selected: "9", text: "High" },
+  ])(
+    "rejects changed effort semantics instead of guessing labels %j",
+    (input) => {
+      expect(
+        fixture({ kind: "effort-options", ...input }).providerState.options,
+      ).toBeUndefined();
+    },
+  );
+  it.each([
+    [{ previous: "Bypass permissions", default: "Auto" }, "Bypass permissions"],
+    [{ default: "Bypass permissions" }, "Bypass permissions"],
+    [{ default: "Auto" }, "Auto"],
+    [{ previous: "Missing", default: "Auto" }, "Auto"],
+    [{ previous: "Plan", default: "Plan" }, "Manual"],
+    [{}, "Manual"],
+  ])(
+    "exits Plan using prior mode, app default, or Manual %j",
+    (input, expected) => {
+      expect(
+        fixture({
+          kind: "plan-exit",
+          choices: "Auto|Manual|Accept edits|Plan|Bypass permissions",
+          ...input,
+        }).model,
+      ).toBe(expected);
+    },
+  );
+  it.each([
+    [{ confirmed: "true", sameSession: "true", sameDraft: "true" }, "MATCHED"],
+    [
+      { confirmed: "false", sameSession: "true", sameDraft: "true" },
+      "REJECTED",
+    ],
+    [
+      { confirmed: "true", sameSession: "false", sameDraft: "true" },
+      "REJECTED",
+    ],
+    [
+      { confirmed: "true", sameSession: "true", sameDraft: "false" },
+      "REJECTED",
+    ],
+  ])(
+    "only accepts a composer remount after the matching Bypass confirmation %j",
+    (input, expected) => {
+      expect(fixture({ kind: "composer-continuity", ...input }).model).toBe(
+        expected,
+      );
+    },
+  );
+  it.each([
+    ["session-before", "MATCHED"],
+    ["session-after", "REJECTED"],
+    ["session-before|session-after", "REJECTED"],
+  ])(
+    "keeps confirmation pinned to the captured URL when the web area changes to %s",
+    (current, expected) => {
+      expect(
+        fixture({
+          kind: "confirmation-session",
+          expected: "session-before",
+          current,
+        }).model,
+      ).toBe(expected);
+    },
+  );
+  it.each([
+    [{}, "MATCHED"],
+    [{ title: "Approve command?" }, "REJECTED"],
+    [{ button: "Run command" }, "REJECTED"],
+    [{ outside: "true" }, "REJECTED"],
+    [{ duplicate: "true" }, "REJECTED"],
+    [{ hidden: "true" }, "REJECTED"],
+  ])("only matches the exact first-use Bypass dialog %j", (input, expected) => {
+    expect(fixture({ kind: "bypass-dialog", ...input }).model).toBe(expected);
   });
   it.each(["code", "epitaxy", "claude-code-desktop"])(
     "recognizes the %s Code root with a full UUID",

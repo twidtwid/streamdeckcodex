@@ -188,7 +188,7 @@ func claudePickLabel(_ text: String, kind: String) -> String? {
     if kind == "model" && value.hasSuffix(" Fast") { value = String(value.dropLast(5)) }
     guard value.count <= 100 else { return nil }
     if kind == "model", value.range(of: "^(?:Claude )?(?:Opus|Sonnet|Haiku|Fable) [0-9]+(?:\\.[0-9]+)*(?: \\([^)]*\\))?$", options: .regularExpression) != nil { return value }
-    if kind == "reasoning", ["Low", "Medium", "High", "Extra", "Max", "Extra high", "Ultra"].contains(value) { return value }
+    if kind == "reasoning", ["Low", "Medium", "High", "Extra", "Max", "Extra high", "Ultra", "Ultracode"].contains(value) { return value }
     if kind == "permission", ["Manual", "Accept edits", "Plan", "Auto", "Bypass permissions", "Ask permissions", "Auto accept edits", "Plan mode"].contains(value) { return value }
     return nil
 }
@@ -202,7 +202,41 @@ func claudePicker(_ snapshot: AXSnapshot, kind: String) -> (ElementInfo, String)
     }
     return matches.count == 1 ? matches[0] : nil
 }
+func claudeContentSessionIds(_ snapshot: AXSnapshot) -> Set<String> {
+    Set(snapshot.elements.filter { ["AXWebArea", "AXWindow"].contains($0.role) }.compactMap { e -> String? in
+        let value = attribute(e.element, kAXURLAttribute as CFString)
+        return claudeCodeSessionId((value as? URL)?.absoluteString ?? (value as? String) ?? "")
+    })
+}
+
+// A first-use Bypass modal hides the composer but keeps the Code session URL.
+// Recognize only its exact container and its two buttons, never transcript text.
+func claudeBypassConfirmation(_ snapshot: AXSnapshot) -> ElementInfo? {
+    let dialogs = snapshot.elements.enumerated().filter { _, e in
+        !e.hidden && ["AXGroup", "AXDialog", "AXSheet"].contains(e.role)
+            && [e.title, e.description].contains("Bypass all permissions?")
+    }
+    guard dialogs.count == 1, let dialog = dialogs.first else { return nil }
+    func inside(_ index: Int) -> Bool {
+        var parent = snapshot.elements[index].parentIndex
+        while let current = parent {
+            if current == dialog.offset { return true }
+            parent = snapshot.elements[current].parentIndex
+        }
+        return false
+    }
+    let buttons = snapshot.elements.enumerated().filter { index, e in
+        inside(index) && !e.hidden && e.enabled && e.role == "AXButton"
+    }.map { $0.element }
+    let confirm = buttons.filter { [ $0.title, $0.description ].contains("Bypass permissions") }
+    let cancel = buttons.filter { [ $0.title, $0.description ].contains("Cancel") }
+    return confirm.count == 1 && cancel.count == 1 ? confirm[0] : nil
+}
+func claudeConfirmationSessionMatches(expected: String, current: Set<String>) -> Bool {
+    current == Set([expected])
+}
 struct ClaudeCapture {
+    let contentSessionId: String
     let app: NSRunningApplication
     let appElement: AXUIElement
     let window: AXUIElement
@@ -241,11 +275,7 @@ func captureClaude() throws -> ClaudeCapture {
     else { throw ControlError.failed("NO CHAT", "NO_FOCUS") }
     let snapshot = captureAXSnapshot(window, maximumDepth: 40)
     // Only a content-root URL counts. Sidebar link URLs must not identify the target.
-    let ids = Set(snapshot.elements.filter { ["AXWebArea", "AXWindow"].contains($0.role) }.compactMap { e -> String? in
-        let value = attribute(e.element, kAXURLAttribute as CFString)
-        let url = (value as? URL)?.absoluteString ?? (value as? String) ?? ""
-        return claudeCodeSessionId(url)
-    })
+    let ids = claudeContentSessionIds(snapshot)
     claudeDiagnostic("Code roots: \(ids.count), AX nodes: \(snapshot.elements.count)")
     guard ids.count == 1, let sessionId = ids.first else {
         throw ControlError.failed(ids.count > 1 ? "WRONG CHAT" : "UNSUPPORTED", "TARGET_MISMATCH")
@@ -314,7 +344,7 @@ func captureClaude() throws -> ClaudeCapture {
           CFGetTypeID(finalWindow) == AXUIElementGetTypeID(),
           sameElement(window, finalWindow as! AXUIElement)
     else { throw ControlError.failed("Target changed; select again", "TARGET_MISMATCH") }
-    return ClaudeCapture(app: app, appElement: root, window: window, snapshot: snapshot, composer: composers[0], state: state)
+    return ClaudeCapture(contentSessionId: sessionId, app: app, appElement: root, window: window, snapshot: snapshot, composer: composers[0], state: state)
 }
 
 func observeProviderState() -> ProviderState {
@@ -323,22 +353,62 @@ func observeProviderState() -> ProviderState {
     do { return try captureClaude().state }
     catch { return ProviderState(foreground: "claude", reason: error.localizedDescription) }
 }
-func verifyClaude(_ captured: ClaudeCapture, target: ProviderTarget) throws -> ClaudeCapture {
+func claudeComposerContinuity(sameComposer: Bool, confirmedBypass: Bool, sameSession: Bool, sameDraft: Bool) -> Bool {
+    sameComposer || (confirmedBypass && sameSession && sameDraft)
+}
+func verifyClaude(_ captured: ClaudeCapture, target: ProviderTarget, afterBypassConfirmation: Bool = false) throws -> ClaudeCapture {
     let current = try captureClaude()
     guard current.state.target == target,
           sameElement(captured.window, current.window),
-          sameElement(captured.composer.element, current.composer.element)
+          claudeComposerContinuity(sameComposer: sameElement(captured.composer.element, current.composer.element), confirmedBypass: afterBypassConfirmation, sameSession: captured.contentSessionId == current.contentSessionId, sameDraft: captured.composer.value == current.composer.value)
     else { throw ControlError.failed("Target changed; select again", "TARGET_MISMATCH") }
     return current
 }
 
+func confirmClaudeBypassIfPresent(_ captured: ClaudeCapture, target: ProviderTarget) throws -> Bool {
+    guard captured.state.target == target, providerForeground() == "claude",
+          let currentWindow = attribute(captured.appElement, kAXFocusedWindowAttribute as CFString),
+          CFGetTypeID(currentWindow) == AXUIElementGetTypeID(),
+          sameElement(captured.window, currentWindow as! AXUIElement)
+    else { throw ControlError.failed("Target changed; select again", "TARGET_MISMATCH") }
+    let snapshot = captureAXSnapshot(captured.window)
+    let ids = claudeContentSessionIds(snapshot)
+    guard claudeConfirmationSessionMatches(expected: captured.contentSessionId, current: ids)
+    else { throw ControlError.failed("Target changed; select again", "TARGET_MISMATCH") }
+    guard let button = claudeBypassConfirmation(snapshot) else { return false }
+    try pressAccessibilityControl(button.element)
+    return true
+}
+
 func claudeNextPermission(current: String, offered: [String]) -> String? {
-    // Bypass opens an additional app confirmation. Never auto-confirm or leave
-    // that modal behind from a dial; users can select it explicitly in Claude.
-    let modes = offered.filter { $0 != "Bypass permissions" }
-    if current == "Bypass permissions" { return modes.first }
-    guard modes.count > 1, let index = modes.firstIndex(of: current) else { return nil }
-    return modes[(index + 1) % modes.count]
+    guard offered.count > 1, let index = offered.firstIndex(of: current) else { return nil }
+    return offered[(index + 1) % offered.count]
+}
+
+func claudePlanExitMode(previous: String?, offered: [String], defaultMode: String?) -> String? {
+    let modes = offered.filter { !["Plan", "Plan mode"].contains($0) }
+    if let previous, modes.contains(previous) { return previous }
+    if let defaultMode, modes.contains(defaultMode) { return defaultMode }
+    // First use without history or an app default still has a deterministic exit.
+    return modes.first { ["Manual", "Ask permissions"].contains($0) }
+}
+
+func claudeDefaultPermission(_ choices: [(ElementInfo, String)]) -> String? {
+    let marked = choices.filter { item, _ in
+        if [item.title, item.description].contains(where: { $0.hasSuffix(" Default") }) { return true }
+        return captureAXSnapshot(item.element, maximumDepth: 4).elements.contains {
+            $0.role == "AXStaticText" && ($0.value == "Default" || $0.title == "Default")
+        }
+    }.map { $0.1 }
+    return marked.count == 1 ? marked[0] : nil
+}
+
+let claudeEffortLevelNames = ["Low", "Medium", "High", "Extra", "Max", "Ultracode"]
+func claudeEffortOptions(range: ClosedRange<Int>, selected: Int?, currentLabel: String) -> [ProviderChoice]? {
+    guard range.lowerBound == 0, range.upperBound < claudeEffortLevelNames.count,
+          let selected, range.contains(selected), claudeEffortLevelNames[selected] == currentLabel
+    else { return nil }
+    return range.map { ProviderChoice(value: "slider:\($0)", label: claudeEffortLevelNames[$0]) }
 }
 
 func claudePermissionMenuLabel(_ text: String) -> String? {
@@ -480,10 +550,8 @@ func executeClaude(_ request: ClaudeRequest) throws -> ProviderState {
             guard let range = claudeSliderRange(slider.element) else { throw ControlError.failed("UNSUPPORTED", "UNAVAILABLE") }
             if request.operation == "reasoning-options" {
                 let selected = (attribute(slider.element, kAXValueAttribute as CFString) as? NSNumber)?.intValue
-                let options = range.map { level in
-                    ProviderChoice(value: "slider:\(level)", label: level == selected
-                        ? picker.1 : "Level \(level - range.lowerBound + 1) of \(range.count)")
-                }
+                guard let options = claudeEffortOptions(range: range, selected: selected, currentLabel: picker.1)
+                else { throw ControlError.failed("Effort choices changed", "UNAVAILABLE") }
                 dismiss()
                 let after = try verifyClaude(captured, target: request.target)
                 guard after.composer.value == captured.composer.value else { throw ControlError.failed("Draft changed", "DRAFT_PRESENT") }
@@ -542,11 +610,10 @@ func executeClaude(_ request: ClaudeRequest) throws -> ProviderState {
             guard let next = claudeNextPermission(current: picker.1, offered: labels) else { throw ControlError.failed("UNSUPPORTED", "UNAVAILABLE") }
             value = next
         } else if request.operation == "plan" {
-            // Restore only a prior mode witnessed in this helper's persisted request.
-            // No guessed escalation when the plugin has never observed the prior mode.
             if ["Plan", "Plan mode"].contains(picker.1) {
-                guard let previous = request.value, labels.contains(previous), !["Plan", "Plan mode", "Bypass permissions"].contains(previous) else { dismiss(); throw ControlError.failed("Select prior mode", "UNAVAILABLE") }
-                value = previous
+                guard let restored = claudePlanExitMode(previous: request.value, offered: labels, defaultMode: claudeDefaultPermission(choices))
+                else { throw ControlError.failed("No non-Plan mode available", "UNAVAILABLE") }
+                value = restored
             } else {
                 guard let plan = labels.first(where: { ["Plan", "Plan mode"].contains($0) }) else { dismiss(); throw ControlError.failed("UNSUPPORTED", "UNAVAILABLE") }
                 value = plan
@@ -559,8 +626,12 @@ func executeClaude(_ request: ClaudeRequest) throws -> ProviderState {
             _ = try verifyClaude(captured, target: request.target)
             guard let item = choices.first(where: { $0.1 == value }) else { throw ControlError.failed("Option unavailable", "UNAVAILABLE") }
             try pressAccessibilityControl(item.0.element)
-            guard let result = waitUntil(timeout: 2, operation: { () -> ProviderState? in
-                guard let current = try? verifyClaude(captured, target: request.target),
+            var confirmedBypass = false
+            guard let result = waitUntil(timeout: value == "Bypass permissions" ? 4 : 2, operation: { () -> ProviderState? in
+                if value == "Bypass permissions", !confirmedBypass {
+                    confirmedBypass = (try? confirmClaudeBypassIfPresent(captured, target: request.target)) == true
+                }
+                guard let current = try? verifyClaude(captured, target: request.target, afterBypassConfirmation: confirmedBypass),
                       current.composer.value == captured.composer.value,
                       claudePicker(current.snapshot, kind: kind)?.1 == value else { return nil }
                 return current.state
@@ -588,6 +659,38 @@ func runProviderAction(_ action: String, requested: String?) {
     if action == "fixture-claude-policy", let requested,
        let data = Data(base64Encoded: requested),
        let fixture = (try? JSONSerialization.jsonObject(with: data)) as? [String: String] {
+        if fixture["kind"] == "composer-continuity" {
+            let matched = claudeComposerContinuity(sameComposer: fixture["sameComposer"] == "true", confirmedBypass: fixture["confirmed"] == "true", sameSession: fixture["sameSession"] == "true", sameDraft: fixture["sameDraft"] == "true")
+            emit(ControlResult(ok: true, action: action, requested: nil, model: matched ? "MATCHED" : "REJECTED", effort: nil, message: "Composer remount fixture"), exitCode: 0)
+        }
+        if fixture["kind"] == "confirmation-session" {
+            let matched = claudeConfirmationSessionMatches(expected: fixture["expected"] ?? "", current: Set((fixture["current"] ?? "").components(separatedBy: "|")))
+            emit(ControlResult(ok: true, action: action, requested: nil, model: matched ? "MATCHED" : "REJECTED", effort: nil, message: "Captured confirmation session fixture"), exitCode: 0)
+        }
+        if fixture["kind"] == "bypass-dialog" {
+            func node(_ role: String, _ title: String, _ parent: Int?, hidden: Bool = false) -> ElementInfo {
+                ElementInfo(element: AXUIElementCreateSystemWide(), role: role, title: title, description: "", value: "", help: "", elementFrame: nil, enabled: true, hidden: hidden, selected: false, parentIndex: parent, depth: parent == nil ? 0 : 1)
+            }
+            var elements = [node("AXWindow", "", nil), node("AXGroup", fixture["title"] ?? "Bypass all permissions?", 0, hidden: fixture["hidden"] == "true"), node("AXButton", fixture["button"] ?? "Bypass permissions", fixture["outside"] == "true" ? 0 : 1), node("AXButton", "Cancel", 1)]
+            if fixture["duplicate"] == "true" { elements.append(node("AXButton", "Bypass permissions", 1)) }
+            let snapshot = AXSnapshot(elements: elements, query: NeutralAXQuery(nodes: neutralNodes(from: elements)))
+            let matched = claudeBypassConfirmation(snapshot) != nil
+            emit(ControlResult(ok: true, action: action, requested: nil, model: matched ? "MATCHED" : "REJECTED", effort: nil, message: "Bypass modal selector fixture"), exitCode: 0)
+        }
+        if fixture["kind"] == "effort-options" {
+            let low = Int(fixture["low"] ?? "0") ?? -1
+            let high = Int(fixture["high"] ?? "5") ?? -1
+            let selected = Int(fixture["selected"] ?? "")
+            var state = ProviderState()
+            if low <= high { state.options = claudeEffortOptions(range: low...high, selected: selected, currentLabel: fixture["text"] ?? "") }
+            var result = ControlResult(ok: true, action: action, requested: nil, model: nil, effort: nil, message: "Effort names fixture")
+            result.providerState = state
+            emit(result, exitCode: 0)
+        }
+        if fixture["kind"] == "plan-exit" {
+            let mode = claudePlanExitMode(previous: fixture["previous"], offered: (fixture["choices"] ?? "").components(separatedBy: "|"), defaultMode: fixture["default"])
+            emit(ControlResult(ok: true, action: action, requested: nil, model: mode, effort: nil, message: "Plan restoration fixture"), exitCode: 0)
+        }
         if fixture["kind"] == "metadata-size", let requestedSize = Int(fixture["text"] ?? ""), requestedSize >= 0, requestedSize <= claudeMetadataByteLimit + 1 {
             let file = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
             do {

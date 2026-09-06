@@ -73,8 +73,8 @@ window/process and environment. An unrecognized route or environment fails close
 | ------------------------------------ | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | Provider routing                     | Foreground bundle ID; per-action provider; namespaced window/session/environment identity      | Native wrong-provider, window, session, environment and background rejections; automated mixed-profile tests |
 | Model                                | Unique Model picker and offered menu rows; unchanged draft and verified selection              | Local + SSH; primary menu choices                                                                            |
-| Effort                               | Actual accessible integer slider range; Increment/Decrement; verified position and description | Local + SSH; unknown preview labels use ordinal levels                                                       |
-| Permission cycle / Plan              | Exact offered mode rows; verify selection; restore prior non-Plan mode                         | Local + SSH; cycle excludes Bypass confirmation; Bypass restoration requires the app                         |
+| Effort                               | Actual accessible integer slider range; Increment/Decrement; verified position and description | Local + SSH; Low, Medium, High, Extra, Max and Ultracode names                                               |
+| Permission cycle / Plan              | Exact offered mode rows; verify selection; restore prior non-Plan mode                         | Local + SSH; full offered cycle including Bypass; first-use workspace confirmation handled                   |
 | Context / weekly usage               | Unique Usage picker in exact correlated Code session; parse displayed percentages and bucket   | Local + SSH; no zero for missing data; model-family quota is labeled                                         |
 | Fast                                 | Opus 5 model-menu checkbox; verify model label Fast suffix and restoration                     | Local + SSH, Opus 5 only; no Fable substitute                                                                |
 | Sidebar / Changes                    | Unique named button or numeric toggle; verify changed state and unchanged draft                | Local + SSH                                                                                                  |
@@ -112,12 +112,13 @@ and a Local session. These observations supersede the initial blank-window block
   description High. Increment produced Extra (3); decrement restored High (2).
   The helper derives offered numeric positions from the accessible range, uses
   Increment/Decrement, and verifies both position and selected description.
-  Unobserved preview labels are shown as ordinal levels rather than guessed names.
+  Beta 1 used ordinal previews. Beta 2 verifies and displays the six named levels.
 - Permission menu rows contain a primary mode label and descriptive text. The
   helper reads exact mode labels from each row's child text. Visible Local choices
   were Auto, Manual, Accept edits, Plan and Bypass permissions. Native cycling
   verified Auto → Manual → Accept edits → Plan → Auto. Bypass opened an additional
-  confirmation, which was cancelled; it is excluded from automatic cycling.
+  confirmation, which was cancelled during beta 1. Beta 2 handles that exact dialog
+  after an explicit Bypass selection, with target and draft checks.
 - Opus 5 exposed an Enable fast mode checkbox in its model menu. A UI test turned
   it on and off and verified both the checkbox and Fast mode status. Fable 5.1 did
   not expose it. Native toggling and restoration subsequently passed separately
@@ -186,3 +187,36 @@ this complete replay; locking has not been established as its cause.
 The console-session guard rejects locked, off-console and unavailable desktop
 states before provider targeting or input. It was verified against a locked desktop,
 which returned `LOCKED` without a target. Automatic unlock is not part of the plugin.
+
+### Beta 2 effort and permission follow-up
+
+Reviewed 2026-09-06 against the same installed Desktop version. The numeric menu
+shortcuts in the [Desktop reference](https://code.claude.com/docs/en/desktop#keyboard-shortcuts)
+were verified live: 4 selected Plan and 5 selected Bypass in the offered five-mode
+menu. Production presses the exact semantic row rather than relying on its position.
+
+All six effort descriptions were observed: Low, Medium, High, Extra, Max and
+Ultracode. Fable and Opus exposed the same six names; Sonnet exposed the same slider
+range. Haiku did not offer an enabled effort control. Named choices are validated
+against the actual range and current description; changed semantics are rejected.
+The missing Ultracode picker label was also corrected and selection/restoration tested.
+
+Permission cycling now includes every offered mode. Plan restores a remembered
+non-Plan mode, including Bypass. With no history it selects the unique Default marked
+in Claude's menu, or Manual if none is marked; it never remains stuck in Plan for
+lack of plugin history. Local's full five-mode cycle and history-free return to its
+marked Bypass default passed native testing.
+
+SSH displayed “Bypass all permissions?” on its first Bypass selection. The user
+authorized that workspace confirmation, and the native helper selected Bypass.
+The initial postcheck rejected the result despite the visible Bypass selection;
+it required the original composer Accessibility object to survive the modal. The
+postcheck now allows a composer remount only after this operation confirmed the exact
+dialog, and only with the captured Code session, window, unique composer and draft
+unchanged. Tests reject changed session URLs, ambiguous dialogs, outside buttons,
+and changed drafts. The repeated full SSH cycle and Plan restoration passed;
+SSH Auto mode was restored after acceptance testing.
+
+Fast remains unchanged following the user's clarification. Anthropic's
+[Fast documentation](https://code.claude.com/docs/en/fast-mode) distinguishes supported
+Opus models from other models; this preview retains its verified Opus 5 control.

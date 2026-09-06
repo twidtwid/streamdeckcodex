@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented here.
 
+## 0.3.0-beta.2 — 2026-09-06
+
+- Name Claude effort previews Low, Medium, High, Extra, Max and Ultracode; recognize
+  and verify Ultracode selection instead of reporting an unavailable effort control.
+- Include Bypass in permission cycling and handle its exact first-use workspace
+  confirmation only after an explicit Bypass selection, with target checks.
+- Restore Bypass from Plan. With no prior mode history, use Claude's marked default,
+  falling back to Manual when no default is exposed.
+- Keep Fast's verified Opus model restriction unchanged.
+
 ## 0.3.0-beta.1 — 2026-09-06
 
 - Add per-action Codex / Claude Code / Follow active app bindings and app badges.

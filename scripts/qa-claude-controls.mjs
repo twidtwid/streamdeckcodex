@@ -130,9 +130,7 @@ if (exercise) {
     }
     assert.equal(read().effort, initial.effort);
   }
-  if (
-    !["Plan", "Plan mode", "Bypass permissions"].includes(initial.permission)
-  ) {
+  if (!["Plan", "Plan mode"].includes(initial.permission)) {
     try {
       assert.ok(["Plan", "Plan mode"].includes(perform("plan").permission));
     } finally {
