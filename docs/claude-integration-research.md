@@ -69,28 +69,76 @@ a content-root Code session URL, and unique matching Desktop metadata. Titles an
 focus timestamps do not establish identity. Session IDs are namespaced by app,
 window/process and environment. An unrecognized route or environment fails closed.
 
-| Feature                        | Mechanism / postcondition                                                                                      | Current limitation                                                                             |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Provider routing and display   | Foreground bundle ID; per-action setting; badges; legacy default is Codex                                      | Automated tests cover mixed profiles, focus changes and invalid settings                       |
-| Model / effort                 | Unique semantic picker; observed menu options; same target and unchanged draft; selected picker value verified | Guarded implementation; Local/SSH/Cloud live acceptance pending                                |
-| Permission cycle / Plan        | Only offered modes; verified selection; prior non-Plan mode scoped to target                                   | No guessed prior mode after restart; live acceptance pending                                   |
-| Send / stop                    | Unique composer control; target checks; empty draft after send or stop control disappearance                   | Live acceptance pending; existing unrelated drafts never replaced                              |
-| Session discovery / navigation | Read bounded Desktop session metadata; exact visible session correlation                                       | Recent metadata alone cannot prove a navigable target; navigation unsupported                  |
-| Approval requests              | Requires unique approval card/request identity and verified dismissal                                          | Unsupported until live card selectors and target correlation are established                   |
-| New session / workflow launch  | Requires new identity, exact project/environment, preserved source draft and verified destination draft        | Unsupported; no insertion into a guessed conversation                                          |
-| Compact / panes / skills       | Documented entry points plus feature-specific postconditions                                                   | Unsupported until observed in the installed Code surface                                       |
-| Context                        | Session-specific UI usage evidence                                                                             | Unsupported; no guessed token count                                                            |
-| Plan quota                     | Local `plan-usage-history.json` inspected: version, timestamped samples, organization and usage fields         | Source observed, but active-account attribution/freshness not verified against UI; unsupported |
-| Fast / PTT                     | Must have a verified Desktop equivalent and captured-session release                                           | Unsupported; never substituted with a terminal hotkey or global dictation                      |
+| Feature                              | Verified mechanism and postcondition                                                           | Accepted environment / limitation                                                                            |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Provider routing                     | Foreground bundle ID; per-action provider; namespaced window/session/environment identity      | Native wrong-provider, window, session, environment and background rejections; automated mixed-profile tests |
+| Model                                | Unique Model picker and offered menu rows; unchanged draft and verified selection              | Local + SSH; primary menu choices                                                                            |
+| Effort                               | Actual accessible integer slider range; Increment/Decrement; verified position and description | Local + SSH; unknown preview labels use ordinal levels                                                       |
+| Permission cycle / Plan              | Exact offered mode rows; verify selection; restore prior non-Plan mode                         | Local + SSH; cycle excludes Bypass confirmation; Bypass restoration requires the app                         |
+| Context / weekly usage               | Unique Usage picker in exact correlated Code session; parse displayed percentages and bucket   | Local + SSH; no zero for missing data; model-family quota is labeled                                         |
+| Fast                                 | Opus 5 model-menu checkbox; verify model label Fast suffix and restoration                     | Local + SSH, Opus 5 only; no Fable substitute                                                                |
+| Sidebar / Changes                    | Unique named button or numeric toggle; verify changed state and unchanged draft                | Local + SSH                                                                                                  |
+| Browser pane                         | Unique Browser toggle; verify changed state and unchanged draft                                | Local only; SSH control unavailable in tested session                                                        |
+| Send / stop                          | Guarded implementation exists but is not in the release capability allowlist                   | Unsupported until separately accepted                                                                        |
+| Session discovery / navigation       | Bounded metadata plus exact visible session correlation                                        | Metadata supports identity; navigation unsupported                                                           |
+| Approvals                            | Requires unique approval request/card identity and verified dismissal                          | Unsupported                                                                                                  |
+| New session / workflows              | Requires verified destination identity/project/environment and draft preservation              | Unsupported                                                                                                  |
+| Compact / Files / side chat / skills | Requires feature-specific surface and result proof                                             | Unsupported                                                                                                  |
+| PTT                                  | Visible recording control; hold/release equivalent not yet validated                           | Unsupported; no global dictation fallback                                                                    |
 
-Local, SSH and Cloud each require separate live acceptance. None has completed live
-acceptance in this worktree yet. The development session exposed a visible Claude
-window but no usable composer tree; later both the native API and desktop automation
-service reported the login/locked surface. A subsequent automation connection returned
-a blank Claude content window with native menus but no Code controls. Reloading that
-window was blocked by automatic approval review because it could disrupt session
-state; live acceptance is still pending. Do not label these controls hardware-tested
-or publish the prerelease as validated on the strength of synthetic fixtures.
+Cloud remains unsupported. Local and SSH native transactions passed separately;
+physical hardware acceptance is pending for this prerelease.
+
+### Live observations after the approved reload
+
+On 2026-09-05, the installed Claude 1.46388.4 exposed its Code accessibility tree
+and a Local session. These observations supersede the initial blank-window blocker:
+
+- The focused window is identified by the application's `AXFocusedWindow` reference.
+  Its own `AXFocused` flag was false. The helper now uses the reference and verifies
+  it belongs to the current window list.
+- `AXEnhancedUserInterface=true` did not mean Electron manual accessibility had
+  been requested. Claude now requests `AXManualAccessibility` explicitly once per
+  native transaction. The setting's readback remained false after successful
+  activation, so repeated verification does not repeat the activation delay.
+- A Code content-root URL used `/epitaxy/local_<UUID>`, matching the `sessionId`
+  in Desktop metadata. `cliSessionId` was a different UUID. The parser preserves
+  the prefix; it does not collapse these two namespaces.
+- The installed shortcut panel confirmed Cmd-Shift-I for model, Cmd-Shift-E for
+  effort, Cmd-Shift-M for permissions, and Cmd-Option-F for Fast mode.
+- Model controls expose descriptions such as `Model: Fable 5.1`. Their menus use
+  `AXMenuItem` rows. A UI test selected Opus 5 and restored Fable 5.1.
+- Effort is an `AXSlider`, with observed minimum 0, maximum 5, value 2 and value
+  description High. Increment produced Extra (3); decrement restored High (2).
+  The helper derives offered numeric positions from the accessible range, uses
+  Increment/Decrement, and verifies both position and selected description.
+  Unobserved preview labels are shown as ordinal levels rather than guessed names.
+- Permission menu rows contain a primary mode label and descriptive text. The
+  helper reads exact mode labels from each row's child text. Visible Local choices
+  were Auto, Manual, Accept edits, Plan and Bypass permissions. Native cycling
+  verified Auto → Manual → Accept edits → Plan → Auto. Bypass opened an additional
+  confirmation, which was cancelled; it is excluded from automatic cycling.
+- Opus 5 exposed an Enable fast mode checkbox in its model menu. A UI test turned
+  it on and off and verified both the checkbox and Fast mode status. Fable 5.1 did
+  not expose it. Native toggling and restoration subsequently passed separately
+  on Local and SSH with Opus 5.
+- A Usage picker exposed a model-family weekly percentage and active-session
+  context usage. Parsing and rendering now use these fields, with the bucket
+  explicitly labeled. The PTT control is visible but hold/release is unvalidated.
+
+The shell sandbox can hide running applications. Preflight reports an unobserved
+foreground without calling it locked; live probes require normal desktop process
+access. Native tests brought Claude forward explicitly and verified Local and SSH
+model/effort selection and restoration, Plan restoration, full non-Bypass permission
+cycling, Fast restoration, pane toggles and visible telemetry. Local additionally
+passed an actual unsent-draft test with focus on the Code mode selector rather than
+the composer; the exact test draft survived and was removed afterward without sending.
+
+Negative native tests rejected changed window, session, provider and environment
+identities; a Claude operation while Codex was foreground; ordinary Claude Chat;
+and an actual split with two Prompt composers. The empty split was closed afterward.
+The compiled per-environment capability allowlists contain only these accepted
+operations; send/stop remain disabled despite guarded source implementations.
 
 ## Privacy and release gates
 
@@ -98,17 +146,22 @@ Only known local session metadata is read; no credential files, Keychain access,
 private API calls, application patches, transcript writes, or hooks are installed.
 Diagnostics must exclude prompts, account IDs, and local paths from public artifacts.
 
-Before release: verify exact targeting and restoration on a disposable Claude Code
-session; exercise Local, SSH, Cloud separately; keep unverified combinations disabled;
-validate Mini and Plus, all ten profile archives, and legacy profile compatibility.
-Wrong-target mutations and Codex regressions block publishing. The stable installed
-plugin remains unchanged during this work.
+Before stable release: qualify physical Mini and Plus controls and all generated
+layouts, including legacy and mixed hand-built profiles. Native Local/SSH acceptance
+is recorded above; Cloud and other unproven combinations stay disabled. Wrong-target
+mutations and Codex regressions block publishing. The stable installed plugin remains
+unchanged while this prerelease is offered for hardware acceptance.
 
-### Development acceptance switch
+### Repeatable native acceptance
 
-The compiled environment allowlist is empty until live acceptance succeeds.
-`STREAMDECK_CLAUDE_ACCEPTANCE_ENVIRONMENT` may name exactly `local`, `ssh`, or
-`cloud` in a developer probe process to exercise that environment's guarded
-transactions. It is not a user setup requirement or a default in the packaged
-plugin. Promote an environment to the compiled allowlist only with recorded live
-proof; remove any probe override from the test process afterward.
+Run `node scripts/qa-claude-controls.mjs --environment=local --activate` with an
+existing Local Code session selected (use `ssh` for SSH). This reads options and
+checks invalid-target rejection without selecting new settings. Add `--exercise`
+to change and restore model, effort, Plan, permissions, available Fast and panes.
+Use an idle test session. Logs omit identifiers, drafts and private paths. If the
+target changes, restoration fails closed rather than editing the new session.
+
+`STREAMDECK_CLAUDE_ACCEPTANCE_ENVIRONMENT` is a developer-process override used by
+the acceptance runner to exercise guarded, not-yet-qualified native transactions.
+It is not a user setup requirement, persisted preference, or packaged default.
+Normal operation uses `verifiedClaudeCapabilities`, separately for Local and SSH.

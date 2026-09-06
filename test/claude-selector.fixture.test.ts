@@ -18,6 +18,91 @@ function fixture(input: Record<string, string>) {
 }
 const id = "11111111-2222-4333-a444-555555555555";
 describe("Claude native selector policy", () => {
+  it("recognizes observed Desktop local session IDs and prefixed picker labels", () => {
+    expect(
+      fixture({ url: `https://claude.ai/epitaxy/local_${id}` }).conversationId,
+    ).toBe(`local_${id}`);
+    expect(
+      fixture({ url: `https://claude.ai/epitaxy/local_bad-id` }).conversationId,
+    ).toBeUndefined();
+    expect(fixture({ kind: "model", text: "Model: Fable 5.1" }).model).toBe(
+      "Fable 5.1",
+    );
+    expect(fixture({ kind: "reasoning", text: "Effort: Extra" }).model).toBe(
+      "Extra",
+    );
+  });
+  it.each([
+    [
+      "Auto , teach auto mode about your environment Claude handles permission decisions",
+      "Auto",
+    ],
+    ["Manual Always ask before making changes", "Manual"],
+    ["Accept edits Automatically accept all file edits", "Accept edits"],
+    ["Plan Create a plan before making changes", "Plan"],
+    [
+      "Bypass permissions Accepts all permissions Default",
+      "Bypass permissions",
+    ],
+  ])("reads the semantic permission row %s", (text, expected) => {
+    expect(fixture({ kind: "permission-row", text }).model).toBe(expected);
+  });
+  it("rejects unrelated permission-looking row text", () => {
+    expect(
+      fixture({ kind: "permission-row", text: "Plan something else" }).model,
+    ).toBeUndefined();
+  });
+  it("reads context and the selected weekly bucket from the observed Usage control", () => {
+    const state = fixture({
+      kind: "usage",
+      text: "Usage: Weekly · Fable: 31%, Resets Mon 2:00 PM, Context 161.3k / 1M (16%)",
+    }).providerState;
+    expect(state).toMatchObject({
+      weeklyUsedPercent: 31,
+      weeklyBucket: "Fable",
+      contextUsedPercent: 16,
+    });
+    expect(
+      fixture({
+        kind: "usage",
+        text: "Usage: Weekly · all models: 0%, Resets Mon 2:00 PM",
+      }).providerState.weeklyUsedPercent,
+    ).toBe(0);
+  });
+  it.each([
+    "",
+    "31%",
+    "Usage: Weekly · Fable: 120%, Resets Monday",
+    "Not Usage: Weekly · Fable: 31%, Resets Monday",
+  ])("does not invent usage from %s", (text) => {
+    expect(
+      fixture({ kind: "usage", text }).providerState.weeklyUsedPercent,
+    ).toBeUndefined();
+  });
+  it("preserves word boundaries in Claude control labels", () => {
+    expect(
+      fixture({ kind: "control-label", text: " Enable  fast mode " }).model,
+    ).toBe("enable fast mode");
+    expect(fixture({ kind: "control-label", text: "Hide sidebar" }).model).toBe(
+      "hide sidebar",
+    );
+  });
+  it("cycles offered permission modes without opening Bypass confirmation", () => {
+    const choices = "Auto|Manual|Accept edits|Plan|Bypass permissions";
+    expect(
+      fixture({ kind: "permission-next", choices, text: "Plan" }).model,
+    ).toBe("Auto");
+    expect(
+      fixture({ kind: "permission-next", choices, text: "Bypass permissions" })
+        .model,
+    ).toBe("Auto");
+    expect(
+      fixture({ kind: "permission-next", choices, text: "Manual" }).model,
+    ).toBe("Accept edits");
+    expect(
+      fixture({ kind: "permission-next", choices: "Plan", text: "Plan" }).model,
+    ).toBeUndefined();
+  });
   it.each(["code", "epitaxy", "claude-code-desktop"])(
     "recognizes the %s Code root with a full UUID",
     (path) => {

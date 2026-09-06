@@ -182,6 +182,41 @@ describe("shared action adapter", () => {
       ">CLAUDE</text>",
     );
   });
+  it.each(["command", "keycap"])(
+    "renders active Fast consistently on %s keys",
+    async (kind) => {
+      fake.observation.fast = true;
+      fake.observation.capabilities = ["fast"];
+      const { router } = action(kind);
+      const key = new FakeStreamDeckAction({
+        provider: "claude",
+        commandId: "fast",
+        action: "command:fast",
+        label: "FAST",
+        icon: "fast",
+      });
+      await router.onWillAppear(keyEvent(key));
+      const image = key.calls.filter((c) => c.method === "setImage").at(-1)!
+        .value as string;
+      const svg = Buffer.from(image.split(",")[1]!, "base64").toString();
+      expect(svg).toContain(">ACTIVE</text>");
+      expect(svg).toContain('fill="#F4B740" stroke="#F4B740"');
+      expect(svg).not.toContain("UNSUPPORTED");
+    },
+  );
+  it("shows the actual Fast mode state on a command dial", async () => {
+    fake.observation.fast = true;
+    fake.observation.capabilities = ["fast"];
+    const { router } = action("command");
+    const dial = new FakeStreamDeckAction(
+      { provider: "claude", commandId: "fast" },
+      "dial",
+    );
+    await router.onWillAppear(keyEvent(dial));
+    expect(
+      dial.calls.filter((c) => c.method === "setFeedback").at(-1)?.value,
+    ).toMatchObject({ value: "ACTIVE" });
+  });
   it("remembers a prior permission mode per exact session for Plan toggle", async () => {
     const { router } = action("command");
     const key = new FakeStreamDeckAction({
@@ -193,13 +228,32 @@ describe("shared action adapter", () => {
     fake.observation.permission = "Plan";
     await router.onKeyDown(keyEvent(key));
     expect(fake.perform.mock.calls.at(-1)![0].value).toBe("Auto");
-    fake.observation.target = { ...target, sessionId: "other" };
+    fake.observation.target = {
+      ...target,
+      sessionId: "plan-with-no-observed-prior-mode",
+    };
     await router.onKeyDown(keyEvent(key));
     expect(fake.perform).toHaveBeenCalledTimes(2);
     // A second press after the new target is rendered cannot restore the old
     // session's permission mode.
     await router.onKeyDown(keyEvent(key));
     expect(fake.perform.mock.calls.at(-1)![0].value).toBeUndefined();
+  });
+  it("remembers an observed mode when Plan is entered through another control", async () => {
+    fake.observation.target = {
+      ...target,
+      sessionId: "external-plan-transition",
+    };
+    fake.observation.permission = "Manual";
+    const { router } = action("command");
+    const key = new FakeStreamDeckAction({
+      provider: "claude",
+      commandId: "plan",
+    });
+    await router.onWillAppear(keyEvent(key));
+    fake.observation.permission = "Plan";
+    await router.onKeyDown(keyEvent(key));
+    expect(fake.perform.mock.calls.at(-1)![0].value).toBe("Manual");
   });
   it("releases Codex PTT with its original settings while a provider read is pending", async () => {
     const { legacy, router } = action("command");

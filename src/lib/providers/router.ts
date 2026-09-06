@@ -26,9 +26,21 @@ export function serializeProviders<T>(work: () => Promise<T>): Promise<T> {
   tail = next.catch(() => undefined);
   return next;
 }
+function rememberNonPlanMode(): void {
+  if (
+    observation.foreground === "claude" &&
+    observation.target &&
+    freshObservation(observation) &&
+    observation.permission &&
+    !["Plan", "Plan mode"].includes(observation.permission)
+  ) {
+    priorModes.set(targetKey(observation.target), observation.permission);
+  }
+}
 export async function observeProviders(): Promise<void> {
   try {
     observation = await claudeProvider.read();
+    rememberNonPlanMode();
   } catch {
     observation = { observedAt: Date.now(), reason: "NO DATA" };
   }
@@ -253,13 +265,12 @@ export class ProviderAction extends SingletonAction<any> {
   private async perform(operation: string, value?: string) {
     if (!observation.target) throw new Error("NO CHAT");
     const key = targetKey(observation.target);
-    if (operation === "plan") {
-      if (
-        observation.permission &&
-        !["Plan", "Plan mode"].includes(observation.permission)
-      )
-        priorModes.set(key, observation.permission);
-      else value = priorModes.get(key);
+    rememberNonPlanMode();
+    if (
+      operation === "plan" &&
+      ["Plan", "Plan mode"].includes(observation.permission ?? "")
+    ) {
+      value = priorModes.get(key);
     }
     const reply = await claudeProvider.perform({
       operation,
@@ -286,7 +297,9 @@ export class ProviderAction extends SingletonAction<any> {
             options: reply.options,
             index: Math.max(
               0,
-              reply.options.findIndex((o) => o.value === current),
+              reply.options.findIndex(
+                (o) => o.value === current || o.label === current,
+              ),
             ),
           };
         }
@@ -387,12 +400,26 @@ export class ProviderAction extends SingletonAction<any> {
       detail = entry.error ?? state ?? observation.permission ?? "NO DATA";
     }
     if (kind === "usage") {
-      label = "Weekly left";
+      label = observation.weeklyBucket
+        ? `Weekly · ${observation.weeklyBucket}`
+        : "Weekly left";
       icon = "usage";
+      detail =
+        entry.error ??
+        state ??
+        (observation.weeklyUsedPercent === undefined
+          ? "NO DATA"
+          : `${Math.round(100 - observation.weeklyUsedPercent)}% left`);
     }
     if (kind === "context") {
       label = "Context left";
       icon = "context";
+      detail =
+        entry.error ??
+        state ??
+        (observation.contextUsedPercent === undefined
+          ? "NO DATA"
+          : `${Math.round(100 - observation.contextUsedPercent)}%`);
     }
     if (kind === "health") {
       label = "Health";
@@ -408,29 +435,44 @@ export class ProviderAction extends SingletonAction<any> {
       label = entry.settings.label ?? "Keycap";
       icon = entry.settings.icon ?? "command";
     }
+    const command =
+      kind === "command"
+        ? this.command(entry)
+        : kind === "keycap" &&
+            typeof entry.settings.action === "string" &&
+            entry.settings.action.startsWith("command:")
+          ? COMMANDS.find((c) => c.id === entry.settings.action.slice(8))
+          : undefined;
     if (kind === "command") {
-      const command = this.command(entry);
       label = command?.dialLabel ?? command?.label ?? "Command";
       icon = command?.icon ?? "command";
-      if (
-        !entry.error &&
-        !state &&
-        observation.capabilities?.includes(command?.id ?? "")
-      )
-        detail = "READY";
-      if (entry.action.isKey() && detail === "READY" && command) {
+    }
+    if (
+      command &&
+      !entry.error &&
+      !state &&
+      observation.capabilities?.includes(command.id)
+    ) {
+      const modeState =
+        command.id === "plan"
+          ? ["Plan", "Plan mode"].includes(observation.permission ?? "")
+            ? "ACTIVE"
+            : "OFF"
+          : command.id === "fast"
+            ? observation.fast
+              ? "ACTIVE"
+              : "OFF"
+            : undefined;
+      detail = modeState ?? "READY";
+      if (entry.action.isKey()) {
         await renderKey(
           entry.action,
           svgDataUrl(
             commandKeySvg(
-              command.label,
+              kind === "command" ? command.label : label,
               command.accent,
-              command.icon,
-              command.id === "plan"
-                ? observation.permission === "Plan"
-                  ? "ACTIVE"
-                  : "OFF"
-                : undefined,
+              icon,
+              modeState,
             ),
           ),
         );

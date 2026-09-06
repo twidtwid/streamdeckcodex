@@ -27,6 +27,10 @@ export interface ProviderObservation {
   effort?: string;
   permission?: string;
   draftEmpty?: boolean;
+  fast?: boolean;
+  weeklyUsedPercent?: number;
+  weeklyBucket?: string;
+  contextUsedPercent?: number;
   sessions?: ProviderSession[];
   capabilities?: string[];
   observedAt: number;

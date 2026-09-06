@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import { nativeHelperPath } from "./lib/native-helper-path.mjs";
 import { resolve } from "node:path";
 
+// Requires desktop process access; a sandbox can hide the foreground app.
 // Read-only, bounded and public-safe: do not print session IDs, titles or paths.
 const result = spawnSync(nativeHelperPath(resolve(".")), ["provider-read"], {
   encoding: "utf8",
@@ -19,7 +20,7 @@ const ready =
 console.log(
   JSON.stringify(
     {
-      foreground: state?.foreground ?? "other-or-locked",
+      foreground: state?.foreground ?? "unobserved",
       exactCodeTarget: !!state?.target,
       environment: state?.target?.environment ?? "unavailable",
       modelExposed: !!state?.model,

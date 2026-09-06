@@ -12,13 +12,13 @@
           "TitleAlignment": "bottom"
         }
       ],
-      "Tooltip": "Cycle Ask for approval, Approve for me, Full Access, and Custom permissions.",
+      "Tooltip": "Cycle available permission modes for the selected app. Claude excludes Bypass confirmation.",
       "UUID": "com.todd.streamdeckcodex.approval-mode"
     },
     {
       "Controllers": ["Keypad"],
       "Icon": "imgs/actions/keycap",
-      "Name": "Codex Workflow Key",
+      "Name": "Workflow Key",
       "States": [
         {
           "Image": "imgs/actions/command",
@@ -26,7 +26,7 @@
           "TitleAlignment": "bottom"
         }
       ],
-      "Tooltip": "Launch the explicitly labeled Codex command or workflow.",
+      "Tooltip": "Run the labeled command or workflow. Unsupported provider features show their status.",
       "UUID": "com.todd.streamdeckcodex.keycap",
       "VisibleInActionsList": false
     },
@@ -56,7 +56,7 @@
         }
       },
       "Icon": "imgs/actions/command",
-      "Name": "Codex Command",
+      "Name": "Command",
       "PropertyInspectorPath": "ui/inspector.html",
       "States": [
         {
@@ -109,7 +109,7 @@
           "Image": "imgs/actions/model"
         }
       ],
-      "Tooltip": "Preview Luna, Terra, or Sol, then press to apply the displayed model.",
+      "Tooltip": "Preview available models for the selected app, then press to apply.",
       "UUID": "com.todd.streamdeckcodex.model"
     },
     {
@@ -130,7 +130,7 @@
           "Image": "imgs/actions/reasoning"
         }
       ],
-      "Tooltip": "View and change the active Codex chat's reasoning effort.",
+      "Tooltip": "View and change the selected app session\u2019s reasoning effort.",
       "UUID": "com.todd.streamdeckcodex.reasoning"
     },
     {
@@ -164,7 +164,7 @@
           "ShowTitle": false
         }
       ],
-      "Tooltip": "Display weekly Codex usage left; press to toggle banked resets left.",
+      "Tooltip": "Display available usage and identify the selected app and quota bucket.",
       "UUID": "com.todd.streamdeckcodex.usage"
     },
     {
@@ -177,7 +177,7 @@
           "ShowTitle": false
         }
       ],
-      "Tooltip": "Display context left in the focused Codex chat; press to toggle used and maximum tokens.",
+      "Tooltip": "Display context left for the verified active session.",
       "UUID": "com.todd.streamdeckcodex.context"
     },
     {

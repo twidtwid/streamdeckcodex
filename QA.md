@@ -133,8 +133,9 @@ private paths, Codex logs, or account data.
 
 ## Claude development acceptance
 
-The Claude integration has not passed live hardware acceptance. Before prerelease,
-use a disposable Code session with a recognizable project and empty draft. Validate
+The Claude prerelease has passed native Local/SSH acceptance; physical hardware
+acceptance remains pending before stable release. For further testing, use an idle
+Code session with a recognizable project and empty draft. Validate
 Local, SSH and Cloud separately. Record installed Claude version and supported
 capabilities in the research matrix. Exercise duplicate titles, multiple windows,
 side composers, app/session switches during dial preview, unchanged drafts after
@@ -143,3 +144,8 @@ Verify a mixed hand-built Mini profile and a shared Plus profile; preserve the s
 installed plugin until the candidate is ready. Unsupported features must remain
 labeled and must not send fallback hotkeys. Do not claim that fixture tests establish
 live acceptance or ship while exact targeting is unverified.
+
+The repeatable native gate is `node scripts/qa-claude-controls.mjs
+--environment=local --activate --exercise` (use `ssh` for SSH). The command verifies
+and restores supported settings and omits private identifiers from its output.
+See the research matrix for the exact live cases already completed.

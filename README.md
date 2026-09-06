@@ -1,32 +1,47 @@
-> **Claude integration development branch:** v0.3.0-beta.1 adds application routing and
-> opt-in shared profiles. Claude native controls are guarded and still await live
-> acceptance. The stable v0.2.4 release remains unchanged. See the
-> [research and capability matrix](docs/claude-integration-research.md).
+> **v0.3.0-beta.1: Claude Code preview for hardware acceptance.** Native controls
+> have been tested separately on Local and SSH sessions in Claude Desktop 1.46388.4.
+> Physical Mini/Plus acceptance of this candidate is pending; stable v0.2.4 is unchanged.
+> See the [research and capability matrix](docs/claude-integration-research.md).
 >
-> Every action's property inspector offers **Codex**, **Claude Code**, or
-> **Follow active app**. Missing settings preserve Codex behavior. Shared
-> `streamdeckai-*` profiles follow the foreground app and display its name on
-> each control; `streamdeckcodex-*` profiles retain their original bindings.
-> Import the profile for your device explicitly. The plugin never switches
-> or replaces a hand-built profile automatically.
+> Every action offers **Codex**, **Claude Code**, or **Follow active app**.
+> Missing settings preserve Codex behavior. Opt-in `streamdeckai-*` profiles follow
+> the foreground supported app and label each control; `streamdeckcodex-*` profiles
+> retain their original bindings. Import the profile for your device explicitly.
+> The plugin never switches or replaces a hand-built profile automatically.
 >
-> Claude integration targets the **Code** tab only. Unverified controls display
-> **UNSUPPORTED**, missing observations display **NO DATA**, and controls do not
-> reuse another app's last active session. No hooks, API keys, or companion
-> daemon are required. Live validation is still pending for Local, SSH, and Cloud.
+> Claude targets the **Code** tab only. Claude controls require that app in front,
+> including pinned Claude controls. Unsupported features show **UNSUPPORTED**,
+> missing readings show **NO DATA**, and old observations show **STALE**.
+> No hooks, API keys, credential extraction, or companion daemon are required.
+
+| Claude capability                                                               | Local       | SSH         | Cloud       |
+| ------------------------------------------------------------------------------- | ----------- | ----------- | ----------- |
+| Model / effort                                                                  | Verified    | Verified    | Unsupported |
+| Permission cycle / Plan                                                         | Verified    | Verified    | Unsupported |
+| Context / weekly usage                                                          | Exposed UI  | Exposed UI  | Unsupported |
+| Fast                                                                            | Opus 5 only | Opus 5 only | Unsupported |
+| Sidebar / Changes                                                               | Verified    | Verified    | Unsupported |
+| Browser pane                                                                    | Verified    | Unsupported | Unsupported |
+| Approvals, new/send/stop, compact, files, side chat, workflows, navigation, PTT | Unsupported | Unsupported | Unsupported |
+
+Permission cycling excludes Bypass because Claude requires a separate confirmation.
+Plan restores a previously observed non-Plan mode, except Bypass; select Bypass in
+Claude itself. Effort choices come from the actual slider range: unobserved labels
+appear as ordinal levels. Weekly usage names the displayed model-family bucket;
+it does not imply an account-wide percentage. These Claude gaps do not alter Codex controls.
 
 # Stream Deck Codex Companion
 
 [![CI](https://github.com/twidtwid/streamdeckcodex/actions/workflows/ci.yml/badge.svg)](https://github.com/twidtwid/streamdeckcodex/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Local Stream Deck controls for the Codex desktop app on macOS. It provides live
+Local Stream Deck controls for Codex and Claude Code Desktop on macOS. It provides live
 chat status, commands, workflows, approval mode, usage, and context on keys.
 Each supported Stream Deck family gets a layout sized for its physical keys.
 Stream Deck + also gets four live dials.
 
 This is an unofficial community project. It is not affiliated with or endorsed
-by OpenAI, Work Louder, Elgato, or Corsair, and it includes no proprietary
+by OpenAI, Anthropic, Work Louder, Elgato, or Corsair, and it includes no proprietary
 OpenAI artwork or source.
 
 ![Stream Deck Codex Companion running on a Stream Deck +](assets/hardware/stream-deck-plus.jpg)
@@ -40,7 +55,7 @@ OpenAI artwork or source.
 Requirements:
 
 - macOS 13 or newer
-- [Codex desktop](https://openai.com/codex/) installed and signed in
+- [Codex desktop](https://openai.com/codex/) or Claude Desktop installed and signed in
 - Stream Deck 7.1 or newer
 - Stream Deck, Stream Deck Mini, Stream Deck Neo, Stream Deck XL, or Stream
   Deck +; dials require Stream Deck +
@@ -49,7 +64,7 @@ Requirements:
    [Releases](https://github.com/twidtwid/streamdeckcodex/releases) page.
 2. Download `com.todd.streamdeckcodex.streamDeckPlugin` from the newest release.
 3. Double-click the downloaded file and approve installation in Stream Deck.
-4. Open Codex and select a chat.
+4. Open Codex and select a chat, or select an existing Claude Code session and choose Claude Code in the action inspector.
 5. In **System Settings → Privacy & Security → Accessibility**, grant
    access to **Elgato Stream Deck** and, when listed, its
    **trampoline_handler** helper. Stream Deck 7.5 launches plugin processes
@@ -58,7 +73,7 @@ Requirements:
 No API key, account token, background service, or separate Codex CLI
 installation is required.
 
-### Included profiles
+### Included Codex profiles
 
 The editable profile for the connected model should install automatically.
 Stream Deck + opens on Agents & Sessions, followed by Live Controls, then the
@@ -76,6 +91,12 @@ If no profile appears, download and open the matching release asset:
 | Stream Deck Neo  | `streamdeckcodex-neo.streamDeckProfile`         |
 | Stream Deck XL   | `streamdeckcodex-xl.streamDeckProfile`          |
 | Stream Deck +    | `streamdeckcodex-plus.streamDeckProfile`        |
+
+For the opt-in shared profiles, replace `streamdeckcodex-` with `streamdeckai-`
+in the asset names above. Shared layouts keep the same positions and display
+unsupported Claude controls explicitly. They do not auto-install over your profiles.
+
+The following layout descriptions describe the full Codex capabilities.
 
 Live Controls contains FAST, Permissions, PTT, Quota, YEET, New Project,
 Compact, and Context. Agents & Sessions contains six live chat slots, New Chat,

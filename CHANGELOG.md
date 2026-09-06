@@ -2,12 +2,17 @@
 
 All notable changes to this project are documented here.
 
-## 0.3.0-beta.1 — unreleased
+## 0.3.0-beta.1 — 2026-09-05
 
 - Add per-action Codex / Claude Code / Follow active app bindings and app badges.
 - Preserve existing Codex actions behind an adapter and isolate Claude targeting.
-- Add guarded Claude model, effort, permission, Plan, and send/stop transactions;
-  live acceptance remains pending and unsupported controls fail closed.
+- Add verified Claude Local/SSH model, effort slider, permission cycle, Plan,
+  context, weekly usage, sidebar and Changes controls; Local also supports Browser.
+- Add Fast for verified Opus 5 menus, including the filled active lightning bolt.
+- Exclude Bypass from cycling because it opens an additional app confirmation.
+- Reject Chat/Cowork, ambiguous composers, changed targets and background actions.
+- Keep Cloud, approvals, new/send/stop, compact, workflows, navigation and PTT
+  unsupported in this preview. Physical Mini/Plus acceptance is pending.
 - Add five opt-in shared profiles alongside the five unchanged Codex profiles.
 - Stop automatically activating bundled profiles over a hand-built profile.
 - Record upstream source/license research and environment-specific acceptance gates.

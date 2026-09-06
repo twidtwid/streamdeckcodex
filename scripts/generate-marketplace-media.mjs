@@ -60,7 +60,7 @@ async function makeThumbnail() {
       text("CODEX + CLAUDE", 108, 86, 42, "#9CD5FE"),
       text("FOR STREAM DECK", 108, 136, 84, "#F7F9FC"),
       text(
-        "Codex controls · Claude development preview · one plugin",
+        "Codex controls · Claude Local + SSH preview · one plugin",
         112,
         238,
         30,
@@ -168,7 +168,13 @@ async function makeCompatibilityGallery() {
 
 async function canvas(destination, labels, layers) {
   labels.push(
-    text("CLAUDE CODE: LIVE ACCEPTANCE PENDING", 126, 918, 20, "#E7A589"),
+    text(
+      "CLAUDE LOCAL + SSH · HARDWARE ACCEPTANCE PENDING",
+      126,
+      918,
+      20,
+      "#E7A589",
+    ),
   );
   const labelArguments = labels.flatMap((item) => [
     "-font",
