@@ -18,6 +18,14 @@ function fixture(input: Record<string, string>) {
 }
 const id = "11111111-2222-4333-a444-555555555555";
 describe("Claude native selector policy", () => {
+  it.each([
+    [{ console: "true", locked: "false" }, "READY"],
+    [{ console: "true", locked: "true" }, "LOCKED"],
+    [{ console: "false", locked: "false" }, "NO DESKTOP"],
+    [{ missing: "true" }, "NO DESKTOP"],
+  ])("rejects inactive desktop state %j", (state, expected) => {
+    expect(fixture({ kind: "desktop", ...state }).model).toBe(expected);
+  });
   it("recognizes observed Desktop local session IDs and prefixed picker labels", () => {
     expect(
       fixture({ url: `https://claude.ai/epitaxy/local_${id}` }).conversationId,

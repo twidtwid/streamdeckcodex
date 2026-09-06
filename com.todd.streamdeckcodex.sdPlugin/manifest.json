@@ -130,7 +130,7 @@
           "Image": "imgs/actions/reasoning"
         }
       ],
-      "Tooltip": "View and change the selected app session\u2019s reasoning effort.",
+      "Tooltip": "View and change the selected app session’s reasoning effort.",
       "UUID": "com.todd.streamdeckcodex.reasoning"
     },
     {

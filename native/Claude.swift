@@ -57,7 +57,15 @@ func claudeEnvironmentAccepted(_ environment: String) -> Bool {
 
 var initializedClaudeProcesses: Set<pid_t> = []
 let claudeBundleId = "com.anthropic.claudefordesktop"
+func providerDesktopUnavailableReason(_ session: [String: Any]?) -> String? {
+    guard let session, (session[kCGSessionOnConsoleKey as String] as? NSNumber)?.boolValue == true else { return "NO DESKTOP" }
+    return (session["CGSSessionScreenIsLocked"] as? NSNumber)?.boolValue == true ? "LOCKED" : nil
+}
+func providerDesktopState() -> String? {
+    providerDesktopUnavailableReason(CGSessionCopyCurrentDictionary() as? [String: Any])
+}
 func providerForeground() -> String? {
+    guard providerDesktopState() == nil else { return nil }
     switch NSWorkspace.shared.frontmostApplication?.bundleIdentifier {
     case "com.openai.codex": return "codex"
     case claudeBundleId: return "claude"
@@ -189,6 +197,7 @@ struct ClaudeCapture {
     let state: ProviderState
 }
 func captureClaude() throws -> ClaudeCapture {
+    if let reason = providerDesktopState() { throw ControlError.failed(reason, "NO_FOCUS") }
     guard providerForeground() == "claude",
           let app = NSRunningApplication.runningApplications(withBundleIdentifier: claudeBundleId).first
     else { throw ControlError.failed("BACKGROUND", "NO_FOCUS") }
@@ -292,6 +301,7 @@ func captureClaude() throws -> ClaudeCapture {
 }
 
 func observeProviderState() -> ProviderState {
+    if let reason = providerDesktopState() { return ProviderState(reason: reason) }
     guard providerForeground() == "claude" else { return ProviderState(foreground: providerForeground()) }
     do { return try captureClaude().state }
     catch { return ProviderState(foreground: "claude", reason: error.localizedDescription) }
@@ -561,6 +571,13 @@ func runProviderAction(_ action: String, requested: String?) {
     if action == "fixture-claude-policy", let requested,
        let data = Data(base64Encoded: requested),
        let fixture = (try? JSONSerialization.jsonObject(with: data)) as? [String: String] {
+        if fixture["kind"] == "desktop" {
+            let session: [String: Any]? = fixture["missing"] == "true" ? nil : [
+                kCGSessionOnConsoleKey as String: fixture["console"] == "true",
+                "CGSSessionScreenIsLocked": fixture["locked"] == "true"
+            ]
+            emit(ControlResult(ok: true, action: action, requested: nil, model: providerDesktopUnavailableReason(session) ?? "READY", effort: nil, message: "Desktop availability fixture"), exitCode: 0)
+        }
         if fixture["kind"] == "usage" {
             let usage = claudeUsageLabel(fixture["text"] ?? "")
             var result = ControlResult(ok: true, action: action, requested: nil, model: nil, effort: nil, message: "Claude usage label fixture")

@@ -165,3 +165,16 @@ target changes, restoration fails closed rather than editing the new session.
 the acceptance runner to exercise guarded, not-yet-qualified native transactions.
 It is not a user setup requirement, persisted preference, or packaged default.
 Normal operation uses `verifiedClaudeCapabilities`, separately for Local and SSH.
+
+### Final qualification status
+
+The final repeated Local menu run encountered `Menu unavailable`, followed by a
+menu remaining in Accessibility state after it was absent from the window image.
+Later computer-use checks explicitly reported a locked desktop. These observations
+do not prove that locking caused the earlier menu failure. The repeat must pass on
+an unlocked desktop before publishing the prerelease; earlier successful Local and
+SSH transactions remain the evidence for the capability matrix above.
+
+A new console-session guard rejects locked, off-console and unavailable desktop
+states before provider targeting or input. It was verified against a locked desktop,
+which returned `LOCKED` without a target. Automatic unlock is not part of the plugin.
