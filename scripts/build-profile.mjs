@@ -1,4 +1,9 @@
 import {
+  sharedId,
+  sharedProfileName,
+  sharedProfileDocument,
+} from "./lib/shared-profile.mjs";
+import {
   cp,
   mkdir,
   mkdtemp,
@@ -7,6 +12,7 @@ import {
   rename,
   rm,
   utimes,
+  writeFile,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -47,6 +53,35 @@ const profiles = [
     profileDirectory: `${profile.archiveName}.sdProfile`,
   })),
 ];
+const allProfiles = [
+  ...profiles,
+  ...profiles.map((profile) => ({
+    ...profile,
+    sourceArchiveName: profile.archiveName,
+    archiveName: sharedProfileName(profile.archiveName),
+    profileDirectory: `${sharedId(profile.profileDirectory)}.sdProfile`,
+    shared: true,
+  })),
+];
+async function adaptShared(directory) {
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const source = join(directory, entry.name);
+    if (entry.isDirectory()) {
+      await adaptShared(source);
+      if (/^[A-F0-9]{8}(?:-[A-F0-9]{4}){3}-[A-F0-9]{12}$/i.test(entry.name))
+        await rename(source, join(directory, sharedId(entry.name)));
+    } else if (entry.name.endsWith(".json")) {
+      await writeFile(
+        source,
+        JSON.stringify(
+          sharedProfileDocument(JSON.parse(await readFile(source, "utf8"))),
+          null,
+          2,
+        ) + "\n",
+      );
+    }
+  }
+}
 const temporary = await mkdtemp(join(tmpdir(), "streamdeckcodex-profile-"));
 const archiveTimestamp = new Date("2000-01-01T00:00:00.000Z");
 
@@ -77,12 +112,17 @@ async function normalizeArchiveTimes(directory, entries) {
 
 try {
   await mkdir(outputRoot, { recursive: true });
-  for (const profile of profiles) {
-    const source = join(root, "profile-src", profile.archiveName);
+  for (const profile of allProfiles) {
+    const source = join(
+      root,
+      "profile-src",
+      profile.sourceArchiveName ?? profile.archiveName,
+    );
     const profileRoot = join(temporary, profile.profileDirectory);
     const archive = join(temporary, `${profile.archiveName}.streamDeckProfile`);
     const output = join(outputRoot, `${profile.archiveName}.streamDeckProfile`);
     await cp(source, profileRoot, { recursive: true });
+    if (profile.shared) await adaptShared(profileRoot);
     const entries = [
       `${profile.profileDirectory}/`,
       ...(await archiveEntries(profileRoot)).map(

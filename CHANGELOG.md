@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented here.
 
+## 0.3.0-beta.1 — unreleased
+
+- Add per-action Codex / Claude Code / Follow active app bindings and app badges.
+- Preserve existing Codex actions behind an adapter and isolate Claude targeting.
+- Add guarded Claude model, effort, permission, Plan, and send/stop transactions;
+  live acceptance remains pending and unsupported controls fail closed.
+- Add five opt-in shared profiles alongside the five unchanged Codex profiles.
+- Stop automatically activating bundled profiles over a hand-built profile.
+- Record upstream source/license research and environment-specific acceptance gates.
+
 ## 0.2.4 — 2026-09-05
 
 ### Fixed

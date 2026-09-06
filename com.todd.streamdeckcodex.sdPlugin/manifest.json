@@ -199,12 +199,12 @@
     "mac": ["com.openai.codex"]
   },
   "Author": "Todd Dailey",
-  "Category": "Codex Companion",
+  "Category": "Codex + Claude Companion",
   "CategoryIcon": "imgs/category",
   "CodePath": "bin/plugin.js",
-  "Description": "Local Stream Deck controls for Codex on macOS, with live chat status, workflows, commands, usage, and context. Stream Deck + adds model, reasoning, and chat-navigation dials.",
+  "Description": "Independent Stream Deck companion for Codex and Claude Code Desktop. Claude controls are experimental and capability-gated.",
   "Icon": "imgs/plugin",
-  "Name": "Codex Companion",
+  "Name": "Codex + Claude Companion",
   "Nodejs": {
     "Version": "24"
   },
@@ -249,6 +249,41 @@
       "DontAutoSwitchWhenInstalled": true,
       "Name": "streamdeckcodex-neo",
       "Readonly": false
+    },
+    {
+      "AutoInstall": false,
+      "DeviceType": 0,
+      "DontAutoSwitchWhenInstalled": true,
+      "Name": "streamdeckai-stream-deck",
+      "Readonly": false
+    },
+    {
+      "AutoInstall": false,
+      "DeviceType": 1,
+      "DontAutoSwitchWhenInstalled": true,
+      "Name": "streamdeckai-mini",
+      "Readonly": false
+    },
+    {
+      "AutoInstall": false,
+      "DeviceType": 2,
+      "DontAutoSwitchWhenInstalled": true,
+      "Name": "streamdeckai-xl",
+      "Readonly": false
+    },
+    {
+      "AutoInstall": false,
+      "DeviceType": 7,
+      "DontAutoSwitchWhenInstalled": true,
+      "Name": "streamdeckai-plus",
+      "Readonly": false
+    },
+    {
+      "AutoInstall": false,
+      "DeviceType": 9,
+      "DontAutoSwitchWhenInstalled": true,
+      "Name": "streamdeckai-neo",
+      "Readonly": false
     }
   ],
   "SDKVersion": 3,
@@ -258,5 +293,5 @@
   "SupportURL": "https://github.com/twidtwid/streamdeckcodex/issues",
   "URL": "https://github.com/twidtwid/streamdeckcodex",
   "UUID": "com.todd.streamdeckcodex",
-  "Version": "0.2.4.0"
+  "Version": "0.3.0.1"
 }

@@ -130,3 +130,16 @@ Record connected evidence outside the repository while testing. A release note
 may summarize the verified device model, software versions, postconditions, and
 restoration result, but must not include device serials, task identifiers,
 private paths, Codex logs, or account data.
+
+## Claude development acceptance
+
+The Claude integration has not passed live hardware acceptance. Before prerelease,
+use a disposable Code session with a recognizable project and empty draft. Validate
+Local, SSH and Cloud separately. Record installed Claude version and supported
+capabilities in the research matrix. Exercise duplicate titles, multiple windows,
+side composers, app/session switches during dial preview, unchanged drafts after
+picker changes, Plan restoration, and lack of fallback on Chat/Cowork or login window.
+Verify a mixed hand-built Mini profile and a shared Plus profile; preserve the stable
+installed plugin until the candidate is ready. Unsupported features must remain
+labeled and must not send fallback hotkeys. Do not claim that fixture tests establish
+live acceptance or ship while exact targeting is unverified.

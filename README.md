@@ -1,3 +1,20 @@
+> **Claude integration development branch:** v0.3.0-beta.1 adds application routing and
+> opt-in shared profiles. Claude native controls are guarded and still await live
+> acceptance. The stable v0.2.4 release remains unchanged. See the
+> [research and capability matrix](docs/claude-integration-research.md).
+>
+> Every action's property inspector offers **Codex**, **Claude Code**, or
+> **Follow active app**. Missing settings preserve Codex behavior. Shared
+> `streamdeckai-*` profiles follow the foreground app and display its name on
+> each control; `streamdeckcodex-*` profiles retain their original bindings.
+> Import the profile for your device explicitly. The plugin never switches
+> or replaces a hand-built profile automatically.
+>
+> Claude integration targets the **Code** tab only. Unverified controls display
+> **UNSUPPORTED**, missing observations display **NO DATA**, and controls do not
+> reuse another app's last active session. No hooks, API keys, or companion
+> daemon are required. Live validation is still pending for Local, SSH, and Cloud.
+
 # Stream Deck Codex Companion
 
 [![CI](https://github.com/twidtwid/streamdeckcodex/actions/workflows/ci.yml/badge.svg)](https://github.com/twidtwid/streamdeckcodex/actions/workflows/ci.yml)
