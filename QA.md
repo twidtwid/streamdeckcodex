@@ -150,6 +150,6 @@ The repeatable native gate is `node scripts/qa-claude-controls.mjs
 and restores supported settings and omits private identifiers from its output.
 See the research matrix for the exact live cases already completed.
 
-Publication is currently held for the final repeated Local picker test described in
-`docs/claude-integration-research.md`. Prior native acceptance does not waive that
-unresolved check. Locked desktops must return `LOCKED` without a Claude target.
+The complete Local and SSH replays passed on 2026-09-06 after fixing the metadata size limit;
+see `docs/claude-integration-research.md`. Locked desktops must return `LOCKED`
+without a Claude target. Physical Mini/Plus acceptance is still required before stable.

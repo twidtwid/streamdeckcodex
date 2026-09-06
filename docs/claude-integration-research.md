@@ -166,15 +166,23 @@ the acceptance runner to exercise guarded, not-yet-qualified native transactions
 It is not a user setup requirement, persisted preference, or packaged default.
 Normal operation uses `verifiedClaudeCapabilities`, separately for Local and SSH.
 
-### Final qualification status
+### Final qualification replay
 
-The final repeated Local menu run encountered `Menu unavailable`, followed by a
-menu remaining in Accessibility state after it was absent from the window image.
-Later computer-use checks explicitly reported a locked desktop. These observations
-do not prove that locking caused the earlier menu failure. The repeat must pass on
-an unlocked desktop before publishing the prerelease; earlier successful Local and
-SSH transactions remain the evidence for the capability matrix above.
+On 2026-09-06, the unlocked Local replay exposed an independent metadata bug:
+Desktop's valid session JSON had grown to 321,001 bytes because it also contains
+prompt snapshots. The old 256 KiB limit silently excluded it. The metadata reader
+now accepts up to 4 MiB and bounds the read itself, including concurrent file growth.
+Regression tests cover the observed size, the limit, and an oversized file.
+Optional diagnostics expose only counts for Code roots, matching metadata and
+matching windows; they do not print session identities or content.
 
-A new console-session guard rejects locked, off-console and unavailable desktop
+After this fix, the complete Local replay passed model/effort discovery and
+selection, Fast, Plan, a full permission cycle, sidebar, Changes, Browser and
+wrong-target rejection. Original settings were restored and both telemetry fields
+were observed. The complete SSH replay subsequently passed the same supported
+operations independently, including restoration and both telemetry fields. The earlier unavailable/inconsistent menu state did not recur in
+this complete replay; locking has not been established as its cause.
+
+The console-session guard rejects locked, off-console and unavailable desktop
 states before provider targeting or input. It was verified against a locked desktop,
 which returned `LOCKED` without a target. Automatic unlock is not part of the plugin.

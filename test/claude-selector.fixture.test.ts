@@ -19,6 +19,15 @@ function fixture(input: Record<string, string>) {
 const id = "11111111-2222-4333-a444-555555555555";
 describe("Claude native selector policy", () => {
   it.each([
+    [321001, "ACCEPTED"],
+    [4 * 1024 * 1024, "ACCEPTED"],
+    [4 * 1024 * 1024 + 1, "REJECTED"],
+  ])("bounds real metadata reads of %i bytes", (size, expected) => {
+    expect(fixture({ kind: "metadata-size", text: String(size) }).model).toBe(
+      expected,
+    );
+  });
+  it.each([
     [{ console: "true", locked: "false" }, "READY"],
     [{ console: "true", locked: "true" }, "LOCKED"],
     [{ console: "false", locked: "false" }, "NO DESKTOP"],

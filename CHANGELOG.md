@@ -2,9 +2,10 @@
 
 All notable changes to this project are documented here.
 
-## 0.3.0-beta.1 — 2026-09-05
+## 0.3.0-beta.1 — 2026-09-06
 
 - Add per-action Codex / Claude Code / Follow active app bindings and app badges.
+- Accept larger Desktop session metadata with bounded reads and reject locked desktops.
 - Preserve existing Codex actions behind an adapter and isolate Claude targeting.
 - Add verified Claude Local/SSH model, effort slider, permission cycle, Plan,
   context, weekly usage, sidebar and Changes controls; Local also supports Browser.

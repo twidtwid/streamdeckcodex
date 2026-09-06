@@ -57,6 +57,10 @@ func claudeEnvironmentAccepted(_ environment: String) -> Bool {
 
 var initializedClaudeProcesses: Set<pid_t> = []
 let claudeBundleId = "com.anthropic.claudefordesktop"
+func claudeDiagnostic(_ text: String) {
+    guard ProcessInfo.processInfo.environment["STREAMDECK_CLAUDE_DIAGNOSTICS"] == "1" else { return }
+    FileHandle.standardError.write(Data((text + "\n").utf8))
+}
 func providerDesktopUnavailableReason(_ session: [String: Any]?) -> String? {
     guard let session, (session[kCGSessionOnConsoleKey as String] as? NSNumber)?.boolValue == true else { return "NO DESKTOP" }
     return (session["CGSSessionScreenIsLocked"] as? NSNumber)?.boolValue == true ? "LOCKED" : nil
@@ -100,6 +104,16 @@ struct ClaudeMetadata {
     let title: String
     let environment: String
 }
+// Desktop metadata includes prompt snapshots and can exceed 256 KiB. Bound
+// the read itself, including files that grow between stat and read.
+let claudeMetadataByteLimit = 4 * 1024 * 1024
+func claudeMetadataData(_ file: URL) -> Data? {
+    guard let handle = try? FileHandle(forReadingFrom: file) else { return nil }
+    defer { try? handle.close() }
+    guard let data = try? handle.read(upToCount: claudeMetadataByteLimit + 1),
+          data.count <= claudeMetadataByteLimit else { return nil }
+    return data
+}
 func claudeMetadata() -> [ClaudeMetadata] {
     let root = FileManager.default.homeDirectoryForCurrentUser
         .appendingPathComponent("Library/Application Support/Claude/claude-code-sessions")
@@ -113,8 +127,8 @@ func claudeMetadata() -> [ClaudeMetadata] {
             let files = (try? fm.contentsOfDirectory(at: project, includingPropertiesForKeys: [.fileSizeKey])) ?? []
             for file in files.filter({ $0.pathExtension == "json" }).prefix(1000) {
                 guard let size = try? file.resourceValues(forKeys: [.fileSizeKey]).fileSize,
-                      size < 262144,
-                      let data = try? Data(contentsOf: file),
+                      size <= claudeMetadataByteLimit,
+                      let data = claudeMetadataData(file),
                       let record = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
                       let id = record["sessionId"] as? String,
                       claudeSessionIdentifier(id) != nil,
@@ -232,12 +246,14 @@ func captureClaude() throws -> ClaudeCapture {
         let url = (value as? URL)?.absoluteString ?? (value as? String) ?? ""
         return claudeCodeSessionId(url)
     })
+    claudeDiagnostic("Code roots: \(ids.count), AX nodes: \(snapshot.elements.count)")
     guard ids.count == 1, let sessionId = ids.first else {
         throw ControlError.failed(ids.count > 1 ? "WRONG CHAT" : "UNSUPPORTED", "TARGET_MISMATCH")
     }
     let composers = snapshot.elements.filter { !$0.hidden && $0.enabled && $0.role == "AXTextArea" && claudeNormalized($0.description) == "prompt" }
     guard composers.count == 1 else { throw ControlError.failed(composers.isEmpty ? "NO DATA" : "WRONG CHAT", "TARGET_MISMATCH") }
     let metadata = claudeMetadata().filter { $0.aliases.contains(sessionId) }
+    claudeDiagnostic("Matching metadata: \(metadata.count)")
     guard metadata.count == 1 else { throw ControlError.failed("UNSUPPORTED", "TARGET_MISMATCH") }
     let row = metadata[0]
     let frame = snapshot.elements.first?.elementFrame
@@ -249,6 +265,7 @@ func captureClaude() throws -> ClaudeCapture {
             && abs(rect.width - frame.width) < 2 && abs(rect.height - frame.height) < 2
     }
     let windowNumber = matches.count == 1 ? (matches[0][kCGWindowNumber as String] as? NSNumber)?.stringValue : nil
+    claudeDiagnostic("Matching windows: \(matches.count)")
     guard let windowNumber else { throw ControlError.failed("UNSUPPORTED", "TARGET_MISMATCH") }
     var state = ProviderState(foreground: "claude")
     state.target = ProviderTarget(provider: "claude", windowId: "\(app.processIdentifier):\(windowNumber)", sessionId: row.id, environment: row.environment)
@@ -571,6 +588,17 @@ func runProviderAction(_ action: String, requested: String?) {
     if action == "fixture-claude-policy", let requested,
        let data = Data(base64Encoded: requested),
        let fixture = (try? JSONSerialization.jsonObject(with: data)) as? [String: String] {
+        if fixture["kind"] == "metadata-size", let requestedSize = Int(fixture["text"] ?? ""), requestedSize >= 0, requestedSize <= claudeMetadataByteLimit + 1 {
+            let file = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            do {
+                try Data(repeating: 32, count: requestedSize).write(to: file)
+                let accepted = claudeMetadataData(file) != nil
+                try? FileManager.default.removeItem(at: file)
+                emit(ControlResult(ok: true, action: action, requested: nil, model: accepted ? "ACCEPTED" : "REJECTED", effort: nil, message: "Bounded metadata read fixture"), exitCode: 0)
+            } catch {
+                emit(ControlResult(ok: false, action: action, requested: nil, model: nil, effort: nil, message: "Metadata fixture failed"), exitCode: 1)
+            }
+        }
         if fixture["kind"] == "desktop" {
             let session: [String: Any]? = fixture["missing"] == "true" ? nil : [
                 kCGSessionOnConsoleKey as String: fixture["console"] == "true",
