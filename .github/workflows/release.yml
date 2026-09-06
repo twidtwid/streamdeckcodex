@@ -27,13 +27,13 @@ jobs:
         run: npm ci
 
       - name: Cache Homebrew bottles
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/Library/Caches/Homebrew
           key: brew-${{ runner.os }}-librsvg-imagemagick
 
       - name: Cache Swift module cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: .cache/clang-modules
           key: swift-modules-${{ runner.os }}-${{ hashFiles('native/*.swift') }}
