@@ -86,7 +86,7 @@
     if (actionId.endsWith(".agent-status")) {
       html =
         number("slot", "Agent slot", 1, 1, 8) +
-        `<p class="muted note">Slots follow Codex chat recency; the bundled pages place slots 1 to 6. Press a key to open and acknowledge that chat.</p>`;
+        `<p class="muted note">Slots follow the selected app’s chat recency; the bundled pages place slots 1 to 6. Press a key to open and acknowledge that chat.</p>`;
     } else if (actionId.endsWith(".command")) {
       html =
         controller === "Encoder"
@@ -96,15 +96,27 @@
     } else if (actionId.endsWith(".workflow")) {
       html =
         select("workflowId", "Workflow", workflowOptions, "pr-review") +
-        text("path", "Workspace path", "Latest Codex workspace when empty");
+        text("path", "Workspace path", "Focused workspace when empty");
     } else if (actionId.endsWith(".reasoning")) {
-      html = `<p class="muted note">The dial reads the model's supported levels from Codex and applies changes to the active chat.</p>`;
+      html = `<p class="muted note">The dial reads the model's supported levels from the selected app and applies changes to the active chat.</p>`;
     } else if (actionId.endsWith(".agent-navigator")) {
       html = `<p class="muted note">Rotate to browse recent chats and press to open the selected one. With no recent chats, press starts a new chat. Touch-strip taps and holds are intentionally inert.</p>`;
     } else {
       html = `<p class="muted note">No settings are required for this action.</p>`;
     }
-    app.innerHTML = html;
+    app.innerHTML =
+      select(
+        "provider",
+        "Application",
+        [
+          ["codex", "Codex"],
+          ["claude", "Claude Code"],
+          ["auto", "Follow active app"],
+        ],
+        "codex",
+      ) +
+      `<p class="muted note">Existing keys stay on Codex. Claude supports the Code tab only; unavailable controls show their status. Shared profiles follow the foreground app.</p>` +
+      html;
     app.querySelectorAll("[data-setting]").forEach((element) => {
       element.addEventListener("change", save);
       if (element.tagName === "TEXTAREA" || element.type === "text") {

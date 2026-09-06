@@ -45,7 +45,11 @@ function temporaryRoot(prefix: string): string {
 
 describe("non-repeating check pipeline", () => {
   it("keeps the package and four-part Stream Deck versions aligned", () => {
-    expect(manifest.Version).toBe(`${packageJson.version}.0`);
+    const match = packageJson.version.match(
+      /^(\d+\.\d+\.\d+)(?:-beta\.(\d+))?$/,
+    );
+    expect(match).not.toBeNull();
+    expect(manifest.Version).toBe(`${match![1]}.${match![2] ?? "0"}`);
   });
 
   it("builds the native helper exactly once per check", () => {

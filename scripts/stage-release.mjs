@@ -9,9 +9,16 @@ const pluginPackage = resolve(
 const keypadProfiles = JSON.parse(
   await readFile(resolve("profile-src", "keypad-profiles.json"), "utf8"),
 );
-const profileNames = [
+const legacyProfileNames = [
   ...keypadProfiles.devices.map((device) => device.archiveName),
   "streamdeckcodex-plus",
+];
+
+const profileNames = [
+  ...legacyProfileNames,
+  ...legacyProfileNames.map((name) =>
+    name.replace("streamdeckcodex-", "streamdeckai-"),
+  ),
 ];
 
 await mkdir(resolve("dist"), { recursive: true });

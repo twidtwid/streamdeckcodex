@@ -57,10 +57,10 @@ async function makeThumbnail() {
   await canvas(
     destination,
     [
-      text("CODEX COMPANION", 108, 86, 42, "#9CD5FE"),
+      text("CODEX + CLAUDE", 108, 86, 42, "#9CD5FE"),
       text("FOR STREAM DECK", 108, 136, 84, "#F7F9FC"),
       text(
-        "Live chat status · focused controls · local by design",
+        "Codex controls · Claude Local + SSH preview · one plugin",
         112,
         238,
         30,
@@ -98,7 +98,7 @@ async function makeLiveStatusGallery() {
   await canvas(
     resolve(outputRoot, "gallery-01-live-status.png"),
     [
-      eyebrow("LIVE CHAT STATUS"),
+      eyebrow("CODEX LIVE CHAT STATUS"),
       ...heading("SEE RECENT CHATS", "AT A GLANCE"),
       body("Status, focus, unread work,", 126, 328),
       body("and input needs stay visible", 126, 366),
@@ -115,7 +115,7 @@ async function makeControlsGallery() {
   await canvas(
     resolve(outputRoot, "gallery-02-controls.png"),
     [
-      eyebrow("FOCUSED CONTROLS"),
+      eyebrow("CODEX CONTROLS · CLAUDE PREVIEW"),
       ...heading("KEEP WORK", "MOVING"),
       body("Plan, permissions, push-to-talk,", 126, 328),
       body("usage, and context are available", 126, 366),
@@ -132,13 +132,13 @@ async function makeWorkflowGallery() {
   await canvas(
     resolve(outputRoot, "gallery-03-workflows.png"),
     [
-      eyebrow("BUILT-IN WORKFLOWS"),
+      eyebrow("CODEX WORKFLOWS"),
       ...heading("YOUR ROUTINE,", "ON KEYS"),
       body("Git and delivery, code quality,", 126, 328),
       body("decisions, workspace work, and", 126, 366),
       body("Codex panels have ready-made pages.", 126, 404),
       rule(126, 492, 390, "#FFD166"),
-      caption("MODEL-SPECIFIC PROFILES", 126, 542, "#FFD166"),
+      caption("DEVICE-SPECIFIC PROFILES", 126, 542, "#FFD166"),
       body("Each key uses the project's original generated artwork.", 126, 582),
     ],
     [
@@ -153,7 +153,7 @@ async function makeCompatibilityGallery() {
   await canvas(
     resolve(outputRoot, "gallery-04-key-actions.png"),
     [
-      eyebrow("KEYPAD ACTIONS"),
+      eyebrow("LEGACY + OPT-IN SHARED PROFILES"),
       ...heading("BUILT FOR", "BUTTONS"),
       body("Included layouts fit Stream Deck,", 126, 328),
       body("Mini, Neo, and XL without dropping", 126, 366),
@@ -167,6 +167,15 @@ async function makeCompatibilityGallery() {
 }
 
 async function canvas(destination, labels, layers) {
+  labels.push(
+    text(
+      "CLAUDE LOCAL + SSH · HARDWARE ACCEPTANCE PENDING",
+      126,
+      918,
+      20,
+      "#E7A589",
+    ),
+  );
   const labelArguments = labels.flatMap((item) => [
     "-font",
     font,
