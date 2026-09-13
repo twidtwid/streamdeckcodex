@@ -1,3 +1,8 @@
+import {
+  ProviderAction,
+  observeProviders,
+  serializeProviders,
+} from "./lib/providers/router.js";
 import streamDeck from "@elgato/streamdeck";
 import { AgentNavigatorAction } from "./actions/agent-navigator.js";
 import { AgentStatusAction } from "./actions/agent-status.js";
@@ -13,25 +18,20 @@ import { WorkflowAction } from "./actions/workflow.js";
 import { codexStore } from "./lib/codex-store.js";
 import { releaseSynthesizedKeysSync } from "./lib/automation.js";
 import { createRefreshCoordinator } from "./lib/refresh-coordinator.js";
-import {
-  BUNDLED_PROFILE_VERSION,
-  bundledProfileTargets,
-  bundledProfileTargetsVisible,
-} from "./lib/bundled-profiles.js";
 import { BUILD_INFO } from "./lib/build-info.js";
 import { collectHealth, HealthTransitionLogger } from "./lib/health.js";
 
-const agentStatus = new AgentStatusAction();
-const agentNavigator = new AgentNavigatorAction();
-const approvalMode = new ApprovalModeAction();
-const command = new CommandAction();
-const context = new ContextAction();
-const keycap = new KeycapAction();
-const health = new HealthAction();
-const model = new ModelAction();
-const workflow = new WorkflowAction();
-const reasoning = new ReasoningAction();
-const usage = new UsageAction();
+const agentStatus = new ProviderAction(new AgentStatusAction());
+const agentNavigator = new ProviderAction(new AgentNavigatorAction());
+const approvalMode = new ProviderAction(new ApprovalModeAction());
+const command = new ProviderAction(new CommandAction());
+const context = new ProviderAction(new ContextAction());
+const keycap = new ProviderAction(new KeycapAction());
+const health = new ProviderAction(new HealthAction());
+const model = new ProviderAction(new ModelAction());
+const workflow = new ProviderAction(new WorkflowAction());
+const reasoning = new ProviderAction(new ReasoningAction());
+const usage = new ProviderAction(new UsageAction());
 
 streamDeck.logger.setLevel("info");
 streamDeck.logger.info(
@@ -49,82 +49,51 @@ streamDeck.actions.registerAction(workflow);
 streamDeck.actions.registerAction(reasoning);
 streamDeck.actions.registerAction(usage);
 
-export const refresh = async (): Promise<void> => {
-  // The account-usage fetch spawns the app server at most once per window;
-  // it runs off the critical path and keys render the last cached value.
-  void codexStore.usageSnapshot();
-  // One bounded composer observation per tick feeds every key that projects
-  // live input; the store limits it to one native spawn per cache window and
-  // keeps a structured reason when Codex is unreachable.
-  await codexStore.refreshLiveComposer().catch((error) => {
-    const signature =
-      error instanceof Error
-        ? `${error.name}: ${error.message}`
-        : String(error);
-    if (signature !== lastComposerFailure) {
-      lastComposerFailure = signature;
-      streamDeck.logger.warn(`Live composer refresh failed: ${signature}`);
+export const refresh = async (): Promise<void> =>
+  serializeProviders(async () => {
+    await observeProviders();
+    // The account-usage fetch spawns the app server at most once per window;
+    // it runs off the critical path and keys render the last cached value.
+    void codexStore.usageSnapshot();
+    // One bounded composer observation per tick feeds every key that projects
+    // live input; the store limits it to one native spawn per cache window and
+    // keeps a structured reason when Codex is unreachable.
+    await codexStore.refreshLiveComposer().catch((error) => {
+      const signature =
+        error instanceof Error
+          ? `${error.name}: ${error.message}`
+          : String(error);
+      if (signature !== lastComposerFailure) {
+        lastComposerFailure = signature;
+        streamDeck.logger.warn(`Live composer refresh failed: ${signature}`);
+      }
+    });
+    // Health summarizes what was observed and logs only transitions.
+    // Rendering continues so every surface can show the same bounded reason.
+    const healthSnapshot = collectHealth(codexStore);
+    if (healthSnapshot.components.focus.state === "ready") {
+      lastComposerFailure = undefined;
     }
+    healthTransitions.observe(healthSnapshot, (message) =>
+      streamDeck.logger.info(message),
+    );
+    await Promise.all([
+      agentStatus.refreshAll(),
+      agentNavigator.refreshAll(),
+      approvalMode.refreshAll(),
+      context.refreshAll(),
+      health.refreshAll(),
+      model.refreshAll(),
+      reasoning.refreshAll(),
+      usage.refreshAll(),
+      command.refreshAll(),
+      keycap.refreshAll(),
+      workflow.refreshAll(),
+    ]);
   });
-  // Health summarizes what was observed and logs only transitions.
-  // Rendering continues so every surface can show the same bounded reason.
-  const healthSnapshot = collectHealth(codexStore);
-  if (healthSnapshot.components.focus.state === "ready") {
-    lastComposerFailure = undefined;
-  }
-  healthTransitions.observe(healthSnapshot, (message) =>
-    streamDeck.logger.info(message),
-  );
-  await Promise.all([
-    agentStatus.refreshAll(),
-    agentNavigator.refreshAll(),
-    approvalMode.refreshAll(),
-    context.refreshAll(),
-    health.refreshAll(),
-    model.refreshAll(),
-    reasoning.refreshAll(),
-    usage.refreshAll(),
-  ]);
-};
 
 const healthTransitions = new HealthTransitionLogger();
 let lastComposerFailure: string | undefined;
-
-const activateBundledProfileOnce = async (): Promise<void> => {
-  const globalSettings = await streamDeck.settings.getGlobalSettings<{
-    profileActivated?: boolean;
-    profileActivationVersion?: string;
-  }>();
-  if (globalSettings.profileActivationVersion === BUNDLED_PROFILE_VERSION)
-    return;
-
-  const profiles = bundledProfileTargets(streamDeck.devices);
-  if (profiles.length === 0) return;
-
-  // Stream Deck serializes bundled-profile imports. Concurrent requests race
-  // and are rejected as "another operation is already in progress".
-  for (const { device, profile } of profiles) {
-    await streamDeck.profiles.switchToProfile(device.id, profile, 0);
-  }
-
-  const deadline = Date.now() + 3_000;
-  while (!bundledProfileTargetsVisible(profiles) && Date.now() < deadline) {
-    await new Promise((resolvePromise) => setTimeout(resolvePromise, 100));
-  }
-  if (!bundledProfileTargetsVisible(profiles)) {
-    throw new Error(
-      "Bundled profile activation did not expose actions; it remains pending.",
-    );
-  }
-  await streamDeck.settings.setGlobalSettings({
-    ...globalSettings,
-    profileActivated: true,
-    profileActivationVersion: BUNDLED_PROFILE_VERSION,
-  });
-  streamDeck.logger.info(
-    `Activated ${profiles.length} bundled Codex Companion profile(s)`,
-  );
-};
 
 const refreshCoordinator = createRefreshCoordinator(refresh, 1250, (error) =>
   streamDeck.logger.error("Failed to refresh Codex companion state", error),
@@ -144,9 +113,5 @@ await streamDeck.connect();
 // macOS may block an untrusted AppleScript on its Accessibility prompt; the
 // cleanup is bounded and must never put Stream Deck into a plugin restart loop.
 releaseSynthesizedKeysSync();
-try {
-  await activateBundledProfileOnce();
-} catch (error) {
-  streamDeck.logger.error("Failed to activate bundled profile", error);
-}
+// Bundled profiles are opt-in. Never replace or switch a hand-built profile.
 await refreshCoordinator.runNow();

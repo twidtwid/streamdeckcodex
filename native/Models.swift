@@ -4,6 +4,7 @@ import Darwin
 import Foundation
 
 struct ControlResult: Codable {
+    var providerState: ProviderState? = nil
     let ok: Bool
     let action: String
     let requested: String?

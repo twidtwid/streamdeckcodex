@@ -1,9 +1,9 @@
 {
   "name": "streamdeck-codex-companion",
-  "version": "0.2.4",
+  "version": "0.3.0-beta.2",
   "private": true,
   "type": "module",
-  "description": "Independent Stream Deck companion for the Codex desktop app.",
+  "description": "Independent Stream Deck companion for Codex and Claude Code Desktop.",
   "author": "Todd",
   "license": "MIT",
   "repository": {
@@ -19,7 +19,9 @@
     "stream-deck",
     "stream-deck-plus",
     "macos",
-    "openai"
+    "openai",
+    "claude",
+    "anthropic"
   ],
   "overrides": {
     "brace-expansion": "5.0.9",

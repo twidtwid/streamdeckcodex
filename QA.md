@@ -130,3 +130,33 @@ Record connected evidence outside the repository while testing. A release note
 may summarize the verified device model, software versions, postconditions, and
 restoration result, but must not include device serials, task identifiers,
 private paths, Codex logs, or account data.
+
+## Claude development acceptance
+
+The Claude prerelease has passed native Local/SSH acceptance; physical hardware
+acceptance remains pending before stable release. For further testing, use an idle
+Code session with a recognizable project and empty draft. Validate
+Local, SSH and Cloud separately. Record installed Claude version and supported
+capabilities in the research matrix. Exercise duplicate titles, multiple windows,
+side composers, app/session switches during dial preview, unchanged drafts after
+picker changes, Plan restoration, and lack of fallback on Chat/Cowork or login window.
+Verify a mixed hand-built Mini profile and a shared Plus profile; preserve the stable
+installed plugin until the candidate is ready. Unsupported features must remain
+labeled and must not send fallback hotkeys. Do not claim that fixture tests establish
+live acceptance or ship while exact targeting is unverified.
+
+The repeatable native gate is `node scripts/qa-claude-controls.mjs
+--environment=local --activate --exercise` (use `ssh` for SSH). The command verifies
+and restores supported settings and omits private identifiers from its output.
+See the research matrix for the exact live cases already completed.
+
+The complete Local and SSH replays passed on 2026-09-06 after fixing the metadata size limit;
+see `docs/claude-integration-research.md`. Locked desktops must return `LOCKED`
+without a Claude target. Physical Mini/Plus acceptance is still required before stable.
+
+For beta 2, verify named effort previews including Ultracode, a full five-mode cycle,
+Bypass → Plan → Bypass, and a Plan exit with no plugin history. The permission-cycle
+test includes Bypass and may accept Claude's first-use workspace confirmation;
+Claude remembers that consent even after the test restores the original mode.
+Also verify that a recreated composer after that specific confirmation is accepted
+only if the original window/session and draft match.

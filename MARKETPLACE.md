@@ -1,3 +1,9 @@
+> Claude integration prerelease: Local and SSH native controls are qualified.
+> The candidate has not completed physical hardware acceptance and is not
+> ready for Marketplace publication. Generated gallery images identify the Claude
+> development preview and show established Codex examples. See the
+> [capability matrix](docs/claude-integration-research.md).
+
 # Elgato Marketplace readiness
 
 This checklist maps Codex Companion to Elgato's current official requirements.

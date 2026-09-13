@@ -19,6 +19,7 @@ describe("Astra picker", () => {
     "accessibility-chromium-appkit",
     "accessibility-electron",
     "accessibility-enabled",
+    "accessibility-claude-enhanced-only",
     "accessibility-denied",
     "title-astra",
     "readout-astra",

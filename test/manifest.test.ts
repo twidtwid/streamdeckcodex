@@ -76,7 +76,7 @@ describe("Stream Deck manifest", () => {
       manifest.Profiles.map((profile) => profile.DeviceType).sort(
         (left, right) => left - right,
       ),
-    ).toEqual([0, 1, 2, 7, 9]);
+    ).toEqual([0, 0, 1, 1, 2, 2, 7, 7, 9, 9]);
   });
 
   it("declares the complete companion surface", () => {
@@ -105,7 +105,7 @@ describe("Stream Deck manifest", () => {
 
   it("ships Marketplace-compliant metadata and action-list artwork", () => {
     expect(manifest.Author).toBe("Todd Dailey");
-    expect(manifest.Category).toBe("Codex Companion");
+    expect(manifest.Category).toBe("Codex + Claude Companion");
     expect(manifest.SupportURL).toBe(
       "https://github.com/twidtwid/streamdeckcodex/issues",
     );
