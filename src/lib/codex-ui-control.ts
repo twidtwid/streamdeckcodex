@@ -14,7 +14,8 @@ export interface LivePickerState {
   effort?: string;
 }
 
-interface NativeControlResult extends LivePickerState {
+export interface NativeControlResult extends LivePickerState {
+  providerState?: import("./providers/types.js").ProviderObservation;
   ok: boolean;
   action: string;
   requested?: string;
@@ -79,7 +80,7 @@ function ensureNativeHelperExecutable(executablePath: string): void {
   }
 }
 
-function invoke(
+export function invoke(
   action:
     | "model"
     | "reasoning"
@@ -91,7 +92,9 @@ function invoke(
     | "workflow"
     | "route"
     | "target-capture"
-    | "target-check",
+    | "target-check"
+    | "provider-read"
+    | "claude",
   requested?: string,
   timeoutMs?: number,
   threadId?: string,

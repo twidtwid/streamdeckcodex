@@ -97,3 +97,19 @@ builds the plugin bundle, and invokes Elgato's validator. `npm run
 release:verify` adds dependency audits, documentation checks, packaging, and a
 read-only doctor report. Connected mutation QA is deliberately separate; see
 [QA.md](QA.md).
+
+## Desktop provider boundary
+
+`ProviderAction` routes all SDK events using per-action settings. `CodexProvider`
+retains the established action/store/native stack and filters its refresh collection
+to Codex-bound controls. `ClaudeProvider` uses the same bounded native invocation
+transport with separate Claude selectors and identity checks. A shared queue prevents
+menu transactions from overlapping; exact provider/window/session/environment identity
+scopes previews and remembered Plan modes. Key release returns to the adapter that
+received key down, even if the foreground app changes.
+
+Automatic bindings have no fallback when another app is foreground. Default legacy
+settings bind to Codex. Provider badges are composed by the existing render cache,
+so unchanged transports remain deduplicated. The profile builder derives a second
+opt-in set with distinct identities and automatic provider settings from the same
+canonical profile sources. No second profile contract is maintained.

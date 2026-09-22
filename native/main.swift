@@ -18,6 +18,7 @@ let requested = arguments.count > 1 ? arguments[1] : nil
 let threadId = arguments.count > 2 ? arguments[2] : nil
 
 runFixtureAction(action, arguments: arguments)
+runProviderAction(action, requested: requested)
 
 var accessibilityInitialization = "not attempted"
 do {

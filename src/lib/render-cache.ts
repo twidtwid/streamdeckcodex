@@ -1,9 +1,16 @@
+import {
+  badgeFor,
+  badgeImage,
+  badgeFeedback,
+} from "./providers/presentation.js";
 type KeyAction = {
+  id?: string;
   setImage(value: string): Promise<void>;
   setTitle(value: string): Promise<void>;
 };
 
 type DialAction = {
+  id?: string;
   setFeedback(value: unknown): Promise<void>;
 };
 
@@ -40,6 +47,7 @@ export async function renderKey(
   action: KeyAction,
   image: string,
 ): Promise<void> {
+  image = badgeImage(image, badgeFor(action.id));
   const state = stateFor(action);
   if (state.keyPending?.payload === image) {
     return state.keyPending.promise;
@@ -68,6 +76,7 @@ export async function renderFeedback(
   action: DialAction,
   feedback: unknown,
 ): Promise<void> {
+  feedback = badgeFeedback(feedback, badgeFor(action.id));
   const serialized = JSON.stringify(feedback);
   const state = stateFor(action);
   if (state.feedbackPending?.payload === serialized) {
