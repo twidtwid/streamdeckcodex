@@ -78,7 +78,7 @@
     "@elgato/streamdeck": "2.1.2"
   },
   "devDependencies": {
-    "@elgato/cli": "1.9.0",
+    "@elgato/cli": "1.10.0",
     "@types/node": "26.6.2",
     "esbuild": "0.28.2",
     "lucide-static": "^1.47.0",
