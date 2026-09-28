@@ -31,6 +31,7 @@ import {
 import { codexStore } from "../lib/codex-store.js";
 import { pickerFailureLabel } from "../lib/codex-ui-control.js";
 import { renderFeedback, renderKey } from "../lib/render-cache.js";
+import { showActionAlert } from "../lib/streamdeck-alert.js";
 
 type CommandSettings = {
   commandId?: string;
@@ -179,7 +180,7 @@ export class CommandAction extends SingletonAction<CommandSettings> {
           title: pickerFailureLabel(error),
         });
       }
-      await actionInstance.showAlert();
+      await showActionAlert(actionInstance);
     }
   }
 

@@ -16,6 +16,7 @@ import {
   type ModelDialState,
 } from "../lib/model.js";
 import { renderFeedback } from "../lib/render-cache.js";
+import { showActionAlert } from "../lib/streamdeck-alert.js";
 import { dialFailureFeedback } from "../lib/visuals.js";
 
 type ModelSettings = {
@@ -115,7 +116,7 @@ export class ModelAction extends SingletonAction<ModelSettings> {
       streamDeck.logger.warn(
         `Ignored unavailable model ${current.selected || "(none)"}`,
       );
-      await actionInstance.showAlert();
+      await showActionAlert(actionInstance);
       return;
     }
 
@@ -158,7 +159,7 @@ export class ModelAction extends SingletonAction<ModelSettings> {
           dialFailureFeedback(pickerFailureLabel(error)),
         );
       }
-      await actionInstance.showAlert();
+      await showActionAlert(actionInstance);
     }
   }
 

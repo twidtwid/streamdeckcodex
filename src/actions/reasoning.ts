@@ -17,6 +17,7 @@ import {
   type ReasoningDialState,
 } from "../lib/reasoning.js";
 import { renderFeedback } from "../lib/render-cache.js";
+import { showActionAlert } from "../lib/streamdeck-alert.js";
 import { dialFailureFeedback } from "../lib/visuals.js";
 
 type ReasoningSettings = {
@@ -121,7 +122,7 @@ export class ReasoningAction extends SingletonAction<ReasoningSettings> {
       streamDeck.logger.warn(
         `Ignored unsupported reasoning level ${current.selected} for ${snapshot.model ?? "current model"}`,
       );
-      await actionInstance.showAlert();
+      await showActionAlert(actionInstance);
       return;
     }
     await this.apply(context, actionInstance, current.selected);
@@ -176,7 +177,7 @@ export class ReasoningAction extends SingletonAction<ReasoningSettings> {
           dialFailureFeedback(pickerFailureLabel(error)),
         );
       }
-      await actionInstance.showAlert();
+      await showActionAlert(actionInstance);
     }
   }
 

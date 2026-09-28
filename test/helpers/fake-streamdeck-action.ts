@@ -17,9 +17,12 @@ export class FakeStreamDeckAction<
   isDial(): boolean {
     return this.kind === "dial";
   }
-  async getSettings<U = T>(): Promise<U> {
+  isNeoInfobar(): boolean {
+    return false;
+  }
+  async getSettings(): Promise<T> {
     this.calls.push({ method: "getSettings" });
-    return this.settings as unknown as U;
+    return this.settings;
   }
   async setSettings(value: T): Promise<void> {
     this.settings = value;

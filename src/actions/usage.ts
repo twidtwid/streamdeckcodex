@@ -10,17 +10,19 @@ import { toggleUsageView, type UsageView } from "../lib/usage.js";
 import { svgDataUrl, usageKeySvg } from "../lib/visuals.js";
 import { renderKey } from "../lib/render-cache.js";
 
+type UsageSettings = Record<string, never>;
+
 @action({ UUID: "com.todd.streamdeckcodex.usage" })
-export class UsageAction extends SingletonAction {
+export class UsageAction extends SingletonAction<UsageSettings> {
   readonly #mode = new Map<string, UsageView>();
 
-  async onWillAppear(event: WillAppearEvent): Promise<void> {
+  async onWillAppear(event: WillAppearEvent<UsageSettings>): Promise<void> {
     if (!event.action.isKey()) return;
     this.#mode.set(event.action.id, "weekly");
     await this.draw(event.action);
   }
 
-  async onKeyDown(event: KeyDownEvent): Promise<void> {
+  async onKeyDown(event: KeyDownEvent<UsageSettings>): Promise<void> {
     const current = this.#mode.get(event.action.id) ?? "weekly";
     this.#mode.set(event.action.id, toggleUsageView(current));
     await this.draw(event.action);
@@ -34,7 +36,7 @@ export class UsageAction extends SingletonAction {
     );
   }
 
-  private async draw(actionInstance: Action): Promise<void> {
+  private async draw(actionInstance: Action<UsageSettings>): Promise<void> {
     if (!actionInstance.isKey()) return;
     const snapshot = codexStore.usageSnapshotCached();
     await renderKey(

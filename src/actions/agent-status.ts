@@ -59,8 +59,7 @@ export class AgentStatusAction extends SingletonAction<AgentSettings> {
     receivedSettings?: AgentSettings,
   ): Promise<void> {
     if (!actionInstance.isKey()) return;
-    const settings =
-      receivedSettings ?? (await actionInstance.getSettings<AgentSettings>());
+    const settings = receivedSettings ?? (await actionInstance.getSettings());
     const slot = this.slotFrom(
       settings,
       (actionInstance.coordinates?.column ?? 0) + 1,
