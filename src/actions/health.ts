@@ -15,17 +15,19 @@ import {
 import { renderKey } from "../lib/render-cache.js";
 import { healthKeySvg, svgDataUrl } from "../lib/visuals.js";
 
+type HealthSettings = Record<string, never>;
+
 @action({ UUID: "com.todd.streamdeckcodex.health" })
-export class HealthAction extends SingletonAction {
+export class HealthAction extends SingletonAction<HealthSettings> {
   readonly #selection = new Map<string, number>();
 
-  async onWillAppear(event: WillAppearEvent): Promise<void> {
+  async onWillAppear(event: WillAppearEvent<HealthSettings>): Promise<void> {
     if (!event.action.isKey()) return;
     this.#selection.set(event.action.id, 0);
     await this.draw(event.action);
   }
 
-  async onKeyDown(event: KeyDownEvent): Promise<void> {
+  async onKeyDown(event: KeyDownEvent<HealthSettings>): Promise<void> {
     const next =
       ((this.#selection.get(event.action.id) ?? 0) + 1) %
       HEALTH_COMPONENTS.length;
@@ -41,7 +43,7 @@ export class HealthAction extends SingletonAction {
     );
   }
 
-  private async draw(actionInstance: Action): Promise<void> {
+  private async draw(actionInstance: Action<HealthSettings>): Promise<void> {
     if (!actionInstance.isKey()) return;
     const snapshot = collectHealth(codexStore);
     const component = HEALTH_COMPONENTS[

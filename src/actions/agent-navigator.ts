@@ -10,6 +10,7 @@ import { openNewChat, openThread } from "../lib/automation.js";
 import { codexStore } from "../lib/codex-store.js";
 import { statusIndicator } from "../lib/visuals.js";
 import { renderFeedback } from "../lib/render-cache.js";
+import { showActionAlert } from "../lib/streamdeck-alert.js";
 
 type NavigatorSettings = {
   index?: number;
@@ -70,7 +71,7 @@ export class AgentNavigatorAction extends SingletonAction<NavigatorSettings> {
       }
       if (actionInstance.isDial()) await this.draw(actionInstance);
     } catch {
-      await actionInstance.showAlert();
+      await showActionAlert(actionInstance);
     }
   }
 

@@ -38,7 +38,7 @@ export class KeycapAction extends SingletonAction<KeycapSettings> {
   }
 
   async onKeyDown(event: KeyDownEvent<KeycapSettings>): Promise<void> {
-    const settings = await event.action.getSettings<KeycapSettings>();
+    const settings = await event.action.getSettings();
     const actionKind = settings.action ?? "info";
     try {
       if (actionKind === "new-chat") await openNewChat();
@@ -83,7 +83,7 @@ export class KeycapAction extends SingletonAction<KeycapSettings> {
 
   private async draw(actionInstance: Action<KeycapSettings>): Promise<void> {
     if (!actionInstance.isKey()) return;
-    const settings = await actionInstance.getSettings<KeycapSettings>();
+    const settings = await actionInstance.getSettings();
     await renderKey(
       actionInstance,
       svgDataUrl(

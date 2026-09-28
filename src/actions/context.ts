@@ -10,17 +10,19 @@ import { toggleContextView, type ContextView } from "../lib/context.js";
 import { contextKeySvg, svgDataUrl } from "../lib/visuals.js";
 import { renderKey } from "../lib/render-cache.js";
 
+type ContextSettings = Record<string, never>;
+
 @action({ UUID: "com.todd.streamdeckcodex.context" })
-export class ContextAction extends SingletonAction {
+export class ContextAction extends SingletonAction<ContextSettings> {
   readonly #mode = new Map<string, ContextView>();
 
-  async onWillAppear(event: WillAppearEvent): Promise<void> {
+  async onWillAppear(event: WillAppearEvent<ContextSettings>): Promise<void> {
     if (!event.action.isKey()) return;
     this.#mode.set(event.action.id, "remaining");
     await this.draw(event.action);
   }
 
-  async onKeyDown(event: KeyDownEvent): Promise<void> {
+  async onKeyDown(event: KeyDownEvent<ContextSettings>): Promise<void> {
     const current = this.#mode.get(event.action.id) ?? "remaining";
     this.#mode.set(event.action.id, toggleContextView(current));
     await this.draw(event.action);
@@ -34,7 +36,7 @@ export class ContextAction extends SingletonAction {
     );
   }
 
-  private async draw(actionInstance: Action): Promise<void> {
+  private async draw(actionInstance: Action<ContextSettings>): Promise<void> {
     if (!actionInstance.isKey()) return;
     await renderKey(
       actionInstance,

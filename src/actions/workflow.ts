@@ -12,6 +12,7 @@ import { launchWorkflow } from "../lib/automation.js";
 import { codexStore } from "../lib/codex-store.js";
 import { commandKeySvg, svgDataUrl } from "../lib/visuals.js";
 import { renderFeedback, renderKey } from "../lib/render-cache.js";
+import { showActionAlert } from "../lib/streamdeck-alert.js";
 import {
   workflowAt,
   WORKFLOWS,
@@ -106,7 +107,7 @@ export class WorkflowAction extends SingletonAction<WorkflowSettings> {
       );
       if (actionInstance.isKey()) await actionInstance.showOk();
     } catch {
-      await actionInstance.showAlert();
+      await showActionAlert(actionInstance);
     }
   }
 

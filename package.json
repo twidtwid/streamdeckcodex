@@ -75,7 +75,7 @@
     "test:fast": "vitest run --project unit"
   },
   "dependencies": {
-    "@elgato/streamdeck": "2.1.2"
+    "@elgato/streamdeck": "3.0.0"
   },
   "devDependencies": {
     "@elgato/cli": "1.10.0",
