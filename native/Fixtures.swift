@@ -1466,11 +1466,12 @@ func runFixtureAction(_ action: String, arguments: [String]) {
             }
             let index = fastControlIndex(in: NeutralAXQuery(nodes: nodes), speedMenu: scenario == "fast-speed-menu", option: scenario == "fast-speed-option" ? "fast" : nil)
             valid = ["fast-control", "fast-speed-menu", "fast-speed-option"].contains(scenario) ? index == 1 : index == nil
-        case "accessibility-chromium", "accessibility-chromium-appkit", "accessibility-electron", "accessibility-enabled", "accessibility-denied":
+        case "accessibility-chromium", "accessibility-chromium-appkit", "accessibility-electron", "accessibility-enabled", "accessibility-denied", "accessibility-claude-enhanced-only":
             var enabled: [String] = []
             var settled = 0
             _ = initializePickerAccessibility(
-                read: { scenario == "accessibility-enabled" && $0 == "AXEnhancedUserInterface" },
+                requireManual: scenario == "accessibility-claude-enhanced-only",
+                read: { ["accessibility-enabled", "accessibility-claude-enhanced-only"].contains(scenario) && $0 == "AXEnhancedUserInterface" },
                 enable: { name in
                     enabled.append(name)
                     if scenario == "accessibility-denied" { return .apiDisabled }

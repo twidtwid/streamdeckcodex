@@ -156,6 +156,7 @@ export class ReasoningAction extends SingletonAction<ReasoningSettings> {
       const state = confirmReasoning({ selected: level, applied: "" }).state;
       this.#state.set(context, state);
       await actionInstance.setSettings({
+        ...(await actionInstance.getSettings()),
         selectedLevel: level,
         appliedLevel: level,
       });
