@@ -139,6 +139,7 @@ export class ModelAction extends SingletonAction<ModelSettings> {
       codexStore.invalidate();
       this.#state.set(context, state);
       await actionInstance.setSettings({
+        ...(await actionInstance.getSettings()),
         selectedModel: state.selected,
         appliedModel: state.applied,
       });

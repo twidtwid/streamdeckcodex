@@ -107,6 +107,18 @@ const harness = vi.hoisted(() => {
   };
 });
 
+// This suite exercises the unchanged Codex adapter; mixed-provider routing has
+// its own event-level integration suite.
+vi.mock("../src/lib/providers/router.js", () => ({
+  ProviderAction: class {
+    constructor(action: { refreshAll?: () => Promise<void> }) {
+      action.refreshAll ??= async () => undefined;
+      return action;
+    }
+  },
+  observeProviders: async () => undefined,
+  serializeProviders: (work: () => Promise<unknown>) => work(),
+}));
 vi.mock("../src/lib/automation.js", () => ({
   cleanupDictation: harness.cleanupDictation,
   endDictation: harness.endDictation,

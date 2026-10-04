@@ -64,5 +64,10 @@ jobs:
             dist/streamdeckcodex-neo.streamDeckProfile \
             dist/streamdeckcodex-xl.streamDeckProfile \
             dist/streamdeckcodex-plus.streamDeckProfile \
+            dist/streamdeckai-stream-deck.streamDeckProfile \
+            dist/streamdeckai-mini.streamDeckProfile \
+            dist/streamdeckai-neo.streamDeckProfile \
+            dist/streamdeckai-xl.streamDeckProfile \
+            dist/streamdeckai-plus.streamDeckProfile \
             dist/SHA256SUMS.txt \
             "${flags[@]}"

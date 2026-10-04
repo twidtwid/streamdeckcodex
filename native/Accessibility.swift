@@ -7,13 +7,14 @@ import Foundation
 // AXManualAccessibility switch. Both debounce activation for two seconds.
 // https://github.com/chromium/chromium/blob/main/chrome/browser/chrome_browser_application_mac.mm
 func initializePickerAccessibility(
+    requireManual: Bool = false,
     read: (String) -> Bool,
     enable: (String) -> AXError,
     settle: () -> Void
 ) -> String {
     let manual = "AXManualAccessibility"
     let enhanced = "AXEnhancedUserInterface"
-    if read(manual) || read(enhanced) { return "already enabled" }
+    if read(manual) || (!requireManual && read(enhanced)) { return "already enabled" }
     let manualResult = enable(manual)
     if manualResult == .success {
         settle()
