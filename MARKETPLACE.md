@@ -8,7 +8,7 @@ It is release evidence, not a substitute for Maker Console review.
 - [x] Reverse-DNS plugin UUID includes author and product identity.
 - [x] Every action UUID is prefixed by the plugin UUID.
 - [x] SDK version 3 and Stream Deck 7.1 minimum.
-- [x] Node.js SDK `@elgato/streamdeck` 2.x and Node.js 24 runtime.
+- [x] Node.js SDK `@elgato/streamdeck` 3.0.1 and Node.js 24 runtime.
 - [x] macOS 13 minimum is declared.
 - [x] Plugin and category names are aligned.
 - [x] Eleven actions—within Elgato's recommended 2–30 range.

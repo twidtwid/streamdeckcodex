@@ -117,6 +117,10 @@ describe("reason-coded health diagnostics", () => {
         state: "unavailable",
         reason: "not-exposed",
       });
+      expect(cached.components.store).toMatchObject({
+        state: "ready",
+        value: "readable",
+      });
 
       await store.refreshLiveComposer();
       await store.usageSnapshot();
@@ -134,6 +138,10 @@ describe("reason-coded health diagnostics", () => {
       expect(live.components.usage).toMatchObject({
         state: "ready",
         value: "70% left",
+      });
+      expect(live.components.store).toMatchObject({
+        state: "ready",
+        value: "readable",
       });
     } finally {
       store.close();

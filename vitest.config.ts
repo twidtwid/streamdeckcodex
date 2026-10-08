@@ -5,6 +5,7 @@ import { transformWithOxc } from "vite";
 // Node process. `npm run test:fast` skips them for the inner loop; `check`
 // and CI run both projects.
 const integrationTests = [
+  "test/astra-picker.fixture.test.ts",
   "test/build-pipeline.test.ts",
   "test/health-diagnostics.test.ts",
   "test/keypad-profiles.test.ts",

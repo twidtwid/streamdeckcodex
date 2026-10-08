@@ -1,14 +1,16 @@
 import {
   closeSync,
+  existsSync,
   fstatSync,
   openSync,
+  readdirSync,
   readFileSync,
   readSync,
   statSync,
 } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
-import { DatabaseSync } from "node:sqlite";
+import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import type {
   AgentSnapshot,
   ContextSnapshot,
@@ -82,7 +84,7 @@ interface SqliteNamedRow {
 /** Root user chats use `/root` or leave this unset; nested paths are sub-sessions. */
 const ROOT_AGENT_PATH = "/root";
 
-function tableColumns(database: DatabaseSync, table: string): Set<string> {
+function tableColumns(database: StoreDatabase, table: string): Set<string> {
   return new Set(
     (
       database
@@ -94,7 +96,7 @@ function tableColumns(database: DatabaseSync, table: string): Set<string> {
   );
 }
 
-function inspectThreadSchema(database: DatabaseSync): ThreadSchema {
+function inspectThreadSchema(database: StoreDatabase): ThreadSchema {
   const columns = tableColumns(database, "threads");
   const spawnTable = database
     .prepare(
@@ -194,26 +196,48 @@ export function resolveCodexHome(): string {
   return resolve(expandHome(configured || join(homedir(), ".codex")));
 }
 
+const STATE_SQLITE_NAME = /^state_(\d+)\.sqlite$/;
+const DEFAULT_STATE_SQLITE = "state_5.sqlite";
+
+function resolveSqliteInDirectory(directory: string): string {
+  const preferred = join(directory, DEFAULT_STATE_SQLITE);
+  if (existsSync(preferred)) return preferred;
+  try {
+    let highest: { name: string; generation: number } | undefined;
+    for (const name of readdirSync(directory)) {
+      const match = STATE_SQLITE_NAME.exec(name);
+      if (!match) continue;
+      const generation = Number(match[1]);
+      if (!highest || generation > highest.generation) {
+        highest = { name, generation };
+      }
+    }
+    if (highest) return join(directory, highest.name);
+  } catch {
+    // An unreadable directory still resolves to the default filename.
+  }
+  return preferred;
+}
+
 export function resolveStateDatabase(codexHome = resolveCodexHome()): string {
   const explicit = process.env["CODEX_SQLITE_HOME"];
   if (explicit) {
     const expanded = resolve(expandHome(explicit));
     return expanded.endsWith(".sqlite")
       ? expanded
-      : join(expanded, "state_5.sqlite");
+      : resolveSqliteInDirectory(expanded);
   }
 
   try {
     const config = readFileSync(join(codexHome, "config.toml"), "utf8");
     const match = config.match(/^\s*sqlite_home\s*=\s*["']([^"']+)["']/m);
     if (match?.[1]) {
-      const configuredHome = resolve(expandHome(match[1]));
-      return join(configuredHome, "state_5.sqlite");
+      return resolveSqliteInDirectory(resolve(expandHome(match[1])));
     }
   } catch {
     // The default location remains authoritative when no readable config exists.
   }
-  return join(codexHome, "state_5.sqlite");
+  return resolveSqliteInDirectory(codexHome);
 }
 
 export function readFileTail(path: string, maxBytes = 512 * 1024): string {
@@ -315,11 +339,81 @@ function sameFile(
   );
 }
 
+interface StoreStatement {
+  all: (...params: SQLInputValue[]) => unknown;
+  get: (...params: SQLInputValue[]) => unknown;
+}
+
+interface StoreDatabase {
+  prepare(sql: string): StoreStatement;
+  exec(sql: string): void;
+  close(): void;
+}
+
+const UNAVAILABLE_STORE_DATABASE: StoreDatabase = {
+  prepare() {
+    return { all: () => [], get: () => undefined };
+  },
+  exec() {},
+  close() {},
+};
+
+const EMPTY_THREAD_SCHEMA: ThreadSchema = {
+  columns: new Set(),
+  spawnColumns: new Set(),
+};
+
+function guardedStoreDatabase(
+  database: DatabaseSync,
+  onFailure: (error: unknown) => void,
+): StoreDatabase {
+  const statement = (sql: string): StoreStatement => {
+    try {
+      const prepared = database.prepare(sql);
+      return {
+        all: (...params: SQLInputValue[]) => {
+          try {
+            return prepared.all(...params);
+          } catch (error) {
+            onFailure(error);
+            return [];
+          }
+        },
+        get: (...params: SQLInputValue[]) => {
+          try {
+            return prepared.get(...params);
+          } catch (error) {
+            onFailure(error);
+            return undefined;
+          }
+        },
+      };
+    } catch (error) {
+      onFailure(error);
+      return { all: () => [], get: () => undefined };
+    }
+  };
+  return {
+    prepare: statement,
+    exec(sql: string) {
+      try {
+        database.exec(sql);
+      } catch (error) {
+        onFailure(error);
+      }
+    },
+    close() {
+      database.close();
+    },
+  };
+}
+
 export class CodexStore {
   readonly codexHome: string;
   readonly databasePath: string;
   readonly #acknowledged = new Map<string, number>();
-  #database: DatabaseSync | undefined;
+  #database: StoreDatabase | undefined;
+  #databaseUnavailableReason: AvailabilityReason | undefined;
   #cache: { at: number; snapshots: AgentSnapshot[] } | undefined;
   #usageCache:
     | { at: number; snapshot?: UsageSnapshot; reason?: AvailabilityReason }
@@ -401,7 +495,19 @@ export class CodexStore {
   close(): void {
     this.#database?.close();
     this.#database = undefined;
+    this.#databaseUnavailableReason = undefined;
     this.#threadSchema = undefined;
+  }
+
+  /**
+   * Cheap local SQLite readability. Failures are `unsupported-schema` so
+   * Health and doctor can render the existing UNSUPPORTED label.
+   */
+  storeAvailability(): Availability<string> {
+    this.#probeDatabase();
+    return this.#databaseUnavailableReason
+      ? unavailable(this.#databaseUnavailableReason)
+      : ready("readable");
   }
 
   acknowledge(threadId: string, at = Date.now()): void {
@@ -924,19 +1030,63 @@ export class CodexStore {
 
   #schema(): ThreadSchema {
     this.#open();
-    return this.#threadSchema!;
+    return this.#threadSchema ?? EMPTY_THREAD_SCHEMA;
   }
 
-  #open(): DatabaseSync {
+  #markDatabaseUnavailable(): void {
+    this.#databaseUnavailableReason = "unsupported-schema";
+    this.#threadSchema = undefined;
+    const database = this.#database;
+    this.#database = undefined;
+    try {
+      database?.close();
+    } catch {
+      // Closing a failed handle must not hide the original unavailability.
+    }
+  }
+
+  #probeDatabase(): void {
+    const database = this.#open();
+    if (this.#databaseUnavailableReason) return;
+    database.prepare(threadSelectSql(this.#schema(), "recent")).all(0);
+  }
+
+  #open(): StoreDatabase {
     if (this.#database) return this.#database;
-    const database = new DatabaseSync(this.databasePath, {
-      readOnly: true,
-      timeout: 1000,
-    });
-    database.exec("PRAGMA query_only = ON");
-    this.#database = database;
-    this.#threadSchema = inspectThreadSchema(database);
-    return database;
+    if (!existsSync(this.databasePath)) {
+      this.#markDatabaseUnavailable();
+      return UNAVAILABLE_STORE_DATABASE;
+    }
+    try {
+      const database = new DatabaseSync(this.databasePath, {
+        readOnly: true,
+        timeout: 1000,
+      });
+      try {
+        database.exec("PRAGMA query_only = ON");
+        const guarded = guardedStoreDatabase(database, () => {
+          this.#markDatabaseUnavailable();
+        });
+        this.#database = guarded;
+        this.#databaseUnavailableReason = undefined;
+        const schema = inspectThreadSchema(guarded);
+        if (this.#databaseUnavailableReason) {
+          return UNAVAILABLE_STORE_DATABASE;
+        }
+        this.#threadSchema = schema;
+        return guarded;
+      } catch (error) {
+        try {
+          database.close();
+        } catch {
+          // Prefer the original open/exec failure.
+        }
+        throw error;
+      }
+    } catch {
+      this.#markDatabaseUnavailable();
+      return UNAVAILABLE_STORE_DATABASE;
+    }
   }
 }
 

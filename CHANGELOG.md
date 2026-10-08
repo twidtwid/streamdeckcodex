@@ -4,8 +4,24 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Changed
+
+- Depend on `@elgato/streamdeck` 3.0.1.
+- Derive Model dial families from `models_cache.json` with the existing
+  slug and reasoning allow-list, falling back to Luna, Terra, Sol, and Astra
+  when the cache is missing.
+- Prefer `state_5.sqlite` and fall back to the highest-numbered
+  `state_*.sqlite` when that default file is absent.
+- Keep `test:fast` free of native helper spawns, including the Astra picker
+  fixtures.
+
 ### Fixed
 
+- Pin `brace-expansion` to a patched override and update `fast-uri` so
+  `npm run audit:full` and production High audits pass.
+- Map a missing, locked, or incompatible Codex SQLite database to the
+  existing `UNSUPPORTED` availability state instead of throwing and blanking
+  keys. Health and `npm run doctor` report the store when it is unreadable.
 - Agent Status no longer lists Codex Guardian / Guardian2 reviewer
   sub-sessions, which could fill the recent-task slots and fail with
   "cannot resume a live Guardian reviewer". Internal threads are excluded

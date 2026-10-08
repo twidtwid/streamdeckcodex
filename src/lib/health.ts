@@ -11,6 +11,7 @@ export const HEALTH_COMPONENTS = [
   "reasoning",
   "usage",
   "input",
+  "store",
 ] as const;
 
 export type HealthComponent = (typeof HEALTH_COMPONENTS)[number];
@@ -68,6 +69,7 @@ export function collectHealth(store: CodexStore): HealthSnapshot {
         (snapshot) => `${Math.round(100 - snapshot.usedPercent)}% left`,
       ),
       input: inputHealth,
+      store: summarize(store.storeAvailability(), (value) => value),
     },
   };
 }
