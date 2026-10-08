@@ -361,10 +361,82 @@ func sqliteLines(_ databasePath: String, _ sql: String) -> SQLiteQueryResult {
     return .success(text.split(separator: "\n").map(String.init))
 }
 
-func sqliteThreadIds(_ databasePath: String) -> Set<String>? {
-    guard case .success(let lines) = sqliteLines(databasePath, "SELECT id FROM threads;") else {
+func sqliteColumnNames(_ databasePath: String, _ table: String) -> Set<String>? {
+    guard table.range(of: "^[A-Za-z_][A-Za-z0-9_]*$", options: .regularExpression) != nil else {
         return nil
     }
+    guard case .success(let lines) = sqliteLines(
+        databasePath,
+        "PRAGMA table_info(\(table));"
+    ) else { return nil }
+    return Set(lines.compactMap { line in
+        let parts = line.split(separator: "|", omittingEmptySubsequences: false)
+        guard parts.count > 1 else { return nil }
+        let name = String(parts[1])
+        return name.isEmpty ? nil : name
+    })
+}
+
+func sqliteTableExists(_ databasePath: String, _ table: String) -> Bool {
+    guard table.range(of: "^[A-Za-z_][A-Za-z0-9_]*$", options: .regularExpression) != nil else {
+        return false
+    }
+    guard case .success(let lines) = sqliteLines(
+        databasePath,
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = '\(table)' LIMIT 1;"
+    ) else { return false }
+    return lines.contains("1")
+}
+
+/// User-facing chats only. Never matches titles; archived and Guardian
+/// reviewer sub-sessions are excluded when those columns/tables exist.
+func sqliteUserFacingPredicate(_ databasePath: String) -> String? {
+    guard let columns = sqliteColumnNames(databasePath, "threads") else { return nil }
+    var clauses: [String] = []
+    if columns.contains("archived") { clauses.append("t.archived = 0") }
+    if columns.contains("thread_source") {
+        clauses.append("t.thread_source IS NOT 'subagent'")
+    }
+    if columns.contains("source") {
+        clauses.append(
+            """
+            CASE
+              WHEN json_valid(t.source)
+              THEN json_extract(t.source, '$.subagent')
+            END IS NULL
+            """
+        )
+    }
+    if columns.contains("agent_path") {
+        clauses.append("(t.agent_path IS NULL OR t.agent_path = '' OR t.agent_path = '/root')")
+    }
+    if sqliteTableExists(databasePath, "thread_spawn_edges"),
+       let spawnColumns = sqliteColumnNames(databasePath, "thread_spawn_edges"),
+       spawnColumns.contains("child_thread_id")
+    {
+        clauses.append(
+            """
+            NOT EXISTS (
+              SELECT 1 FROM thread_spawn_edges child
+              WHERE child.child_thread_id = t.id
+            )
+            """
+        )
+    }
+    guard !clauses.isEmpty else { return "" }
+    return clauses.map { "AND \($0)" }.joined(separator: "\n")
+}
+
+func sqliteThreadIds(_ databasePath: String) -> Set<String>? {
+    guard let predicate = sqliteUserFacingPredicate(databasePath) else { return nil }
+    guard case .success(let lines) = sqliteLines(
+        databasePath,
+        """
+        SELECT DISTINCT t.id FROM threads t
+        WHERE 1 = 1
+        \(predicate);
+        """
+    ) else { return nil }
     return Set(lines)
 }
 
@@ -372,9 +444,14 @@ func sqliteThreadCwd(_ databasePath: String, _ threadId: String) -> SQLiteRowRes
     guard threadId.range(of: "^[0-9A-Fa-f-]{16,64}$", options: .regularExpression) != nil else {
         return .failure
     }
+    guard let predicate = sqliteUserFacingPredicate(databasePath) else { return .failure }
     guard case .success(let lines) = sqliteLines(
         databasePath,
-        "SELECT cwd FROM threads WHERE id = '\(threadId)';"
+        """
+        SELECT t.cwd FROM threads t
+        WHERE t.id = '\(threadId)'
+        \(predicate);
+        """
     ) else { return .failure }
     return .success(lines.first)
 }

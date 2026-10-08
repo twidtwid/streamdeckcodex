@@ -22,6 +22,13 @@ All notable changes to this project are documented here.
 - Map a missing, locked, or incompatible Codex SQLite database to the
   existing `UNSUPPORTED` availability state instead of throwing and blanking
   keys. Health and `npm run doctor` report the store when it is unreadable.
+- Agent Status no longer lists Codex Guardian / Guardian2 reviewer
+  sub-sessions, which could fill the recent-task slots and fail with
+  "cannot resume a live Guardian reviewer". Internal threads are excluded
+  in SQL from structured metadata (`thread_source`, JSON `source.subagent`,
+  `agent_path`, and spawn-edge children) before the 12-row limit. A user
+  chat titled "Guardian" still appears. New Chat targeting uses the same
+  user-facing filter.
 
 ## 0.2.4 — 2026-09-05
 

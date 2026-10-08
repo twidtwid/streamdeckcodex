@@ -2228,9 +2228,9 @@ func runFixtureAction(_ action: String, arguments: [String]) {
             emit(ControlResult(ok: false, action: action, requested: nil, model: nil, effort: nil, message: "SQLite fixture query failed"), exitCode: 1)
         }
         let valid = ids.contains("aaaaaaaaaaaaaaaa")
-            && ids.contains("bbbbbbbbbbbbbbbb")
+            && !ids.contains("bbbbbbbbbbbbbbbb")
             && sqliteThreadCwdValue(databasePath, "aaaaaaaaaaaaaaaa") == "/tmp/active"
-            && sqliteThreadCwdValue(databasePath, "bbbbbbbbbbbbbbbb") == "/tmp/archived"
+            && sqliteThreadCwdValue(databasePath, "bbbbbbbbbbbbbbbb") == nil
         emit(
             ControlResult(
                 ok: valid,
@@ -2239,6 +2239,31 @@ func runFixtureAction(_ action: String, arguments: [String]) {
                 model: nil,
                 effort: nil,
                 message: valid ? "SQLite fixture accepted" : "SQLite fixture rejected"
+            ),
+            exitCode: valid ? 0 : 1
+        )
+    }
+
+    if action == "--sqlite-guardian-fixture" {
+        let databasePath = arguments.dropFirst().first ?? ""
+        guard isRegularCanonicalSQLiteDatabase(databasePath) else {
+            emit(ControlResult(ok: false, action: action, requested: nil, model: nil, effort: nil, message: "SQLite guardian fixture prevalidation failed"), exitCode: 1)
+        }
+        guard let ids = sqliteThreadIds(databasePath) else {
+            emit(ControlResult(ok: false, action: action, requested: nil, model: nil, effort: nil, message: "SQLite guardian fixture query failed"), exitCode: 1)
+        }
+        let valid = ids.contains("aaaaaaaaaaaaaaaa")
+            && !ids.contains("cccccccccccccccc")
+            && sqliteThreadCwdValue(databasePath, "aaaaaaaaaaaaaaaa") == "/tmp/parent"
+            && sqliteThreadCwdValue(databasePath, "cccccccccccccccc") == nil
+        emit(
+            ControlResult(
+                ok: valid,
+                action: action,
+                requested: nil,
+                model: nil,
+                effort: nil,
+                message: valid ? "SQLite guardian fixture accepted" : "SQLite guardian fixture rejected"
             ),
             exitCode: valid ? 0 : 1
         )
