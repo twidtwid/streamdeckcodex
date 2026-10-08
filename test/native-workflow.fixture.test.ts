@@ -164,7 +164,7 @@ describe("native workflow postcondition fixture", () => {
     expect(result.status).toBe(0);
   });
 
-  it("queries a real readonly SQLite snapshot including archived IDs", () => {
+  it("queries a real readonly SQLite snapshot excluding archived IDs", () => {
     const directory = mkdtempSync(resolve(tmpdir(), "codex-sqlite-"));
     const database = resolve(directory, "state.sqlite");
     try {
@@ -199,6 +199,34 @@ describe("native workflow postcondition fixture", () => {
       expect(
         spawnSync(native, ["--sqlite-fixture", realpathSync(corrupt)]).status,
       ).toBe(1);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("excludes a Guardian child from targeting while keeping its parent", () => {
+    const directory = mkdtempSync(resolve(tmpdir(), "codex-sqlite-guardian-"));
+    const database = resolve(directory, "state.sqlite");
+    try {
+      const setup = spawnSync("/usr/bin/sqlite3", [
+        database,
+        [
+          "CREATE TABLE threads (id TEXT, cwd TEXT, archived INTEGER, thread_source TEXT, source TEXT, agent_path TEXT, title TEXT);",
+          "CREATE TABLE thread_spawn_edges (parent_thread_id TEXT, child_thread_id TEXT, status TEXT);",
+          "INSERT INTO threads VALUES ('aaaaaaaaaaaaaaaa', '/tmp/parent', 0, 'user', 'cli', '/root', 'Guardian');",
+          "INSERT INTO threads VALUES ('cccccccccccccccc', '/tmp/child', 0, 'subagent', '{\"subagent\":{\"other\":\"guardian\"}}', '/root/guardian', 'User work');",
+          "INSERT INTO thread_spawn_edges VALUES ('aaaaaaaaaaaaaaaa', 'cccccccccccccccc', 'running');",
+          "INSERT INTO thread_spawn_edges VALUES ('aaaaaaaaaaaaaaaa', 'cccccccccccccccc', 'running');",
+        ].join(" "),
+      ]);
+      expect(setup.status).toBe(0);
+      const observed = spawnSync(
+        native,
+        ["--sqlite-guardian-fixture", realpathSync(database)],
+        { encoding: "utf8" },
+      );
+      expect(observed.stdout).toContain("SQLite guardian fixture accepted");
+      expect(observed.status).toBe(0);
     } finally {
       rmSync(directory, { recursive: true, force: true });
     }

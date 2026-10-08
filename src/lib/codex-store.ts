@@ -70,6 +70,121 @@ interface ThreadRow {
   spawn_status: string | null;
 }
 
+interface ThreadSchema {
+  columns: Set<string>;
+  spawnColumns: Set<string>;
+}
+
+interface SqliteNamedRow {
+  name: string;
+}
+
+/** Root user chats use `/root` or leave this unset; nested paths are sub-sessions. */
+const ROOT_AGENT_PATH = "/root";
+
+function tableColumns(database: DatabaseSync, table: string): Set<string> {
+  return new Set(
+    (
+      database
+        .prepare(`PRAGMA table_info(${table})`)
+        .all() as unknown as SqliteNamedRow[]
+    )
+      .map((column) => column.name)
+      .filter(Boolean),
+  );
+}
+
+function inspectThreadSchema(database: DatabaseSync): ThreadSchema {
+  const columns = tableColumns(database, "threads");
+  const spawnTable = database
+    .prepare(
+      `SELECT name FROM sqlite_master
+       WHERE type = 'table' AND name = 'thread_spawn_edges'`,
+    )
+    .get() as SqliteNamedRow | undefined;
+  return {
+    columns,
+    spawnColumns:
+      spawnTable?.name === "thread_spawn_edges"
+        ? tableColumns(database, "thread_spawn_edges")
+        : new Set(),
+  };
+}
+
+/**
+ * Exclude Codex-internal sub-sessions using structured metadata only.
+ * Titles are never consulted: a user chat named "Guardian" must remain visible.
+ *
+ * Signals, each optional and used only when present in this database:
+ * - threads.archived = 1
+ * - threads.thread_source = 'subagent'
+ * - threads.source JSON with a `subagent` property
+ * - threads.agent_path set to a non-root path
+ * - a row in thread_spawn_edges whose child is this thread
+ */
+function userFacingThreadPredicate(schema: ThreadSchema): string {
+  const clauses: string[] = [];
+  if (schema.columns.has("archived")) {
+    clauses.push(`t.archived = 0`);
+  }
+  if (schema.columns.has("thread_source")) {
+    clauses.push(`t.thread_source IS NOT 'subagent'`);
+  }
+  if (schema.columns.has("source")) {
+    clauses.push(
+      `CASE
+         WHEN json_valid(t.source)
+         THEN json_extract(t.source, '$.subagent')
+       END IS NULL`,
+    );
+  }
+  if (schema.columns.has("agent_path")) {
+    clauses.push(
+      `(t.agent_path IS NULL OR t.agent_path = '' OR t.agent_path = '${ROOT_AGENT_PATH}')`,
+    );
+  }
+  if (schema.spawnColumns.has("child_thread_id")) {
+    clauses.push(
+      `NOT EXISTS (
+             SELECT 1 FROM thread_spawn_edges child
+             WHERE child.child_thread_id = t.id
+           )`,
+    );
+  }
+  return clauses.length === 0 ? "" : `AND ${clauses.join("\n           AND ")}`;
+}
+
+function threadSelectSql(
+  schema: ThreadSchema,
+  kind: "recent" | "focused",
+): string {
+  const spawnStatus =
+    schema.spawnColumns.has("status") &&
+    schema.spawnColumns.has("child_thread_id")
+      ? `(SELECT MAX(child.status) FROM thread_spawn_edges child
+               WHERE child.child_thread_id = t.id) AS spawn_status`
+      : "NULL AS spawn_status";
+  const visibility = userFacingThreadPredicate(schema);
+  const recencyFilter =
+    kind === "recent"
+      ? `AND t.preview <> ''
+           AND t.recency_at_ms >= ?`
+      : "AND t.id = ?";
+  const orderLimit =
+    kind === "recent"
+      ? `ORDER BY t.recency_at_ms DESC
+         LIMIT 12`
+      : "LIMIT 1";
+  return `SELECT DISTINCT
+           t.id, t.rollout_path, t.cwd, t.title, t.preview, t.recency_at_ms,
+           t.reasoning_effort, t.model, ${spawnStatus}
+         FROM threads t
+         WHERE 1 = 1
+           ${recencyFilter}
+           ${visibility}
+         ${orderLimit}`;
+}
+
 function expandHome(path: string): string {
   return path.startsWith("~/") ? join(homedir(), path.slice(2)) : path;
 }
@@ -251,6 +366,7 @@ export class CodexStore {
   #recentRolloutPaths = new Set<string>();
   #focusedRolloutPath: string | undefined;
   #modelCache: { identity: FileIdentity; parsed: unknown } | undefined;
+  #threadSchema: ThreadSchema | undefined;
 
   constructor(
     options: {
@@ -285,6 +401,7 @@ export class CodexStore {
   close(): void {
     this.#database?.close();
     this.#database = undefined;
+    this.#threadSchema = undefined;
   }
 
   acknowledge(threadId: string, at = Date.now()): void {
@@ -377,18 +494,7 @@ export class CodexStore {
     const database = this.#open();
     const cutoff = now - maxAgeMs;
     const rows = database
-      .prepare(
-        `SELECT
-           t.id, t.rollout_path, t.cwd, t.title, t.preview, t.recency_at_ms,
-           t.reasoning_effort, t.model, e.status AS spawn_status
-         FROM threads t
-         LEFT JOIN thread_spawn_edges e ON e.child_thread_id = t.id
-         WHERE t.archived = 0
-           AND t.preview <> ''
-           AND t.recency_at_ms >= ?
-         ORDER BY t.recency_at_ms DESC
-         LIMIT 12`,
-      )
+      .prepare(threadSelectSql(this.#schema(), "recent"))
       .all(cutoff) as unknown as ThreadRow[];
 
     const persistedSnapshots = rows.map((row) =>
@@ -424,15 +530,7 @@ export class CodexStore {
       return this.#focusedProjectionCache.snapshot;
     }
     const row = this.#open()
-      .prepare(
-        `SELECT
-           t.id, t.rollout_path, t.cwd, t.title, t.preview, t.recency_at_ms,
-           t.reasoning_effort, t.model, e.status AS spawn_status
-         FROM threads t
-         LEFT JOIN thread_spawn_edges e ON e.child_thread_id = t.id
-         WHERE t.archived = 0 AND t.id = ?
-         LIMIT 1`,
-      )
+      .prepare(threadSelectSql(this.#schema(), "focused"))
       .get(activeId) as unknown as ThreadRow | undefined;
     const persisted = row ? this.#projectThreadRow(row, now) : undefined;
     const snapshot = persisted
@@ -824,6 +922,11 @@ export class CodexStore {
         );
   }
 
+  #schema(): ThreadSchema {
+    this.#open();
+    return this.#threadSchema!;
+  }
+
   #open(): DatabaseSync {
     if (this.#database) return this.#database;
     const database = new DatabaseSync(this.databasePath, {
@@ -832,6 +935,7 @@ export class CodexStore {
     });
     database.exec("PRAGMA query_only = ON");
     this.#database = database;
+    this.#threadSchema = inspectThreadSchema(database);
     return database;
   }
 }

@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented here.
 
+## Unreleased
+
+### Fixed
+
+- Agent Status no longer lists Codex Guardian / Guardian2 reviewer
+  sub-sessions, which could fill the recent-task slots and fail with
+  "cannot resume a live Guardian reviewer". Internal threads are excluded
+  in SQL from structured metadata (`thread_source`, JSON `source.subagent`,
+  `agent_path`, and spawn-edge children) before the 12-row limit. A user
+  chat titled "Guardian" still appears. New Chat targeting uses the same
+  user-facing filter.
+
 ## 0.2.4 — 2026-09-05
 
 ### Fixed
