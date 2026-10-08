@@ -103,6 +103,11 @@ const harness = vi.hoisted(() => {
         reason: "unsupported-schema",
         observedAt: 1,
       })),
+      storeAvailability: vi.fn(() => ({
+        state: "ready",
+        value: "readable",
+        observedAt: 1,
+      })),
     },
   };
 });

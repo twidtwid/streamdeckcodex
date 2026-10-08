@@ -2,8 +2,13 @@ import type { ModelOption } from "../types.js";
 import { normalizeReasoningLevels } from "./reasoning.js";
 import type { DialFeedback } from "./visuals.js";
 
-const MODEL_FAMILIES = ["luna", "terra", "sol", "astra"] as const;
-const MODEL_SLUG = /^gpt-[a-z0-9.-]+-(luna|terra|sol|astra)$/i;
+export const FALLBACK_MODEL_FAMILIES = [
+  "luna",
+  "terra",
+  "sol",
+  "astra",
+] as const;
+const MODEL_SLUG = /^gpt-[a-z0-9.-]+-([a-z][a-z0-9]{0,31})$/i;
 const SAFE_DISPLAY_NAME = /^[a-z0-9 ._-]{1,64}$/i;
 const REASONING_LEVELS = new Set([
   "none",
@@ -28,13 +33,47 @@ interface CachedModel {
   supported_reasoning_levels?: Array<{ effort?: string }>;
 }
 
-export function supportedModelOptions(parsed: unknown): ModelOption[] {
+function cachedModels(parsed: unknown): CachedModel[] {
   if (typeof parsed !== "object" || parsed === null) return [];
-  const models = Array.isArray((parsed as { models?: unknown }).models)
+  return Array.isArray((parsed as { models?: unknown }).models)
     ? ((parsed as { models: CachedModel[] }).models ?? [])
     : [];
+}
 
-  return MODEL_FAMILIES.flatMap((family) => {
+function familyFromSlug(slug: string): string | undefined {
+  if (slug.length > 64) return undefined;
+  const match = MODEL_SLUG.exec(slug);
+  return match?.[1]?.toLowerCase();
+}
+
+/**
+ * Families advertised by the live catalog, in the Luna → Terra → Sol → Astra
+ * order when those are present, then any additional matching suffixes. A
+ * missing or empty cache keeps the current four-family fallback.
+ */
+export function modelFamiliesFromCache(parsed: unknown): string[] {
+  const seen = new Set<string>();
+  const extras: string[] = [];
+  for (const candidate of cachedModels(parsed)) {
+    if (typeof candidate?.slug !== "string") continue;
+    const family = familyFromSlug(candidate.slug);
+    if (!family || seen.has(family)) continue;
+    seen.add(family);
+    if (!(FALLBACK_MODEL_FAMILIES as readonly string[]).includes(family)) {
+      extras.push(family);
+    }
+  }
+  if (seen.size === 0) return [...FALLBACK_MODEL_FAMILIES];
+  return [
+    ...FALLBACK_MODEL_FAMILIES.filter((family) => seen.has(family)),
+    ...extras,
+  ];
+}
+
+export function supportedModelOptions(parsed: unknown): ModelOption[] {
+  const models = cachedModels(parsed);
+
+  return modelFamiliesFromCache(parsed).flatMap((family) => {
     const model = models.find(
       (candidate) =>
         typeof candidate?.slug === "string" &&
